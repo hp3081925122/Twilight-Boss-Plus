@@ -1,0 +1,16 @@
+pluginManagement {
+    repositories {
+        // 使用 ForgeGradle 所需的官方插件仓库。
+        gradlePluginPortal()
+        maven {
+            name = 'MinecraftForge'
+            url = 'https://maven.minecraftforge.net/'
+        }
+        maven {
+            name = 'Sponge'
+            url = 'https://repo.spongepowered.org/repository/maven-public/'
+        }
+    }
+}
+
+rootProject.name = 'twilightbossplus'
