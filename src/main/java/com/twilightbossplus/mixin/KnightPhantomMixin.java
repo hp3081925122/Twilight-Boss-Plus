@@ -81,7 +81,7 @@ public abstract class KnightPhantomMixin extends FlyingMob implements KnightData
 
     @Redirect(method = "aiStep", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;addParticle(Lnet/minecraft/core/particles/ParticleOptions;DDDDDD)V"))
     private void twilightbossplus$chargeParticles(Level level, ParticleOptions options, double x, double y, double z, double dx, double dy, double dz) {
-        if (KnightPhantomConfig.ENABLED.get()) {
+        if (level.isClientSide() && KnightPhantomConfig.ENABLED.get() && ClientConfig.VFX_ENABLED.get()) {
             return;
         }
         level.addParticle(options, x, y, z, dx, dy, dz);

@@ -540,8 +540,8 @@ public final class KnightFxManager {
             double ground = groundY(level, x, y + 1.0D, z, y);
             VertexConsumer frame = buffers.getBuffer(RenderType.entityTranslucent(FRAME));
             float pulse = 0.65F + 0.2F * Mth.sin(age * 0.25F);
-            FxDraw.flatSquare(frame, poseStack.last(), (float) x, (float) ground + 0.05F, (float) z, 1.4F, age * 0.04F, TEAL_R, TEAL_G, TEAL_B, pulse, FxDraw.FULL_BRIGHT);
-            FxDraw.flatSquare(frame, poseStack.last(), (float) x, (float) ground + 0.06F, (float) z, 0.9F, -age * 0.06F, SILVER_R, SILVER_G, SILVER_B, pulse * 0.6F, FxDraw.FULL_BRIGHT);
+            FxDraw.flatSquare(frame, poseStack.last(), (float) x, (float) ground + 0.05F, (float) z, 1.4F, clickAngle(age, 10.0F), TEAL_R, TEAL_G, TEAL_B, pulse, FxDraw.FULL_BRIGHT);
+            FxDraw.flatSquare(frame, poseStack.last(), (float) x, (float) ground + 0.06F, (float) z, 0.9F, clickAngle(age + 5.0F, 10.0F), SILVER_R, SILVER_G, SILVER_B, pulse * 0.6F, FxDraw.FULL_BRIGHT);
             renderShell(poseStack, buffers, knight, partialTick, 0.28F + 0.08F * Mth.sin(age * 0.3F));
         }
         if (track.trackTarget >= 0 && level.getEntity(track.trackTarget) instanceof LivingEntity target) {
@@ -761,6 +761,13 @@ public final class KnightFxManager {
         renderGhost(poseStack, buffers, x, y - 0.06D, z, echo.yaw, CHARGE_SCALE * 1.06F, TEAL_R, TEAL_G, TEAL_B, 0.3F * alpha, true);
     }
 
+    private static float clickAngle(float age, float period) {
+        int step = Mth.floor(age / period);
+        float ease = Mth.clamp((age - step * period) / 3.0F, 0.0F, 1.0F);
+        ease = ease * ease * (3.0F - 2.0F * ease);
+        return (step + ease) * Mth.HALF_PI * 0.5F;
+    }
+
     private static void renderRegroup(PoseStack poseStack, MultiBufferSource buffers, RegroupFx regroup, float partialTick) {
         float age = regroup.age + partialTick;
         float t = Mth.clamp(age / regroup.duration, 0.0F, 1.0F);
@@ -770,8 +777,8 @@ public final class KnightFxManager {
         }
         VertexConsumer frame = buffers.getBuffer(RenderType.entityTranslucentEmissive(FRAME));
         float size = Mth.lerp(t, 4.0F, 1.8F);
-        FxDraw.flatSquare(frame, poseStack.last(), (float) regroup.x, (float) regroup.y + 0.05F, (float) regroup.z, size, age * 0.05F, SILVER_R, SILVER_G, SILVER_B, alpha, FxDraw.FULL_BRIGHT);
-        FxDraw.flatSquare(frame, poseStack.last(), (float) regroup.x, (float) regroup.y + 0.06F, (float) regroup.z, size * 0.7F, -age * 0.05F + 0.785F, TEAL_R, TEAL_G, TEAL_B, alpha * 0.7F, FxDraw.FULL_BRIGHT);
+        FxDraw.flatSquare(frame, poseStack.last(), (float) regroup.x, (float) regroup.y + 0.05F, (float) regroup.z, size, clickAngle(age, 8.0F), SILVER_R, SILVER_G, SILVER_B, alpha, FxDraw.FULL_BRIGHT);
+        FxDraw.flatSquare(frame, poseStack.last(), (float) regroup.x, (float) regroup.y + 0.06F, (float) regroup.z, size * 0.7F, clickAngle(age + 4.0F, 8.0F), TEAL_R, TEAL_G, TEAL_B, alpha * 0.7F, FxDraw.FULL_BRIGHT);
     }
 
     private static void renderShards(PoseStack poseStack, MultiBufferSource buffers, Quaternionf cameraRotation, float partialTick) {

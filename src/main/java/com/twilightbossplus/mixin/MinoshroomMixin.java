@@ -1,5 +1,6 @@
 package com.twilightbossplus.mixin;
 
+import com.twilightbossplus.config.ClientConfig;
 import com.twilightbossplus.config.MinoshroomConfig;
 import com.twilightbossplus.minoshroom.MinoshroomBossController;
 import com.twilightbossplus.minoshroom.MinoshroomControllerHolder;
@@ -62,7 +63,7 @@ public abstract class MinoshroomMixin extends Minotaur implements MinoshroomCont
 
     @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;addParticle(Lnet/minecraft/core/particles/ParticleOptions;DDDDDD)V"))
     private void twilightbossplus$slamParticles(Level level, ParticleOptions options, double x, double y, double z, double dx, double dy, double dz) {
-        if (MinoshroomConfig.ENABLED.get()) {
+        if (level.isClientSide() && MinoshroomConfig.ENABLED.get() && ClientConfig.VFX_ENABLED.get()) {
             return;
         }
         level.addParticle(options, x, y, z, dx, dy, dz);

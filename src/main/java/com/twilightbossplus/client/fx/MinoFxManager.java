@@ -573,11 +573,18 @@ public final class MinoFxManager {
         if (age > warn.duration) {
             alpha *= Mth.clamp(1.0F - (age - warn.duration) / 2.0F, 0.0F, 1.0F);
         }
-        float size = 0.55F + 0.55F * t;
+        int stage = Math.min(3, (int) (t * 4.0F));
+        float local = t * 4.0F - stage;
+        float pop = 1.0F + 0.12F * Math.max(0.0F, 1.0F - local * 5.0F);
+        float size = (0.55F + 0.55F * (stage + 1) / 4.0F) * pop;
+        float shake = 0.02F + 0.06F * t;
+        float jx = shake * Mth.sin(age * 7.3F + warn.spin * 11.0F);
+        float jz = shake * Mth.cos(age * 8.9F + warn.spin * 5.0F);
         VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucent(CRACK));
-        FxDraw.flatSquare(consumer, poseStack.last(), (float) warn.x, (float) warn.y + 0.03F, (float) warn.z, size, warn.spin, 1.0F, 1.0F, 1.0F, alpha, FxDraw.FULL_BRIGHT);
-        float pulse = 0.85F + 0.15F * Mth.sin(age * 1.4F);
-        FxDraw.flatSquare(consumer, poseStack.last(), (float) warn.x, (float) warn.y + 0.035F, (float) warn.z, size * 0.45F * pulse, -warn.spin, RAGE_R, 0.55F, 0.35F, alpha * 0.6F, FxDraw.FULL_BRIGHT);
+        FxDraw.flatSquare(consumer, poseStack.last(), (float) warn.x + jx * 0.3F, (float) warn.y + 0.03F, (float) warn.z + jz * 0.3F, size, warn.spin,
+            1.0F, 1.0F, 1.0F, alpha, FxDraw.FULL_BRIGHT);
+        FxDraw.flatSquare(consumer, poseStack.last(), (float) warn.x + jx, (float) warn.y + 0.035F, (float) warn.z + jz, size * 0.45F, warn.spin + Mth.HALF_PI * 0.5F,
+            RAGE_R, 0.55F, 0.35F, alpha * 0.6F, FxDraw.FULL_BRIGHT);
     }
 
     private static void renderStun(PoseStack poseStack, MultiBufferSource buffers, ClientLevel level, Stun stun, float partialTick) {

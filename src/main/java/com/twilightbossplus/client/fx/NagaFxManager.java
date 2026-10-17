@@ -36,6 +36,7 @@ import twilightforest.entity.boss.Naga;
 public final class NagaFxManager {
     private static final ResourceLocation RING = tex("ring");
     private static final ResourceLocation RING_FILL = tex("ring_fill");
+    private static final ResourceLocation RING_SCALE = tex("ring_scale");
     private static final ResourceLocation FAN = tex("fan");
     private static final ResourceLocation TAIL_ARC = tex("tail_arc");
     private static final ResourceLocation HUSK = tex("husk");
@@ -45,6 +46,7 @@ public final class NagaFxManager {
     private static final ResourceLocation WALL = tex("wall");
     private static final ResourceLocation WEAK_SCALE = tex("weak_scale");
 
+    private static final int RING_SCALES = 12;
     private static final int HUSK_HOLD = 60;
     private static final int HUSK_CRUMBLE = 24;
     private static final int CRACK_LIFE = 70;
@@ -302,9 +304,29 @@ public final class NagaFxManager {
         FxDraw.flatSquare(fill, pose, (float) ring.x, y, (float) ring.z, ring.radius, 0.0F, r, g, b, 0.25F + 0.35F * t, FxDraw.FULL_BRIGHT);
         VertexConsumer outer = buffers.getBuffer(RenderType.entityTranslucent(RING));
         float contract = ring.radius * (1.9F - 0.9F * t);
-        float angle = (ring.age + partialTick) * 0.05F * spin;
-        FxDraw.flatSquare(outer, pose, (float) ring.x, y + 0.005F, (float) ring.z, contract, angle, r, g, b, 0.35F + 0.6F * t, FxDraw.FULL_BRIGHT);
-        FxDraw.flatSquare(outer, pose, (float) ring.x, y + 0.004F, (float) ring.z, ring.radius, -angle * 0.5F, r, g, b, 0.3F + 0.3F * t, FxDraw.FULL_BRIGHT);
+        FxDraw.flatSquare(outer, pose, (float) ring.x, y + 0.005F, (float) ring.z, contract, 0.0F, r, g, b, 0.35F + 0.6F * t, FxDraw.FULL_BRIGHT);
+        FxDraw.flatSquare(outer, pose, (float) ring.x, y + 0.004F, (float) ring.z, ring.radius, 0.0F, r, g, b, 0.3F + 0.3F * t, FxDraw.FULL_BRIGHT);
+        VertexConsumer scales = buffers.getBuffer(RenderType.entityTranslucent(RING_SCALE));
+        float head = (ring.age + partialTick) * 0.35F * Math.abs(spin);
+        float step = Mth.TWO_PI / RING_SCALES;
+        for (int i = 0; i < RING_SCALES; i++) {
+            float lag = (head - i) % RING_SCALES;
+            if (lag < 0.0F) {
+                lag += RING_SCALES;
+            }
+            float glow = Math.max(0.0F, 1.0F - lag / 4.0F);
+            float theta = i * step;
+            float facing = theta + Mth.PI;
+            if (spin < 0.0F) {
+                theta = -theta;
+                facing = theta;
+            }
+            float size = ring.radius * 0.13F * (0.7F + 0.3F * glow);
+            float alpha = (0.15F + 0.8F * glow) * (0.4F + 0.6F * t);
+            float sx = (float) ring.x + Mth.cos(theta) * ring.radius * 0.9F;
+            float sz = (float) ring.z + Mth.sin(theta) * ring.radius * 0.9F;
+            FxDraw.flatSquare(scales, pose, sx, y + 0.006F, sz, size, facing, r, g, b, alpha, FxDraw.FULL_BRIGHT);
+        }
     }
 
     private static void renderSweep(PoseStack poseStack, MultiBufferSource buffers, Sweep sweep, float partialTick, boolean decorative) {

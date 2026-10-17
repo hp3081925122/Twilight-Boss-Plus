@@ -52,6 +52,7 @@ public final class HydraFxManager {
     private static final ResourceLocation LAVA = tex("lava");
     private static final ResourceLocation BUBBLE = tex("bubble");
     private static final ResourceLocation HEAT_WAVE = tex("heat_wave");
+    private static final ResourceLocation HEAT_RING = tex("heat_ring");
 
     private static final float GOLD_R = 1.0F;
     private static final float GOLD_G = 0.71F;
@@ -77,6 +78,8 @@ public final class HydraFxManager {
     private static final int GEYSER_FADE = 6;
     private static final int FLASH_LIFE = 10;
     private static final int MORTAR_FUSE = 80;
+    private static final int SCORCH_BUBBLES = 3;
+    private static final float BUBBLE_CYCLE = 18.0F;
     private static final int MAX_EMBERS = 300;
     private static final int MAX_SCORCHES = 160;
     private static final double WAVE_HEIGHT = 2.5D;
@@ -494,10 +497,29 @@ public final class HydraFxManager {
         FxDraw.flatSquare(consumer, poseStack.last(), (float) scorch.x, (float) scorch.y + 0.04F, (float) scorch.z, scorch.radius, scorch.spin,
             1.0F, 1.0F, 1.0F, alpha * 0.9F, FxDraw.FULL_BRIGHT);
         if (scorch.burning) {
-            float pulse = 0.75F + 0.25F * Mth.sin(age * 0.5F + scorch.spin * 3.0F);
+            float pulse = 0.7F + 0.15F * Mth.sin(age * 0.5F + scorch.spin * 3.0F) + 0.15F * Mth.sin(age * 1.37F + scorch.spin * 5.0F);
             VertexConsumer glow = buffers.getBuffer(RenderType.entityTranslucent(HEAT_CORE));
             FxDraw.flatSquare(glow, poseStack.last(), (float) scorch.x, (float) scorch.y + 0.05F, (float) scorch.z, scorch.radius * 0.8F * pulse, -scorch.spin,
                 ORANGE_R, ORANGE_G, ORANGE_B, alpha * 0.45F, FxDraw.FULL_BRIGHT);
+            VertexConsumer bubbles = buffers.getBuffer(RenderType.entityTranslucent(BUBBLE));
+            for (int slot = 0; slot < SCORCH_BUBBLES; slot++) {
+                float clock = age / BUBBLE_CYCLE + slot / (float) SCORCH_BUBBLES + scorch.spin;
+                int cycle = Mth.floor(clock);
+                float local = clock - cycle;
+                float seed = Mth.sin(cycle * 12.9898F + slot * 78.233F + scorch.spin * 37.719F) * 43758.547F;
+                seed -= Mth.floor(seed);
+                float angle = seed * Mth.TWO_PI;
+                float dist = scorch.radius * 0.55F * Mth.sqrt((seed * 7.0F) % 1.0F);
+                float size = scorch.radius * 0.16F * local / 0.8F;
+                float bubbleAlpha = alpha * 0.8F;
+                if (local > 0.8F) {
+                    float pop = (local - 0.8F) / 0.2F;
+                    size = scorch.radius * 0.16F * (1.0F + pop * 0.8F);
+                    bubbleAlpha *= 1.0F - pop;
+                }
+                FxDraw.flatSquare(bubbles, poseStack.last(), (float) scorch.x + Mth.cos(angle) * dist, (float) scorch.y + 0.06F, (float) scorch.z + Mth.sin(angle) * dist,
+                    size, angle, CORE_R, CORE_G, CORE_B, bubbleAlpha, FxDraw.FULL_BRIGHT);
+            }
         }
     }
 
@@ -510,11 +532,9 @@ public final class HydraFxManager {
         float age = slag.age + partialTick;
         float t = Mth.clamp(age / slag.flight, 0.0F, 1.0F);
         VertexConsumer marker = buffers.getBuffer(RenderType.entityTranslucent(HEAT_CORE));
-        float size = slag.radius * (1.6F - 0.6F * t);
-        FxDraw.flatSquare(marker, poseStack.last(), (float) slag.to.x, (float) slag.to.y + 0.07F, (float) slag.to.z, size, age * 0.05F,
-            ORANGE_R, ORANGE_G, ORANGE_B, 0.3F + 0.55F * t, FxDraw.FULL_BRIGHT);
-        FxDraw.flatSquare(marker, poseStack.last(), (float) slag.to.x, (float) slag.to.y + 0.075F, (float) slag.to.z, slag.radius * 0.35F, -age * 0.08F,
-            CORE_R, CORE_G, CORE_B, 0.2F + 0.6F * t, FxDraw.FULL_BRIGHT);
+        FxDraw.flatSquare(marker, poseStack.last(), (float) slag.to.x, (float) slag.to.y + 0.07F, (float) slag.to.z, slag.radius, 0.0F,
+            ORANGE_R, ORANGE_G, ORANGE_B, 0.2F + 0.45F * t, FxDraw.FULL_BRIGHT);
+        heatRings(poseStack, buffers, slag.to.x, slag.to.y + 0.075D, slag.to.z, slag.radius, age * 0.05F, 0.3F + 0.6F * t);
         for (int k = 4; k >= 1; k--) {
             float trail = t - k * 0.035F;
             if (trail <= 0.0F) {
@@ -722,9 +742,21 @@ public final class HydraFxManager {
             flicker = 0.7F + 0.3F * Mth.sin(age * 2.5F);
         }
         VertexConsumer ground = buffers.getBuffer(RenderType.entityTranslucent(SCORCH));
-        FxDraw.flatSquare(ground, poseStack.last(), (float) x, (float) y + 0.05F, (float) z, 0.6F + 1.6F * t, age * 0.02F, 1.0F, 1.0F, 1.0F, 0.5F + 0.4F * t, FxDraw.FULL_BRIGHT);
-        FxDraw.flatSquare(glow, poseStack.last(), (float) x, (float) y + 0.06F, (float) z, (0.4F + 1.2F * t) * flicker, -age * 0.04F,
+        FxDraw.flatSquare(ground, poseStack.last(), (float) x, (float) y + 0.05F, (float) z, 0.6F + 1.6F * t, mortar.getId() * 0.7F, 1.0F, 1.0F, 1.0F, 0.5F + 0.4F * t, FxDraw.FULL_BRIGHT);
+        FxDraw.flatSquare(glow, poseStack.last(), (float) x, (float) y + 0.06F, (float) z, (0.4F + 1.2F * t) * flicker, mortar.getId() * 1.3F,
             ORANGE_R, ORANGE_G, ORANGE_B, 0.35F + 0.45F * t, FxDraw.FULL_BRIGHT);
+        heatRings(poseStack, buffers, x, y + 0.07D, z, 0.6F + 1.6F * t, (landed + partialTick) * (0.03F + 0.05F * t), 0.3F + 0.5F * t);
+    }
+
+    private static void heatRings(PoseStack poseStack, MultiBufferSource buffers, double x, double y, double z, float radius, float clock, float alpha) {
+        VertexConsumer rings = buffers.getBuffer(RenderType.entityTranslucent(HEAT_RING));
+        for (int k = 0; k < 3; k++) {
+            float phase = (clock + k / 3.0F) % 1.0F;
+            float size = radius * (1.7F - 1.4F * phase);
+            float fade = 4.0F * phase * (1.0F - phase);
+            FxDraw.flatSquare(rings, poseStack.last(), (float) x, (float) y + k * 0.002F, (float) z, size, k * 2.1F,
+                ORANGE_R, ORANGE_G, ORANGE_B, alpha * fade, FxDraw.FULL_BRIGHT);
+        }
     }
 
     private static void renderEmbers(PoseStack poseStack, MultiBufferSource buffers, float partialTick) {
