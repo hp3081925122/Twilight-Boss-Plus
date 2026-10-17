@@ -5,6 +5,9 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.client.fx.FxDraw;
+import com.twilightbossplus.client.fx.FxRenderTypes;
+import com.twilightbossplus.client.fx.FxTextures;
+import com.twilightbossplus.config.ClientConfig;
 import com.twilightbossplus.entity.SoulCandle;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -17,7 +20,6 @@ import net.minecraft.world.phys.Vec3;
 
 public class SoulCandleRenderer extends EntityRenderer<SoulCandle> {
     private static final ResourceLocation TEXTURE = new ResourceLocation(TwilightBossPlus.MOD_ID, "textures/entity/soul_candle.png");
-    private static final ResourceLocation BEAM = new ResourceLocation(TwilightBossPlus.MOD_ID, "textures/fx/lich/beam.png");
 
     public SoulCandleRenderer(EntityRendererProvider.Context context) {
         super(context);
@@ -52,33 +54,39 @@ public class SoulCandleRenderer extends EntityRenderer<SoulCandle> {
         }
         poseStack.popPose();
 
+        FxDraw.camera(this.entityRenderDispatcher.camera);
+        double ex = Mth.lerp(partialTick, entity.xo, entity.getX());
+        double ey = Mth.lerp(partialTick, entity.yo, entity.getY());
+        double ez = Mth.lerp(partialTick, entity.zo, entity.getZ());
+        Vec3 flame = new Vec3(ex, ey + (bottom + top) * 0.5D, ez);
+        poseStack.pushPose();
+        poseStack.translate(-ex, -ey, -ez);
+        PoseStack.Pose world = poseStack.last();
+        VertexConsumer glow = buffers.getBuffer(FxRenderTypes.glow(FxTextures.GLOW));
+        FxDraw.sprite(glow, world, flame.x, flame.y, flame.z, 1.0F * flicker, 0.0F, 0.37F, 0.99F, 0.89F, 0.5F);
+        FxDraw.flat(glow, world, ex, ey + 0.02D, ez, 0.7F, 0.0F, 0.37F, 0.99F, 0.89F, 0.25F * flicker);
         Entity owner = entity.level().getEntity(entity.getOwnerEntityId());
         if (owner != null && owner.isAlive()) {
-            Vec3 self = new Vec3(Mth.lerp(partialTick, entity.xo, entity.getX()), Mth.lerp(partialTick, entity.yo, entity.getY()), Mth.lerp(partialTick, entity.zo, entity.getZ()));
-            Vec3 ownerPos = new Vec3(Mth.lerp(partialTick, owner.xo, owner.getX()), Mth.lerp(partialTick, owner.yo, owner.getY()) + owner.getBbHeight() * 0.55D, Mth.lerp(partialTick, owner.zo, owner.getZ()));
-            Vec3 from = new Vec3(0.0D, top, 0.0D);
-            Vec3 to = ownerPos.subtract(self);
-            Vec3 camera = this.entityRenderDispatcher.camera.getPosition().subtract(self);
-            Vec3 dir = to.subtract(from);
-            Vec3 view = camera.subtract(from.add(to).scale(0.5D));
-            Vec3 side = dir.cross(view);
-            if (side.lengthSqr() > 1.0E-8D) {
-                side = side.normalize().scale(0.035D);
-                float alpha = 0.25F + 0.15F * Mth.sin(age * 0.25F);
-                float scroll = -age * 0.08F;
-                float length = (float) dir.length();
-                VertexConsumer beam = buffers.getBuffer(RenderType.entityTranslucent(BEAM));
-                PoseStack.Pose pose = poseStack.last();
-                Vec3 normal = view.normalize();
-                float nx = (float) normal.x;
-                float ny = (float) normal.y;
-                float nz = (float) normal.z;
-                FxDraw.vertex(beam, pose, (float) (from.x - side.x), (float) (from.y - side.y), (float) (from.z - side.z), scroll, 0.0F, 0.37F, 0.99F, 0.89F, alpha, FxDraw.FULL_BRIGHT, nx, ny, nz);
-                FxDraw.vertex(beam, pose, (float) (from.x + side.x), (float) (from.y + side.y), (float) (from.z + side.z), scroll, 1.0F, 0.37F, 0.99F, 0.89F, alpha, FxDraw.FULL_BRIGHT, nx, ny, nz);
-                FxDraw.vertex(beam, pose, (float) (to.x + side.x), (float) (to.y + side.y), (float) (to.z + side.z), scroll + length, 1.0F, 0.37F, 0.99F, 0.89F, alpha * 0.3F, FxDraw.FULL_BRIGHT, nx, ny, nz);
-                FxDraw.vertex(beam, pose, (float) (to.x - side.x), (float) (to.y - side.y), (float) (to.z - side.z), scroll + length, 0.0F, 0.37F, 0.99F, 0.89F, alpha * 0.3F, FxDraw.FULL_BRIGHT, nx, ny, nz);
+            Vec3 from = new Vec3(ex, ey + top, ez);
+            Vec3 to = new Vec3(Mth.lerp(partialTick, owner.xo, owner.getX()), Mth.lerp(partialTick, owner.yo, owner.getY()) + owner.getBbHeight() * 0.55D,
+                Mth.lerp(partialTick, owner.zo, owner.getZ()));
+            float alpha = 0.3F + 0.15F * Mth.sin(age * 0.25F);
+            float length = (float) from.distanceTo(to);
+            float scroll = -age * 0.08F;
+            VertexConsumer beam = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+            FxDraw.beam(beam, world, from, to, 0.14F, 0.1F, scroll, scroll + length * 0.5F, 0.37F, 0.99F, 0.89F, alpha, alpha * 0.4F);
+            FxDraw.beam(beam, world, from, to, 0.04F, 0.03F, scroll, scroll + length * 0.5F, 0.78F, 1.0F, 0.96F, alpha * 2.0F, alpha * 0.8F);
+            if (ClientConfig.VFX_ENABLED.get()) {
+                VertexConsumer motes = buffers.getBuffer(FxRenderTypes.glow(FxTextures.MOTE));
+                for (int i = 0; i < 3; i++) {
+                    float cycle = age * 0.025F + i / 3.0F;
+                    float t = cycle - Mth.floor(cycle);
+                    Vec3 p = from.lerp(to, t);
+                    FxDraw.sprite(motes, world, p.x, p.y + Mth.sin(t * Mth.PI) * 0.4D, p.z, 0.22F, 0.0F, 0.37F, 0.99F, 0.89F, 0.9F * Mth.sin(t * Mth.PI));
+                }
             }
         }
+        poseStack.popPose();
         super.render(entity, entityYaw, partialTick, poseStack, buffers, packedLight);
     }
 

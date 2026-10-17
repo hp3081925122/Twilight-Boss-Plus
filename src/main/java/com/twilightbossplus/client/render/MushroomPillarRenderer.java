@@ -5,6 +5,9 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.client.fx.FxDraw;
+import com.twilightbossplus.client.fx.FxRenderTypes;
+import com.twilightbossplus.client.fx.FxTextures;
+import com.twilightbossplus.client.fx.MinoFxManager;
 import com.twilightbossplus.entity.MushroomPillar;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -54,6 +57,32 @@ public class MushroomPillarRenderer extends EntityRenderer<MushroomPillar> {
         FxDraw.prism(consumer, pose, -0.85F, 2.2F, -0.85F, 0.85F, 2.78F, 0.85F, capSide, capTop, GILLS, 1.0F, 1.0F, 1.0F, 1.0F, packedLight);
         FxDraw.prism(consumer, pose, -0.58F, 2.78F, -0.58F, 0.58F, 3.0F, 0.58F, capSide, capTop, capTop, 1.0F, 1.0F, 1.0F, 1.0F, packedLight);
         poseStack.popPose();
+
+        float burst = age / (MushroomPillar.RISE_TICKS + 12.0F);
+        if (burst < 1.0F) {
+            FxDraw.camera(this.entityRenderDispatcher.camera);
+            float out = 1.0F - burst;
+            float sr = 0.91F;
+            float sg = 0.84F;
+            float sb = 0.65F;
+            if (entity.getKind() == 1) {
+                sr = 0.75F;
+                sg = 0.62F;
+                sb = 0.48F;
+            }
+            PoseStack.Pose base = poseStack.last();
+            VertexConsumer crater = buffers.getBuffer(FxRenderTypes.soft(MinoFxManager.CRATER));
+            FxDraw.flat(crater, base, 0.0D, 0.03D, 0.0D, 1.1F + 0.5F * rise, (entity.getId() * 1.7F) % Mth.TWO_PI, 1.0F, 1.0F, 1.0F, 0.85F * out);
+            VertexConsumer shock = buffers.getBuffer(FxRenderTypes.glow(FxTextures.SHOCK));
+            FxDraw.flat(shock, base, 0.0D, 0.05D, 0.0D, 0.8F + 2.0F * burst, 0.0F, sr, sg, sb, 0.6F * out * out);
+            VertexConsumer spores = buffers.getBuffer(FxRenderTypes.soft(MinoFxManager.SPORE_CLOUD));
+            for (int i = 0; i < 6; i++) {
+                float angle = i * Mth.TWO_PI / 6.0F + entity.getId() * 0.9F;
+                float dist = 0.5F + 1.4F * burst;
+                FxDraw.sprite(spores, base, Mth.cos(angle) * dist, 0.25F + 0.5F * burst, Mth.sin(angle) * dist, 0.7F + 1.1F * burst, angle,
+                    sr, sg, sb, 0.75F * out);
+            }
+        }
         super.render(entity, entityYaw, partialTick, poseStack, buffers, packedLight);
     }
 

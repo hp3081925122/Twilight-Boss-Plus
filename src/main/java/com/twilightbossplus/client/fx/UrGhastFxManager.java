@@ -14,10 +14,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -47,15 +47,12 @@ public final class UrGhastFxManager {
     public static final ResourceLocation TEAR = tex("tear");
     public static final ResourceLocation CORE = tex("core");
     public static final ResourceLocation MARKER = tex("marker");
-    private static final ResourceLocation STREAK = tex("streak");
-    private static final ResourceLocation CURTAIN = tex("curtain");
+    private static final ResourceLocation RAIN = tex("rain");
     private static final ResourceLocation EYE = tex("eye");
     private static final ResourceLocation IRIS = tex("iris");
-    private static final ResourceLocation GAZE = tex("gaze");
     private static final ResourceLocation GAZE_DASH = tex("gaze_dash");
     private static final ResourceLocation RIPPLE = tex("ripple");
     private static final ResourceLocation POOL = tex("pool");
-    private static final ResourceLocation HALO = tex("halo");
 
     public static final float PALE_R = 0.902F;
     public static final float PALE_G = 0.953F;
@@ -69,22 +66,22 @@ public final class UrGhastFxManager {
     private static final float DARK_R = 0.353F;
     private static final float DARK_G = 0.063F;
     private static final float DARK_B = 0.133F;
-    private static final float GOLD_R = 1.0F;
-    private static final float GOLD_G = 0.827F;
-    private static final float GOLD_B = 0.42F;
+    private static final float CLOUD_R = 0.11F;
+    private static final float CLOUD_G = 0.13F;
+    private static final float CLOUD_B = 0.2F;
 
     private static final double FACE_FORWARD = 6.8D;
     private static final double TEAR_FORWARD = 8.5D;
     private static final double TEAR_DROP = 3.0D;
+    private static final double EYE_LIFT = 0.95D;
     private static final double RAIN_SCAN = 48.0D;
     private static final float RAIN_FALL_SPEED = 1.4F;
     private static final float STREAK_LENGTH = 1.8F;
+    private static final float STREAK_WIDTH = 0.07F;
     private static final int GAZE_CLOSE = 8;
     private static final int SPLASH_LIFE = 12;
-    private static final int DROPLET_LIFE = 20;
-    private static final int RIPPLE_LIFE = 12;
+    private static final int RIPPLE_LIFE = 14;
     private static final int TRAIL_LENGTH = 8;
-    private static final int MAX_DROPLETS = 240;
     private static final int MAX_RIPPLES = 160;
 
     private static final Map<Integer, BossTrack> TRACKS = new HashMap<>();
@@ -92,14 +89,13 @@ public final class UrGhastFxManager {
     private static final Map<Integer, List<Vec3>> FIRE_TRAILS = new HashMap<>();
     private static final List<PoolFx> POOLS = new ArrayList<>();
     private static final List<SplashFx> SPLASHES = new ArrayList<>();
-    private static final List<Droplet> DROPLETS = new ArrayList<>();
     private static final List<RippleFx> RIPPLES = new ArrayList<>();
 
     private UrGhastFxManager() {
     }
 
     private static ResourceLocation tex(String name) {
-        return new ResourceLocation(TwilightBossPlus.MOD_ID, "textures/fx/urghast/" + name + ".png");
+        return new ResourceLocation(TwilightBossPlus.MOD_ID, "textures/fx/urghast/px/" + name + ".png");
     }
 
     private static BossTrack track(int id) {
@@ -112,6 +108,7 @@ public final class UrGhastFxManager {
         if (level == null) {
             return;
         }
+        RandomSource random = level.getRandom();
         if (type == UrGhastFxPacket.GAZE && data.length >= 1) {
             BossTrack track = track(entityId);
             track.gazeDuration = Math.max(1, (int) data[0]);
@@ -142,6 +139,20 @@ public final class UrGhastFxManager {
                 track.endHits = new boolean[track.gazeIds.length];
             }
             track.endAge = 0;
+            for (int i = 0; i < track.endIds.length; i++) {
+                if (!track.endHits[i] || !(level.getEntity(track.endIds[i]) instanceof LivingEntity target)) {
+                    continue;
+                }
+                Vec3 eye = target.getEyePosition();
+                FxShake.at(eye.x, eye.y, eye.z, 0.5F, 4.0F, 8);
+                for (int k = 0; k < 14; k++) {
+                    double angle = random.nextDouble() * Math.PI * 2.0D;
+                    double speed = 0.12D + random.nextDouble() * 0.12D;
+                    FxParticles.glow(FxTextures.SPARK, eye.x, eye.y + EYE_LIFT, eye.z, Math.cos(angle) * speed, (random.nextDouble() - 0.3D) * 0.2D,
+                            Math.sin(angle) * speed, 8 + random.nextInt(5), 0.16F)
+                        .color(1.0F, 0.85F, 0.88F).fadeTo(CRIMSON_R, CRIMSON_G, CRIMSON_B).drag(0.85D).streak(2.5F);
+                }
+            }
         } else if (type == UrGhastFxPacket.RAIN && data.length >= 3) {
             BossTrack track = track(entityId);
             if (track.rainFade <= 0.0F) {
@@ -184,20 +195,36 @@ public final class UrGhastFxManager {
         } else if (type == UrGhastFxPacket.SPLASH && data.length >= 6) {
             boolean air = data[4] > 0.5F;
             SPLASHES.add(new SplashFx(data[0], data[1], data[2], data[3], air, (int) data[5]));
-            if (ClientConfig.VFX_ENABLED.get()) {
-                RandomSource random = level.getRandom();
-                int count = 18;
+            if (!air) {
+                FxShake.at(data[0], data[1], data[2], 0.6F, 14.0F, 10);
+            }
+            int count = 20;
+            if (air) {
+                count = 26;
+            }
+            for (int i = 0; i < count; i++) {
+                double angle = random.nextDouble() * Math.PI * 2.0D;
+                double speed = 0.15D + random.nextDouble() * 0.25D;
+                double up = 0.25D + random.nextDouble() * 0.3D;
                 if (air) {
-                    count = 24;
+                    up = (random.nextDouble() - 0.5D) * 0.4D;
                 }
-                for (int i = 0; i < count && DROPLETS.size() < MAX_DROPLETS; i++) {
+                FxParticles.glow(TEAR, data[0], data[1] + 0.3D, data[2], Math.cos(angle) * speed, up, Math.sin(angle) * speed, 18 + random.nextInt(8),
+                        0.22F + random.nextFloat() * 0.14F)
+                    .color(PALE_R, PALE_G, PALE_B).fadeTo(BLUE_R, BLUE_G, BLUE_B).gravity(0.04D).drag(0.92D);
+            }
+            if (air) {
+                for (int i = 0; i < 8; i++) {
+                    FxParticles.glow(CORE, data[0], data[1], data[2], (random.nextDouble() - 0.5D) * 0.4D, (random.nextDouble() - 0.5D) * 0.4D,
+                            (random.nextDouble() - 0.5D) * 0.4D, 16 + random.nextInt(8), 0.3F)
+                        .drag(0.9D).gravity(0.02D).spin(random.nextFloat() * 6.0F, (random.nextFloat() - 0.5F) * 0.5F).fadeTo(0.4F, 0.4F, 0.4F);
+                }
+            } else {
+                for (int i = 0; i < 10; i++) {
                     double angle = random.nextDouble() * Math.PI * 2.0D;
-                    double speed = 0.15D + random.nextDouble() * 0.25D;
-                    double up = 0.2D + random.nextDouble() * 0.3D;
-                    if (air) {
-                        up = (random.nextDouble() - 0.5D) * 0.4D;
-                    }
-                    DROPLETS.add(new Droplet(new Vec3(data[0], data[1] + 0.3D, data[2]), new Vec3(Math.cos(angle) * speed, up, Math.sin(angle) * speed)));
+                    FxParticles.soft(FxTextures.SMOKE, data[0] + Math.cos(angle) * data[3] * 0.4D, data[1] + 0.3D, data[2] + Math.sin(angle) * data[3] * 0.4D,
+                            Math.cos(angle) * 0.08D, 0.02D, Math.sin(angle) * 0.08D, 24 + random.nextInt(10), 1.0F)
+                        .color(PALE_R, PALE_G, PALE_B).fadeTo(BLUE_R, BLUE_G, BLUE_B).alpha(0.5F).grow(2.2F).drag(0.9D);
                 }
             }
         }
@@ -252,7 +279,6 @@ public final class UrGhastFxManager {
         FIRE_TRAILS.clear();
         POOLS.clear();
         SPLASHES.clear();
-        DROPLETS.clear();
         RIPPLES.clear();
     }
 
@@ -293,7 +319,22 @@ public final class UrGhastFxManager {
                     if (level.getEntity(track.gazeIds[i]) instanceof LivingEntity target) {
                         HitResult result = level.clip(new ClipContext(origin, target.getEyePosition(), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, boss));
                         track.gazeSight[i] = result.getType() == HitResult.Type.MISS;
+                        if (track.gazeAge % 5 == 0) {
+                            FxParticles.glow(TEAR, target.getX() + (random.nextDouble() - 0.5D) * 0.3D, target.getEyeY() + EYE_LIFT - 0.2D,
+                                    target.getZ() + (random.nextDouble() - 0.5D) * 0.3D, 0.0D, -0.02D, 0.0D, 16, 0.2F)
+                                .color(CRIMSON_R, CRIMSON_G, CRIMSON_B).fadeTo(DARK_R, DARK_G, DARK_B).gravity(0.012D).drag(0.98D);
+                        }
                     }
+                }
+                if (track.gazeAge % 2 == 0) {
+                    double angle = random.nextDouble() * Math.PI * 2.0D;
+                    double tilt = (random.nextDouble() - 0.5D) * Math.PI;
+                    double dist = 3.0D;
+                    double ox = Math.cos(angle) * Math.cos(tilt) * dist;
+                    double oy = Math.sin(tilt) * dist;
+                    double oz = Math.sin(angle) * Math.cos(tilt) * dist;
+                    FxParticles.glow(FxTextures.SPARK, origin.x + ox, origin.y + oy, origin.z + oz, -ox * 0.12D, -oy * 0.12D, -oz * 0.12D, 8, 0.2F)
+                        .color(1.0F, 0.6F, 0.65F).fadeTo(CRIMSON_R, CRIMSON_G, CRIMSON_B).drag(1.0D).streak(2.0F);
                 }
             }
             if (track.endAge >= 0) {
@@ -304,9 +345,34 @@ public final class UrGhastFxManager {
             }
             if (track.recallOn) {
                 track.recallAge++;
+                if (track.recallAge % 2 == 0) {
+                    Vec3 center = boss.position().add(0.0D, boss.getBbHeight() * 0.5D, 0.0D);
+                    for (int id : track.recallIds) {
+                        Entity ghast = level.getEntity(id);
+                        if (ghast == null || !ghast.isAlive()) {
+                            continue;
+                        }
+                        Vec3 dir = center.subtract(ghast.position()).normalize();
+                        FxParticles.glow(FxTextures.MOTE, ghast.getX() + (random.nextDouble() - 0.5D) * 1.5D, ghast.getY() + random.nextDouble() * ghast.getBbHeight(),
+                                ghast.getZ() + (random.nextDouble() - 0.5D) * 1.5D, -dir.x * 0.05D, -dir.y * 0.05D + 0.02D, -dir.z * 0.05D, 18, 0.3F)
+                            .color(CRIMSON_R, CRIMSON_G, CRIMSON_B).fadeTo(DARK_R, DARK_G, DARK_B).drag(0.95D);
+                    }
+                }
             }
             if (track.charging) {
                 track.tearAge++;
+                Vec3 origin = faceOrigin(boss, 1.0F, TEAR_FORWARD, TEAR_DROP);
+                float progress = Mth.clamp((float) track.tearAge / Math.max(1, track.tearTotal), 0.0F, 1.0F);
+                for (int k = 0; k < 2; k++) {
+                    double angle = random.nextDouble() * Math.PI * 2.0D;
+                    double tilt = (random.nextDouble() - 0.5D) * Math.PI;
+                    double dist = 2.5D + 1.5D * (1.0D - progress);
+                    double ox = Math.cos(angle) * Math.cos(tilt) * dist;
+                    double oy = Math.sin(tilt) * dist;
+                    double oz = Math.sin(angle) * Math.cos(tilt) * dist;
+                    FxParticles.glow(FxTextures.SPARK, origin.x + ox, origin.y + oy, origin.z + oz, -ox * 0.13D, -oy * 0.13D, -oz * 0.13D, 7, 0.18F)
+                        .color(PALE_R, PALE_G, PALE_B).fadeTo(BLUE_R, BLUE_G, BLUE_B).drag(1.0D).streak(2.0F);
+                }
             }
             track.prevRainX = track.rainX;
             track.prevRainZ = track.rainZ;
@@ -348,7 +414,17 @@ public final class UrGhastFxManager {
                     double x = track.rainX + Math.cos(track.colAngle[i]) * track.colRadius[i] * track.rainR;
                     double z = track.rainZ + Math.sin(track.colAngle[i]) * track.colRadius[i] * track.rainR;
                     RIPPLES.add(new RippleFx(x, track.colGround[i], z));
+                    if (k < 2) {
+                        FxParticles.glow(TEAR, x, track.colGround[i] + 0.05D, z, (random.nextDouble() - 0.5D) * 0.08D, 0.12D + random.nextDouble() * 0.08D,
+                                (random.nextDouble() - 0.5D) * 0.08D, 10, 0.14F)
+                            .color(PALE_R, PALE_G, PALE_B).fadeTo(BLUE_R, BLUE_G, BLUE_B).gravity(0.035D).drag(0.95D);
+                    }
                 }
+                double angle = random.nextDouble() * Math.PI * 2.0D;
+                double dist = Math.sqrt(random.nextDouble()) * track.rainR;
+                FxParticles.soft(FxTextures.SMOKE, track.rainX + Math.cos(angle) * dist, boss.getY() + 0.5D, track.rainZ + Math.sin(angle) * dist,
+                        Math.cos(angle + Math.PI * 0.5D) * 0.05D, 0.0D, Math.sin(angle + Math.PI * 0.5D) * 0.05D, 34, 2.4F)
+                    .color(0.3F, 0.34F, 0.46F).fadeTo(CLOUD_R, CLOUD_G, CLOUD_B).alpha(0.55F).grow(3.6F).drag(0.98D).fade(0.25F, 2.0F);
             }
         }
         Iterator<Integer> fireballs = FIREBALLS.iterator();
@@ -360,25 +436,30 @@ public final class UrGhastFxManager {
                 FIRE_TRAILS.remove(id);
                 continue;
             }
+            Vec3 center = entity.position().add(0.0D, entity.getBbHeight() * 0.5D, 0.0D);
             List<Vec3> trail = FIRE_TRAILS.computeIfAbsent(id, key -> new ArrayList<>());
-            trail.add(0, entity.position().add(0.0D, entity.getBbHeight() * 0.5D, 0.0D));
+            trail.add(0, center);
             while (trail.size() > TRAIL_LENGTH) {
                 trail.remove(trail.size() - 1);
+            }
+            if (decorative && entity.tickCount % 2 == 0) {
+                FxParticles.glow(TEAR, center.x + (random.nextDouble() - 0.5D) * 0.6D, center.y + (random.nextDouble() - 0.5D) * 0.6D,
+                        center.z + (random.nextDouble() - 0.5D) * 0.6D, 0.0D, -0.02D, 0.0D, 14, 0.24F)
+                    .color(CRIMSON_R, CRIMSON_G, CRIMSON_B).fadeTo(DARK_R, DARK_G, DARK_B).gravity(0.015D).drag(0.95D);
+            }
+        }
+        for (PoolFx pool : POOLS) {
+            if (decorative && pool.age % 4 == 0) {
+                double angle = random.nextDouble() * Math.PI * 2.0D;
+                double dist = Math.sqrt(random.nextDouble()) * pool.radius * 0.85D;
+                FxParticles.glow(FxTextures.MOTE, pool.x + Math.cos(angle) * dist, pool.y + 0.1D, pool.z + Math.sin(angle) * dist,
+                        0.0D, 0.03D + random.nextDouble() * 0.03D, 0.0D, 24, 0.2F)
+                    .color(PALE_R, PALE_G, PALE_B).fadeTo(BLUE_R, BLUE_G, BLUE_B).drag(0.97D).flicker(0.3F, random.nextFloat() * 10.0F);
             }
         }
         POOLS.removeIf(pool -> ++pool.age >= pool.ticks);
         SPLASHES.removeIf(splash -> ++splash.age > SPLASH_LIFE);
         RIPPLES.removeIf(ripple -> ++ripple.age > RIPPLE_LIFE);
-        Iterator<Droplet> droplets = DROPLETS.iterator();
-        while (droplets.hasNext()) {
-            Droplet droplet = droplets.next();
-            droplet.prev = droplet.pos;
-            droplet.pos = droplet.pos.add(droplet.vel);
-            droplet.vel = new Vec3(droplet.vel.x * 0.92D, droplet.vel.y - 0.04D, droplet.vel.z * 0.92D);
-            if (++droplet.age > DROPLET_LIFE) {
-                droplets.remove();
-            }
-        }
     }
 
     @SubscribeEvent
@@ -391,17 +472,20 @@ public final class UrGhastFxManager {
         if (level == null || !UrGhastConfig.ENABLED.get()) {
             return;
         }
-        if (TRACKS.isEmpty() && POOLS.isEmpty() && SPLASHES.isEmpty() && DROPLETS.isEmpty() && RIPPLES.isEmpty()) {
+        if (TRACKS.isEmpty() && POOLS.isEmpty() && SPLASHES.isEmpty() && RIPPLES.isEmpty()) {
             return;
         }
         boolean decorative = ClientConfig.VFX_ENABLED.get();
         float partialTick = event.getPartialTick();
-        Vec3 camera = event.getCamera().getPosition();
-        Quaternionf cameraRotation = event.getCamera().rotation();
+        Camera camera = event.getCamera();
+        FxDraw.camera(camera);
+        Vec3 cameraPos = camera.getPosition();
+        Quaternionf cameraRotation = camera.rotation();
         PoseStack poseStack = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
         poseStack.pushPose();
-        poseStack.translate(-camera.x, -camera.y, -camera.z);
+        poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+        PoseStack.Pose pose = poseStack.last();
 
         for (Map.Entry<Integer, BossTrack> entry : TRACKS.entrySet()) {
             BossTrack track = entry.getValue();
@@ -409,16 +493,16 @@ public final class UrGhastFxManager {
                 continue;
             }
             if (track.rainFade > 0.0F && track.colAngle != null) {
-                renderRain(poseStack, buffers, boss, track, camera, partialTick);
+                renderRain(pose, buffers, boss, track, cameraPos, partialTick);
             }
             if (track.gazeActive || track.endAge >= 0) {
-                renderGaze(poseStack, buffers, level, boss, track, camera, cameraRotation, partialTick);
+                renderGaze(pose, buffers, level, boss, track, partialTick);
             }
             if (track.recallOn) {
-                renderRecall(poseStack, buffers, level, boss, track, cameraRotation, partialTick, decorative);
+                renderRecall(pose, buffers, level, boss, track, partialTick, decorative);
             }
             if (track.stacks > 0 && boss.isAlive()) {
-                renderStacks(poseStack, buffers, boss, track, cameraRotation, partialTick);
+                renderStacks(pose, buffers, boss, track, partialTick);
             }
             if (track.charging && boss.isAlive()) {
                 Vec3 origin = faceOrigin(boss, partialTick, TEAR_FORWARD, TEAR_DROP);
@@ -429,33 +513,56 @@ public final class UrGhastFxManager {
                 poseStack.popPose();
             }
         }
-        for (PoolFx pool : POOLS) {
-            renderPool(poseStack, buffers, pool, partialTick, decorative);
-        }
-        for (SplashFx splash : SPLASHES) {
-            renderSplash(poseStack, buffers, level, splash, camera, partialTick);
-        }
-        if (decorative) {
-            VertexConsumer tears = buffers.getBuffer(RenderType.entityTranslucent(TEAR));
-            for (Droplet droplet : DROPLETS) {
-                float life = 1.0F - (droplet.age + partialTick) / DROPLET_LIFE;
-                if (life <= 0.0F) {
-                    continue;
+        if (!POOLS.isEmpty()) {
+            VertexConsumer water = buffers.getBuffer(FxRenderTypes.soft(POOL));
+            for (PoolFx pool : POOLS) {
+                FxDraw.flat(water, pose, pool.x, pool.y + 0.04D, pool.z, pool.radius * poolGrow(pool, partialTick), 0.0F, 1.0F, 1.0F, 1.0F, 0.85F * poolFade(pool, partialTick));
+            }
+            VertexConsumer rim = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+            for (PoolFx pool : POOLS) {
+                float radius = pool.radius * poolGrow(pool, partialTick);
+                float alpha = 0.55F * poolFade(pool, partialTick);
+                FxDraw.ring(rim, pose, pool.x, pool.y + 0.05D, pool.z, radius * 0.9F, radius * 1.02F, 40, 0.0F, 1.0F, BLUE_R, BLUE_G, BLUE_B, alpha, alpha);
+            }
+            if (decorative) {
+                VertexConsumer ripple = buffers.getBuffer(FxRenderTypes.glow(RIPPLE));
+                for (PoolFx pool : POOLS) {
+                    float age = pool.age + partialTick;
+                    float grow = poolGrow(pool, partialTick);
+                    float fade = poolFade(pool, partialTick);
+                    for (int k = 0; k < 3; k++) {
+                        float phase = (age / 36.0F + k / 3.0F) % 1.0F;
+                        FxDraw.flat(ripple, pose, pool.x, pool.y + 0.06D, pool.z, pool.radius * phase * grow, 0.0F, PALE_R, PALE_G, PALE_B, 0.6F * (1.0F - phase) * fade);
+                    }
                 }
-                Vec3 pos = droplet.prev.lerp(droplet.pos, partialTick);
-                billboardRect(poseStack, tears, cameraRotation, pos.x, pos.y, pos.z, 0.1F, 0.15F, BLUE_R, BLUE_G, BLUE_B, 0.85F * life);
             }
-            VertexConsumer ripples = buffers.getBuffer(RenderType.entityTranslucent(RIPPLE));
-            for (RippleFx ripple : RIPPLES) {
-                float t = Mth.clamp((ripple.age + partialTick) / RIPPLE_LIFE, 0.0F, 1.0F);
-                FxDraw.flatSquare(ripples, poseStack.last(), (float) ripple.x, (float) ripple.y + 0.03F, (float) ripple.z, 0.1F + 0.5F * t, 0.0F, BLUE_R, BLUE_G, BLUE_B, 0.6F * (1.0F - t), FxDraw.FULL_BRIGHT);
+        }
+        renderSplashes(pose, buffers, level, partialTick);
+        if (decorative) {
+            if (!RIPPLES.isEmpty()) {
+                VertexConsumer ripples = buffers.getBuffer(FxRenderTypes.glow(RIPPLE));
+                for (RippleFx ripple : RIPPLES) {
+                    float t = Mth.clamp((ripple.age + partialTick) / RIPPLE_LIFE, 0.0F, 1.0F);
+                    FxDraw.flat(ripples, pose, ripple.x, ripple.y + 0.03D, ripple.z, 0.1F + 0.55F * t, 0.0F, PALE_R, PALE_G, PALE_B, 0.7F * (1.0F - t));
+                }
             }
-            VertexConsumer cores = buffers.getBuffer(RenderType.entityTranslucent(CORE));
-            for (List<Vec3> trail : FIRE_TRAILS.values()) {
-                for (int i = 1; i < trail.size(); i++) {
-                    float fade = 1.0F - (float) i / TRAIL_LENGTH;
-                    Vec3 pos = trail.get(i);
-                    billboardRect(poseStack, cores, cameraRotation, pos.x, pos.y, pos.z, 0.45F * fade, 0.45F * fade, CRIMSON_R, CRIMSON_G, CRIMSON_B, 0.65F * fade);
+            if (!FIRE_TRAILS.isEmpty()) {
+                VertexConsumer ribbon = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+                for (List<Vec3> trail : FIRE_TRAILS.values()) {
+                    int count = trail.size();
+                    if (count < 2) {
+                        continue;
+                    }
+                    Vec3[] points = new Vec3[count];
+                    float[] widths = new float[count];
+                    float[] alphas = new float[count];
+                    for (int i = 0; i < count; i++) {
+                        points[i] = trail.get(count - 1 - i);
+                        float f = (float) i / (count - 1);
+                        widths[i] = 0.08F + 0.5F * f;
+                        alphas[i] = 0.85F * f;
+                    }
+                    FxDraw.trail(ribbon, pose, points, count, widths, alphas, 0.0F, 0.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B);
                 }
             }
         }
@@ -464,15 +571,22 @@ public final class UrGhastFxManager {
         buffers.endBatch();
     }
 
-    private static void renderRain(PoseStack poseStack, MultiBufferSource buffers, UrGhast boss, BossTrack track, Vec3 camera, float partialTick) {
+    private static float poolGrow(PoolFx pool, float partialTick) {
+        return Mth.clamp((pool.age + partialTick) / 6.0F, 0.0F, 1.0F);
+    }
+
+    private static float poolFade(PoolFx pool, float partialTick) {
+        return Mth.clamp((pool.ticks - pool.age - partialTick) / 30.0F, 0.0F, 1.0F);
+    }
+
+    private static void renderRain(PoseStack.Pose pose, MultiBufferSource buffers, UrGhast boss, BossTrack track, Vec3 camera, float partialTick) {
         double cx = Mth.lerp(partialTick, track.prevRainX, track.rainX);
         double cz = Mth.lerp(partialTick, track.prevRainZ, track.rainZ);
         double radius = Mth.lerp(partialTick, track.prevRainR, track.rainR);
         double top = Mth.lerp(partialTick, boss.yo, boss.getY()) + 1.0D;
         float fade = track.rainFade;
         float time = track.age + partialTick;
-        VertexConsumer streaks = buffers.getBuffer(RenderType.entityTranslucent(STREAK));
-        PoseStack.Pose pose = poseStack.last();
+        VertexConsumer streaks = buffers.getBuffer(FxRenderTypes.glow(RAIN));
         for (int i = 0; i < track.columns; i++) {
             double x = cx + Math.cos(track.colAngle[i]) * track.colRadius[i] * radius;
             double z = cz + Math.sin(track.colAngle[i]) * track.colRadius[i] * radius;
@@ -489,15 +603,13 @@ public final class UrGhastFxManager {
             if (len < 0.01D) {
                 continue;
             }
-            float sx = (float) (-dz / len * 0.04D);
-            float sz = (float) (dx / len * 0.04D);
-            float fx = (float) x;
-            float fz = (float) z;
-            float alpha = 0.75F * fade;
-            FxDraw.vertex(streaks, pose, fx - sx, (float) tail, fz - sz, 0.0F, 0.0F, BLUE_R, BLUE_G, BLUE_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-            FxDraw.vertex(streaks, pose, fx - sx, (float) head, fz - sz, 0.0F, 1.0F, BLUE_R, BLUE_G, BLUE_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-            FxDraw.vertex(streaks, pose, fx + sx, (float) head, fz + sz, 1.0F, 1.0F, BLUE_R, BLUE_G, BLUE_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-            FxDraw.vertex(streaks, pose, fx + sx, (float) tail, fz + sz, 1.0F, 0.0F, BLUE_R, BLUE_G, BLUE_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
+            double sx = -dz / len * STREAK_WIDTH;
+            double sz = dx / len * STREAK_WIDTH;
+            float alpha = 0.85F * fade;
+            FxDraw.glowVertex(streaks, pose, x - sx, tail, z - sz, 0.0F, 0.0F, PALE_R, PALE_G, PALE_B, alpha);
+            FxDraw.glowVertex(streaks, pose, x - sx, head, z - sz, 0.0F, 1.0F, PALE_R, PALE_G, PALE_B, alpha);
+            FxDraw.glowVertex(streaks, pose, x + sx, head, z + sz, 1.0F, 1.0F, PALE_R, PALE_G, PALE_B, alpha);
+            FxDraw.glowVertex(streaks, pose, x + sx, tail, z + sz, 1.0F, 0.0F, PALE_R, PALE_G, PALE_B, alpha);
         }
         double bottom = track.centerGround;
         if (Double.isNaN(bottom)) {
@@ -505,50 +617,114 @@ public final class UrGhastFxManager {
         }
         float height = (float) (top - bottom);
         if (height > 0.5F) {
-            VertexConsumer curtain = buffers.getBuffer(RenderType.entityTranslucent(CURTAIN));
-            int segments = 40;
-            float scroll = -time * 0.06F;
+            VertexConsumer curtain = buffers.getBuffer(FxRenderTypes.glow(FxTextures.ENERGY));
+            int segments = 48;
             float circumference = (float) (Math.PI * 2.0D * radius);
-            for (int s = 0; s < segments; s++) {
-                double a0 = Math.PI * 2.0D * s / segments;
-                double a1 = Math.PI * 2.0D * (s + 1) / segments;
-                float x0 = (float) (cx + Math.cos(a0) * radius);
-                float z0 = (float) (cz + Math.sin(a0) * radius);
-                float x1 = (float) (cx + Math.cos(a1) * radius);
-                float z1 = (float) (cz + Math.sin(a1) * radius);
-                float u0 = circumference * s / segments / 2.0F;
-                float u1 = circumference * (s + 1) / segments / 2.0F;
-                float v0 = scroll;
-                float v1 = scroll + height / 4.0F;
-                float alpha = 0.3F * fade;
-                FxDraw.vertex(curtain, pose, x0, (float) top, z0, u0, v0, BLUE_R, BLUE_G, BLUE_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-                FxDraw.vertex(curtain, pose, x0, (float) bottom, z0, u0, v1, BLUE_R, BLUE_G, BLUE_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-                FxDraw.vertex(curtain, pose, x1, (float) bottom, z1, u1, v1, BLUE_R, BLUE_G, BLUE_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-                FxDraw.vertex(curtain, pose, x1, (float) top, z1, u1, v0, BLUE_R, BLUE_G, BLUE_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
+            for (int layer = 0; layer < 2; layer++) {
+                float scroll = -time * 0.05F;
+                float vOffset = 0.0F;
+                float layerRadius = (float) radius;
+                float r = BLUE_R;
+                float g = BLUE_G;
+                float b = BLUE_B;
+                float alpha = 0.42F * fade;
+                if (layer == 1) {
+                    scroll = -time * 0.11F;
+                    vOffset = 0.5F;
+                    layerRadius = (float) radius - 0.2F;
+                    r = PALE_R;
+                    g = PALE_G;
+                    b = PALE_B;
+                    alpha = 0.26F * fade;
+                }
+                float uTop = scroll;
+                float uBottom = scroll + height / 6.0F;
+                for (int s = 0; s < segments; s++) {
+                    double a0 = Math.PI * 2.0D * s / segments;
+                    double a1 = Math.PI * 2.0D * (s + 1) / segments;
+                    double x0 = cx + Math.cos(a0) * layerRadius;
+                    double z0 = cz + Math.sin(a0) * layerRadius;
+                    double x1 = cx + Math.cos(a1) * layerRadius;
+                    double z1 = cz + Math.sin(a1) * layerRadius;
+                    float v0 = vOffset + circumference * s / segments / 3.0F;
+                    float v1 = vOffset + circumference * (s + 1) / segments / 3.0F;
+                    FxDraw.glowVertex(curtain, pose, x0, top, z0, uTop, v0, r, g, b, alpha * 0.25F);
+                    FxDraw.glowVertex(curtain, pose, x0, bottom, z0, uBottom, v0, r, g, b, alpha);
+                    FxDraw.glowVertex(curtain, pose, x1, bottom, z1, uBottom, v1, r, g, b, alpha);
+                    FxDraw.glowVertex(curtain, pose, x1, top, z1, uTop, v1, r, g, b, alpha * 0.25F);
+                }
             }
         }
-        VertexConsumer ring = buffers.getBuffer(RenderType.entityTranslucent(RIPPLE));
-        FxDraw.flatSquare(ring, pose, (float) cx, (float) bottom + 0.05F, (float) cz, (float) radius, 0.0F, BLUE_R, BLUE_G, BLUE_B, 0.55F * fade, FxDraw.FULL_BRIGHT);
+        VertexConsumer border = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+        FxDraw.ring(border, pose, cx, bottom + 0.05D, cz, (float) radius - 0.3F, (float) radius + 0.3F, 56, 0.0F, 1.0F, BLUE_R, BLUE_G, BLUE_B, 0.8F * fade, 0.8F * fade);
+        VertexConsumer cloud = buffers.getBuffer(FxRenderTypes.soft(FxTextures.GLOW));
+        FxDraw.flat(cloud, pose, cx, top - 0.6D, cz, (float) radius * 1.35F, 0.0F, CLOUD_R, CLOUD_G, CLOUD_B, 0.6F * fade);
     }
 
-    private static void renderGaze(PoseStack poseStack, MultiBufferSource buffers, ClientLevel level, UrGhast boss, BossTrack track, Vec3 camera,
-                                   Quaternionf cameraRotation, float partialTick) {
+    private static void renderGaze(PoseStack.Pose pose, MultiBufferSource buffers, ClientLevel level, UrGhast boss, BossTrack track, float partialTick) {
         Vec3 origin = faceOrigin(boss, partialTick, FACE_FORWARD, 0.0D);
+        float time = track.age + partialTick;
         if (track.gazeActive) {
             float progress = Mth.clamp((track.gazeAge + partialTick) / track.gazeDuration, 0.0F, 1.0F);
-            for (int i = 0; i < track.gazeIds.length; i++) {
-                if (!(level.getEntity(track.gazeIds[i]) instanceof LivingEntity target)) {
+            int count = track.gazeIds.length;
+            Vec3[] eyes = new Vec3[count];
+            for (int i = 0; i < count; i++) {
+                if (level.getEntity(track.gazeIds[i]) instanceof LivingEntity target) {
+                    eyes[i] = target.getEyePosition(partialTick);
+                }
+            }
+            float open = (float) Math.pow(progress, 0.6D);
+            VertexConsumer glow = buffers.getBuffer(FxRenderTypes.glow(FxTextures.GLOW));
+            FxDraw.sprite(glow, pose, origin.x, origin.y, origin.z, 2.5F + 2.0F * progress, 0.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B, 0.3F + 0.5F * progress);
+            for (int i = 0; i < count; i++) {
+                if (eyes[i] != null) {
+                    FxDraw.sprite(glow, pose, eyes[i].x, eyes[i].y + EYE_LIFT, eyes[i].z, 1.6F * open, 0.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B, 0.55F);
+                }
+            }
+            VertexConsumer beam = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+            for (int i = 0; i < count; i++) {
+                if (eyes[i] == null || !track.gazeSight[i]) {
                     continue;
                 }
-                Vec3 eye = target.getEyePosition(partialTick);
-                boolean sight = track.gazeSight[i];
-                float alpha = 0.35F;
-                if (sight) {
-                    alpha = 0.55F + 0.35F * progress;
+                Vec3 end = eyes[i].add(0.0D, -0.2D, 0.0D);
+                float width = 0.08F + 0.12F * progress;
+                FxDraw.beam(beam, pose, origin, end, width * 1.6F, width, 0.0F, 1.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B, 0.5F + 0.4F * progress, 0.5F + 0.4F * progress);
+                FxDraw.beam(beam, pose, origin, end, width * 0.4F, width * 0.3F, 0.0F, 1.0F, 1.0F, 0.85F, 0.88F, 0.7F * progress, 0.7F * progress);
+            }
+            VertexConsumer flow = buffers.getBuffer(FxRenderTypes.glow(FxTextures.ENERGY));
+            for (int i = 0; i < count; i++) {
+                if (eyes[i] == null || !track.gazeSight[i]) {
+                    continue;
                 }
-                renderBeam(poseStack, buffers, origin, eye.add(0.0D, -0.2D, 0.0D), camera, 0.1F + 0.12F * progress, CRIMSON_R, CRIMSON_G, CRIMSON_B, alpha, !sight, (track.age + partialTick) * 0.15F);
-                float open = (float) Math.pow(progress, 0.6D);
-                renderEye(poseStack, buffers, cameraRotation, eye.x, eye.y + 0.95D, eye.z, open, PALE_R, PALE_G, PALE_B, 0.9F);
+                Vec3 end = eyes[i].add(0.0D, -0.2D, 0.0D);
+                float length = (float) origin.distanceTo(end);
+                float scroll = time * 0.08F;
+                FxDraw.beam(flow, pose, origin, end, 0.5F, 0.25F, -scroll, length / 8.0F - scroll, CRIMSON_R, CRIMSON_G, CRIMSON_B, 0.6F * progress, 0.6F * progress);
+            }
+            VertexConsumer dash = buffers.getBuffer(FxRenderTypes.glow(GAZE_DASH));
+            for (int i = 0; i < count; i++) {
+                if (eyes[i] == null || track.gazeSight[i]) {
+                    continue;
+                }
+                Vec3 end = eyes[i].add(0.0D, -0.2D, 0.0D);
+                float length = (float) origin.distanceTo(end);
+                float scroll = time * 0.15F;
+                FxDraw.beam(dash, pose, origin, end, 0.14F, 0.14F, -scroll, length / 1.5F - scroll, CRIMSON_R, CRIMSON_G, CRIMSON_B, 0.5F, 0.5F);
+            }
+            VertexConsumer lid = buffers.getBuffer(FxRenderTypes.soft(EYE));
+            for (int i = 0; i < count; i++) {
+                if (eyes[i] != null && open > 0.02F) {
+                    FxDraw.stretchedSprite(lid, pose, eyes[i].x, eyes[i].y + EYE_LIFT, eyes[i].z, 1.2F, 0.6F * open, 0.0F, PALE_R, PALE_G, PALE_B, 0.95F);
+                }
+            }
+            if (open > 0.3F) {
+                VertexConsumer iris = buffers.getBuffer(FxRenderTypes.soft(IRIS));
+                float size = 0.36F * Math.min(1.0F, (open - 0.3F) / 0.5F);
+                for (int i = 0; i < count; i++) {
+                    if (eyes[i] != null) {
+                        FxDraw.stretchedSprite(iris, pose, eyes[i].x, eyes[i].y + EYE_LIFT, eyes[i].z, size, Math.min(size, 0.42F * open), 0.0F, 1.0F, 1.0F, 1.0F, 1.0F);
+                    }
+                }
             }
             return;
         }
@@ -556,11 +732,34 @@ public final class UrGhastFxManager {
             return;
         }
         float t = Mth.clamp((track.endAge + partialTick) / GAZE_CLOSE, 0.0F, 1.0F);
-        for (int i = 0; i < track.endIds.length; i++) {
-            if (!(level.getEntity(track.endIds[i]) instanceof LivingEntity target)) {
+        float flash = 1.0F - Mth.clamp((track.endAge + partialTick) / 4.0F, 0.0F, 1.0F);
+        int count = track.endIds.length;
+        Vec3[] eyes = new Vec3[count];
+        for (int i = 0; i < count; i++) {
+            if (level.getEntity(track.endIds[i]) instanceof LivingEntity target) {
+                eyes[i] = target.getEyePosition(partialTick);
+            }
+        }
+        if (flash > 0.0F) {
+            VertexConsumer beam = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+            for (int i = 0; i < count; i++) {
+                if (eyes[i] != null && track.endHits[i]) {
+                    FxDraw.beam(beam, pose, origin, eyes[i].add(0.0D, -0.2D, 0.0D), 0.5F * flash + 0.1F, 0.3F * flash + 0.08F, 0.0F, 1.0F,
+                        CRIMSON_R, CRIMSON_G, CRIMSON_B, flash, flash);
+                }
+            }
+            VertexConsumer flare = buffers.getBuffer(FxRenderTypes.glow(FxTextures.FLARE));
+            for (int i = 0; i < count; i++) {
+                if (eyes[i] != null && track.endHits[i]) {
+                    FxDraw.sprite(flare, pose, eyes[i].x, eyes[i].y + EYE_LIFT, eyes[i].z, 2.4F * flash + 0.6F, 0.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B, flash);
+                }
+            }
+        }
+        VertexConsumer lid = buffers.getBuffer(FxRenderTypes.soft(EYE));
+        for (int i = 0; i < count; i++) {
+            if (eyes[i] == null || t >= 0.98F) {
                 continue;
             }
-            Vec3 eye = target.getEyePosition(partialTick);
             float r = PALE_R;
             float g = PALE_G;
             float b = PALE_B;
@@ -568,66 +767,37 @@ public final class UrGhastFxManager {
                 r = CRIMSON_R;
                 g = CRIMSON_G;
                 b = CRIMSON_B;
-                float flash = 1.0F - Mth.clamp((track.endAge + partialTick) / 4.0F, 0.0F, 1.0F);
-                if (flash > 0.0F) {
-                    renderBeam(poseStack, buffers, origin, eye.add(0.0D, -0.2D, 0.0D), camera, 0.45F * flash + 0.1F, CRIMSON_R, CRIMSON_G, CRIMSON_B, flash, false, 0.0F);
-                }
             }
-            renderEye(poseStack, buffers, cameraRotation, eye.x, eye.y + 0.95D, eye.z, 1.0F - t, r, g, b, 0.9F * (1.0F - t * 0.5F));
+            FxDraw.stretchedSprite(lid, pose, eyes[i].x, eyes[i].y + EYE_LIFT, eyes[i].z, 1.2F + 0.2F * t, 0.6F * (1.0F - t), 0.0F, r, g, b, 0.95F * (1.0F - t * 0.5F));
         }
     }
 
-    private static void renderEye(PoseStack poseStack, MultiBufferSource buffers, Quaternionf cameraRotation, double x, double y, double z, float open,
-                                  float r, float g, float b, float alpha) {
-        if (open <= 0.02F) {
-            return;
-        }
-        VertexConsumer eye = buffers.getBuffer(RenderType.entityTranslucent(EYE));
-        billboardRect(poseStack, eye, cameraRotation, x, y, z, 0.55F, 0.28F * open, r, g, b, alpha);
-        if (open > 0.3F) {
-            VertexConsumer iris = buffers.getBuffer(RenderType.entityTranslucent(IRIS));
-            float size = 0.17F * Math.min(1.0F, (open - 0.3F) / 0.5F);
-            billboardRect(poseStack, iris, cameraRotation, x, y, z, size, size, GOLD_R, GOLD_G, GOLD_B, alpha);
-        }
-    }
-
-    private static void renderBeam(PoseStack poseStack, MultiBufferSource buffers, Vec3 from, Vec3 to, Vec3 camera, float width,
-                                   float r, float g, float b, float alpha, boolean dashed, float scroll) {
-        Vec3 dir = to.subtract(from);
-        double length = dir.length();
-        if (length < 0.1D || alpha <= 0.01F) {
-            return;
-        }
-        Vec3 mid = from.add(to).scale(0.5D);
-        Vec3 side = dir.cross(mid.subtract(camera));
-        if (side.lengthSqr() < 1.0E-6D) {
-            return;
-        }
-        side = side.normalize().scale(width * 0.5D);
-        ResourceLocation texture = GAZE;
-        if (dashed) {
-            texture = GAZE_DASH;
-        }
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucent(texture));
-        PoseStack.Pose pose = poseStack.last();
-        float u1 = (float) (length / 1.5D);
-        FxDraw.vertex(consumer, pose, (float) (from.x + side.x), (float) (from.y + side.y), (float) (from.z + side.z), -scroll, 0.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-        FxDraw.vertex(consumer, pose, (float) (from.x - side.x), (float) (from.y - side.y), (float) (from.z - side.z), -scroll, 1.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-        FxDraw.vertex(consumer, pose, (float) (to.x - side.x), (float) (to.y - side.y), (float) (to.z - side.z), u1 - scroll, 1.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-        FxDraw.vertex(consumer, pose, (float) (to.x + side.x), (float) (to.y + side.y), (float) (to.z + side.z), u1 - scroll, 0.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-    }
-
-    private static void renderRecall(PoseStack poseStack, MultiBufferSource buffers, ClientLevel level, UrGhast boss, BossTrack track,
-                                     Quaternionf cameraRotation, float partialTick, boolean decorative) {
+    private static void renderRecall(PoseStack.Pose pose, MultiBufferSource buffers, ClientLevel level, UrGhast boss, BossTrack track, float partialTick, boolean decorative) {
         Vec3 center = boss.getPosition(partialTick).add(0.0D, boss.getBbHeight() * 0.5D, 0.0D);
-        VertexConsumer tears = buffers.getBuffer(RenderType.entityTranslucent(TEAR));
         float time = track.recallAge + partialTick;
+        List<Vec3> starts = new ArrayList<>();
         for (int id : track.recallIds) {
             Entity ghast = level.getEntity(id);
-            if (ghast == null || !ghast.isAlive()) {
-                continue;
+            if (ghast != null && ghast.isAlive()) {
+                starts.add(ghast.getPosition(partialTick).add(0.0D, ghast.getBbHeight() * 0.5D, 0.0D));
             }
-            Vec3 start = ghast.getPosition(partialTick).add(0.0D, ghast.getBbHeight() * 0.5D, 0.0D);
+        }
+        if (starts.isEmpty()) {
+            return;
+        }
+        if (decorative) {
+            VertexConsumer halo = buffers.getBuffer(FxRenderTypes.soft(FxTextures.GLOW));
+            float pulse = 2.6F + 0.3F * Mth.sin(time * 0.4F);
+            for (Vec3 start : starts) {
+                FxDraw.sprite(halo, pose, start.x, start.y, start.z, pulse, 0.0F, DARK_R, DARK_G, DARK_B, 0.8F);
+            }
+        }
+        VertexConsumer line = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+        for (Vec3 start : starts) {
+            FxDraw.beam(line, pose, start, center, 0.12F, 0.3F, 0.0F, 1.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B, 0.1F, 0.3F);
+        }
+        VertexConsumer tears = buffers.getBuffer(FxRenderTypes.glow(TEAR));
+        for (Vec3 start : starts) {
             Vec3 path = center.subtract(start);
             double length = path.length();
             int count = Math.max(1, (int) (length / 1.6D));
@@ -635,105 +805,101 @@ public final class UrGhastFxManager {
                 float f = ((k + time * 0.15F) % count) / count;
                 Vec3 pos = start.add(path.scale(f));
                 float fade = Math.min(1.0F, f * 6.0F);
-                billboardRect(poseStack, tears, cameraRotation, pos.x, pos.y, pos.z, 0.14F, 0.21F, CRIMSON_R, CRIMSON_G, CRIMSON_B, 0.85F * fade);
+                FxDraw.sprite(tears, pose, pos.x, pos.y, pos.z, 0.5F, 0.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B, 0.9F * fade);
             }
-        }
-        if (!decorative) {
-            return;
-        }
-        VertexConsumer halo = buffers.getBuffer(RenderType.entityTranslucent(HALO));
-        for (int id : track.recallIds) {
-            Entity ghast = level.getEntity(id);
-            if (ghast == null || !ghast.isAlive()) {
-                continue;
-            }
-            Vec3 pos = ghast.getPosition(partialTick).add(0.0D, ghast.getBbHeight() * 0.5D, 0.0D);
-            float pulse = 1.2F + 0.15F * Mth.sin(time * 0.4F);
-            billboardRect(poseStack, halo, cameraRotation, pos.x, pos.y, pos.z, pulse, pulse, DARK_R, DARK_G, DARK_B, 0.7F);
         }
     }
 
-    private static void renderStacks(PoseStack poseStack, MultiBufferSource buffers, UrGhast boss, BossTrack track, Quaternionf cameraRotation, float partialTick) {
+    private static void renderStacks(PoseStack.Pose pose, MultiBufferSource buffers, UrGhast boss, BossTrack track, float partialTick) {
         Vec3 base = boss.getPosition(partialTick);
-        VertexConsumer tears = buffers.getBuffer(RenderType.entityTranslucent(TEAR));
         float time = track.age + partialTick;
+        double[] xs = new double[track.stacks];
+        double[] ys = new double[track.stacks];
+        double[] zs = new double[track.stacks];
         for (int i = 0; i < track.stacks; i++) {
             double angle = Math.PI * 2.0D * i / track.stacks + time * 0.02D;
-            double x = base.x + Math.cos(angle) * 3.5D;
-            double z = base.z + Math.sin(angle) * 3.5D;
-            double y = base.y - 0.8D - 0.25D * Math.sin(time * 0.1D + i);
-            billboardRect(poseStack, tears, cameraRotation, x, y, z, 0.32F, 0.48F, CRIMSON_R, CRIMSON_G, CRIMSON_B, 0.9F);
+            xs[i] = base.x + Math.cos(angle) * 3.5D;
+            zs[i] = base.z + Math.sin(angle) * 3.5D;
+            ys[i] = base.y - 0.8D - 0.25D * Math.sin(time * 0.1D + i);
+        }
+        VertexConsumer glow = buffers.getBuffer(FxRenderTypes.glow(FxTextures.GLOW));
+        for (int i = 0; i < track.stacks; i++) {
+            FxDraw.sprite(glow, pose, xs[i], ys[i], zs[i], 1.6F, 0.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B, 0.45F);
+        }
+        VertexConsumer tears = buffers.getBuffer(FxRenderTypes.soft(TEAR));
+        for (int i = 0; i < track.stacks; i++) {
+            FxDraw.sprite(tears, pose, xs[i], ys[i], zs[i], 1.0F, 0.12F * Mth.sin(time * 0.1F + i), CRIMSON_R, CRIMSON_G, CRIMSON_B, 0.95F);
         }
     }
 
-    private static void renderPool(PoseStack poseStack, MultiBufferSource buffers, PoolFx pool, float partialTick, boolean decorative) {
-        float age = pool.age + partialTick;
-        float grow = Mth.clamp(age / 6.0F, 0.0F, 1.0F);
-        float fade = Mth.clamp((pool.ticks - age) / 30.0F, 0.0F, 1.0F);
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucent(POOL));
-        FxDraw.flatSquare(consumer, poseStack.last(), pool.x, pool.y + 0.04F, pool.z, pool.radius * grow, age * 0.01F, BLUE_R, BLUE_G, BLUE_B, 0.7F * fade, FxDraw.FULL_BRIGHT);
-        if (!decorative) {
+    private static void renderSplashes(PoseStack.Pose pose, MultiBufferSource buffers, ClientLevel level, float partialTick) {
+        if (SPLASHES.isEmpty()) {
             return;
         }
-        VertexConsumer ripple = buffers.getBuffer(RenderType.entityTranslucent(RIPPLE));
-        for (int k = 0; k < 2; k++) {
-            float phase = (age / 30.0F + k * 0.5F) % 1.0F;
-            FxDraw.flatSquare(ripple, poseStack.last(), pool.x, pool.y + 0.05F, pool.z, pool.radius * phase * grow, 0.0F, PALE_R, PALE_G, PALE_B, 0.5F * (1.0F - phase) * fade, FxDraw.FULL_BRIGHT);
-        }
-    }
-
-    private static void renderSplash(PoseStack poseStack, MultiBufferSource buffers, ClientLevel level, SplashFx splash, Vec3 camera, float partialTick) {
-        float t = Mth.clamp((splash.age + partialTick) / SPLASH_LIFE, 0.0F, 1.0F);
-        if (splash.air) {
-            if (level.getEntity(splash.ownerId) instanceof UrGhast boss) {
-                Vec3 center = boss.getPosition(partialTick).add(0.0D, boss.getBbHeight() * 0.5D, 0.0D);
-                renderBeam(poseStack, buffers, new Vec3(splash.x, splash.y, splash.z), center, camera, 0.35F * (1.0F - t) + 0.05F, CRIMSON_R, CRIMSON_G, CRIMSON_B, 1.0F - t, false, 0.0F);
+        VertexConsumer shock = buffers.getBuffer(FxRenderTypes.glow(FxTextures.SHOCK));
+        for (SplashFx splash : SPLASHES) {
+            if (!splash.air) {
+                float t = Mth.clamp((splash.age + partialTick) / SPLASH_LIFE, 0.0F, 1.0F);
+                FxDraw.flat(shock, pose, splash.x, splash.y + 0.06D, splash.z, splash.radius * (float) Math.sqrt(t), 0.0F, PALE_R, PALE_G, PALE_B, 0.9F * (1.0F - t));
             }
-            return;
         }
-        VertexConsumer ripple = buffers.getBuffer(RenderType.entityTranslucent(RIPPLE));
-        float radius = splash.radius * (float) Math.sqrt(t);
-        FxDraw.flatSquare(ripple, poseStack.last(), splash.x, splash.y + 0.06F, splash.z, radius, 0.0F, PALE_R, PALE_G, PALE_B, 0.9F * (1.0F - t), FxDraw.FULL_BRIGHT);
+        VertexConsumer ripple = buffers.getBuffer(FxRenderTypes.glow(RIPPLE));
+        for (SplashFx splash : SPLASHES) {
+            if (!splash.air) {
+                float t = Mth.clamp((splash.age + partialTick) / SPLASH_LIFE, 0.0F, 1.0F);
+                FxDraw.flat(ripple, pose, splash.x, splash.y + 0.07D, splash.z, splash.radius * (0.3F + 0.9F * t), 0.0F, BLUE_R, BLUE_G, BLUE_B, 1.0F - t);
+            }
+        }
+        VertexConsumer flare = buffers.getBuffer(FxRenderTypes.glow(FxTextures.FLARE));
+        for (SplashFx splash : SPLASHES) {
+            float flash = 1.0F - Mth.clamp((splash.age + partialTick) / 5.0F, 0.0F, 1.0F);
+            if (splash.air) {
+                FxDraw.sprite(flare, pose, splash.x, splash.y, splash.z, 3.0F * flash + 0.5F, 0.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B, flash);
+            } else {
+                FxDraw.sprite(flare, pose, splash.x, splash.y + 0.5D, splash.z, 4.0F * flash + 0.5F, 0.0F, PALE_R, PALE_G, PALE_B, flash);
+            }
+        }
+        VertexConsumer beam = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+        for (SplashFx splash : SPLASHES) {
+            if (splash.air && level.getEntity(splash.ownerId) instanceof UrGhast boss) {
+                float t = Mth.clamp((splash.age + partialTick) / SPLASH_LIFE, 0.0F, 1.0F);
+                Vec3 center = boss.getPosition(partialTick).add(0.0D, boss.getBbHeight() * 0.5D, 0.0D);
+                FxDraw.beam(beam, pose, new Vec3(splash.x, splash.y, splash.z), center, 0.35F * (1.0F - t) + 0.05F, 0.6F * (1.0F - t) + 0.05F, 0.0F, 1.0F,
+                    CRIMSON_R, CRIMSON_G, CRIMSON_B, 1.0F - t, (1.0F - t) * 0.6F);
+            }
+        }
     }
 
     public static void drawTear(PoseStack poseStack, MultiBufferSource buffers, Quaternionf cameraRotation, float size, float age, float alpha) {
-        VertexConsumer tear = buffers.getBuffer(RenderType.entityTranslucent(TEAR));
-        float half = size * 0.5F;
-        float bottom = -size * 0.55F;
-        float top = size * 0.95F;
-        for (int i = 0; i < 3; i++) {
-            poseStack.pushPose();
-            poseStack.mulPose(Axis.YP.rotationDegrees(i * 60.0F + age * 1.5F));
-            PoseStack.Pose pose = poseStack.last();
-            FxDraw.vertex(tear, pose, -half, top, 0.0F, 0.0F, 0.0F, PALE_R, PALE_G, PALE_B, alpha * 0.7F, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-            FxDraw.vertex(tear, pose, -half, bottom, 0.0F, 0.0F, 1.0F, PALE_R, PALE_G, PALE_B, alpha * 0.7F, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-            FxDraw.vertex(tear, pose, half, bottom, 0.0F, 1.0F, 1.0F, PALE_R, PALE_G, PALE_B, alpha * 0.7F, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-            FxDraw.vertex(tear, pose, half, top, 0.0F, 1.0F, 0.0F, PALE_R, PALE_G, PALE_B, alpha * 0.7F, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-            poseStack.popPose();
-        }
-        VertexConsumer core = buffers.getBuffer(RenderType.entityTranslucent(CORE));
-        float pulse = size * (0.22F + 0.03F * Mth.sin(age * 0.3F));
-        poseStack.pushPose();
-        poseStack.mulPose(cameraRotation);
-        poseStack.mulPose(Axis.ZP.rotationDegrees(age * 3.0F));
-        PoseStack.Pose pose = poseStack.last();
-        FxDraw.vertex(core, pose, -pulse, -pulse, 0.0F, 0.0F, 1.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        FxDraw.vertex(core, pose, pulse, -pulse, 0.0F, 1.0F, 1.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        FxDraw.vertex(core, pose, pulse, pulse, 0.0F, 1.0F, 0.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        FxDraw.vertex(core, pose, -pulse, pulse, 0.0F, 0.0F, 0.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        poseStack.popPose();
+        VertexConsumer halo = buffers.getBuffer(FxRenderTypes.glow(FxTextures.GLOW));
+        billboard(poseStack, halo, cameraRotation, 0.0D, size * 0.1D, 0.0D, size * 1.4F, size * 1.4F, 0.0F, BLUE_R, BLUE_G, BLUE_B, alpha * 0.5F);
+        billboard(poseStack, halo, cameraRotation, 0.0D, 0.0D, 0.0D, size * 0.7F, size * 0.7F, 0.0F, CRIMSON_R, CRIMSON_G, CRIMSON_B, alpha * 0.6F);
+        VertexConsumer tear = buffers.getBuffer(FxRenderTypes.glow(TEAR));
+        float wobble = 1.0F + 0.05F * Mth.sin(age * 0.2F);
+        billboard(poseStack, tear, cameraRotation, 0.0D, size * 0.2D, 0.0D, size * 0.84F / wobble, size * 0.84F * wobble, 0.0F, BLUE_R, BLUE_G, BLUE_B, alpha * 0.55F);
+        billboard(poseStack, tear, cameraRotation, 0.0D, size * 0.2D, 0.0D, size * 0.66F, size * 0.66F, 0.0F, PALE_R, PALE_G, PALE_B, alpha * 0.8F);
+        VertexConsumer core = buffers.getBuffer(FxRenderTypes.soft(CORE));
+        float pulse = size * (0.24F + 0.03F * Mth.sin(age * 0.3F));
+        float roll = Mth.floor(age / 6.0F) * Mth.HALF_PI * 0.5F;
+        billboard(poseStack, core, cameraRotation, 0.0D, -size * 0.03D, 0.0D, pulse, pulse, roll, 1.0F, 1.0F, 1.0F, alpha);
     }
 
-    public static void billboardRect(PoseStack poseStack, VertexConsumer consumer, Quaternionf cameraRotation, double x, double y, double z, float halfWidth, float halfHeight,
-                                     float r, float g, float b, float alpha) {
+    public static void billboard(PoseStack poseStack, VertexConsumer consumer, Quaternionf cameraRotation, double x, double y, double z, float halfWidth, float halfHeight,
+                                 float roll, float r, float g, float b, float alpha) {
+        if (alpha <= 0.003F) {
+            return;
+        }
         poseStack.pushPose();
         poseStack.translate(x, y, z);
         poseStack.mulPose(cameraRotation);
+        if (roll != 0.0F) {
+            poseStack.mulPose(Axis.ZP.rotation(roll));
+        }
         PoseStack.Pose pose = poseStack.last();
-        FxDraw.vertex(consumer, pose, -halfWidth, -halfHeight, 0.0F, 0.0F, 1.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        FxDraw.vertex(consumer, pose, halfWidth, -halfHeight, 0.0F, 1.0F, 1.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        FxDraw.vertex(consumer, pose, halfWidth, halfHeight, 0.0F, 1.0F, 0.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        FxDraw.vertex(consumer, pose, -halfWidth, halfHeight, 0.0F, 0.0F, 0.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
+        FxDraw.glowVertex(consumer, pose, -halfWidth, -halfHeight, 0.0D, 0.0F, 1.0F, r, g, b, alpha);
+        FxDraw.glowVertex(consumer, pose, halfWidth, -halfHeight, 0.0D, 1.0F, 1.0F, r, g, b, alpha);
+        FxDraw.glowVertex(consumer, pose, halfWidth, halfHeight, 0.0D, 1.0F, 0.0F, r, g, b, alpha);
+        FxDraw.glowVertex(consumer, pose, -halfWidth, halfHeight, 0.0D, 0.0F, 0.0F, r, g, b, alpha);
         poseStack.popPose();
     }
 
@@ -821,19 +987,6 @@ public final class UrGhastFxManager {
             this.radius = radius;
             this.air = air;
             this.ownerId = ownerId;
-        }
-    }
-
-    private static final class Droplet {
-        private Vec3 pos;
-        private Vec3 prev;
-        private Vec3 vel;
-        private int age;
-
-        private Droplet(Vec3 pos, Vec3 vel) {
-            this.pos = pos;
-            this.prev = pos;
-            this.vel = vel;
         }
     }
 

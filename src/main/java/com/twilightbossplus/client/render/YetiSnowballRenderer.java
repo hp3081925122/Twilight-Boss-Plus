@@ -4,6 +4,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.twilightbossplus.client.fx.FxDraw;
+import com.twilightbossplus.client.fx.FxRenderTypes;
+import com.twilightbossplus.config.ClientConfig;
 import com.twilightbossplus.client.fx.YetiFxManager;
 import com.twilightbossplus.entity.YetiSnowball;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -13,6 +15,7 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 public class YetiSnowballRenderer extends EntityRenderer<YetiSnowball> {
     private static final int SLICES = 14;
@@ -33,6 +36,25 @@ public class YetiSnowballRenderer extends EntityRenderer<YetiSnowball> {
         poseStack.mulPose(Axis.XP.rotationDegrees(roll));
         drawSphere(poseStack, buffers.getBuffer(RenderType.entityCutoutNoCull(YetiFxManager.SNOW)), size * 0.5F, packedLight);
         poseStack.popPose();
+
+        Vec3 motion = entity.getDeltaMovement();
+        double speed = Math.sqrt(motion.x * motion.x + motion.z * motion.z);
+        if (speed > 0.02D && ClientConfig.VFX_ENABLED.get()) {
+            FxDraw.camera(this.entityRenderDispatcher.camera);
+            double dx = motion.x / speed;
+            double dz = motion.z / speed;
+            float age = entity.tickCount + partialTick;
+            PoseStack.Pose base = poseStack.last();
+            VertexConsumer mist = buffers.getBuffer(FxRenderTypes.soft(YetiFxManager.MIST));
+            for (int i = 0; i < 5; i++) {
+                float cycle = age * 0.12F + i / 5.0F;
+                float t = cycle - Mth.floor(cycle);
+                double side = Mth.sin(Mth.floor(cycle) * 2.7F + i * 1.3F) * size * 0.35D;
+                double back = size * 0.4D + t * size * 1.2D;
+                FxDraw.sprite(mist, base, -dx * back - dz * side, size * 0.12D + t * size * 0.35D, -dz * back + dx * side, size * (0.35F + 0.5F * t), cycle,
+                    0.95F, 0.97F, 1.0F, 0.65F * (1.0F - t));
+            }
+        }
         super.render(entity, entityYaw, partialTick, poseStack, buffers, packedLight);
     }
 

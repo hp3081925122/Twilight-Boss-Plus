@@ -5,6 +5,10 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.client.fx.FxDraw;
+import com.twilightbossplus.client.fx.FxRenderTypes;
+import com.twilightbossplus.client.fx.FxTextures;
+import com.twilightbossplus.client.fx.MinoFxManager;
+import com.twilightbossplus.config.ClientConfig;
 import com.twilightbossplus.entity.Puffball;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -15,7 +19,7 @@ import net.minecraft.util.Mth;
 
 public class PuffballRenderer extends EntityRenderer<Puffball> {
     private static final ResourceLocation TEXTURE = new ResourceLocation(TwilightBossPlus.MOD_ID, "textures/entity/puffball.png");
-    private static final ResourceLocation WARNING = new ResourceLocation(TwilightBossPlus.MOD_ID, "textures/fx/mino/cap_shadow.png");
+    private static final ResourceLocation WARNING = new ResourceLocation(TwilightBossPlus.MOD_ID, "textures/fx/mino/px/warn.png");
     private static final float[] SIDE = {0.0F, 0.0F, 0.5F, 0.5F};
     private static final float[] TOP = {0.5F, 0.0F, 1.0F, 0.5F};
     private static final float[] BOTTOM = {0.0F, 0.5F, 1.0F, 1.0F};
@@ -33,12 +37,31 @@ public class PuffballRenderer extends EntityRenderer<Puffball> {
         if (landedAt >= 0) {
             progress = Mth.clamp((age - landedAt) / Math.max(1, entity.getFuse()), 0.0F, 1.0F);
         }
+        FxDraw.camera(this.entityRenderDispatcher.camera);
         if (landedAt >= 0) {
             float radius = entity.getRadius();
-            VertexConsumer warning = buffers.getBuffer(RenderType.entityTranslucent(WARNING));
             float pulse = 0.75F + 0.25F * Mth.sin(age * (0.3F + progress * 0.9F));
-            FxDraw.flatSquare(warning, poseStack.last(), 0.0F, 0.04F, 0.0F, radius, 0.0F, 1.0F, 0.42F, 0.25F, 0.55F * pulse, FxDraw.FULL_BRIGHT);
-            FxDraw.flatSquare(warning, poseStack.last(), 0.0F, 0.045F, 0.0F, radius * progress, age * 0.02F, 0.91F, 0.84F, 0.65F, 0.45F, FxDraw.FULL_BRIGHT);
+            float wr = 0.91F + 0.09F * progress;
+            float wg = Mth.lerp(progress, 0.84F, 0.29F);
+            float wb = Mth.lerp(progress, 0.65F, 0.16F);
+            PoseStack.Pose base = poseStack.last();
+            VertexConsumer glow = buffers.getBuffer(FxRenderTypes.glow(FxTextures.GLOW));
+            FxDraw.flat(glow, base, 0.0D, 0.03D, 0.0D, radius * 1.2F, 0.0F, wr, wg, wb, 0.18F + 0.25F * progress);
+            VertexConsumer warning = buffers.getBuffer(FxRenderTypes.glow(WARNING));
+            FxDraw.flat(warning, base, 0.0D, 0.04D, 0.0D, radius, age * 0.02F, wr, wg, wb, 0.7F * pulse);
+            VertexConsumer rim = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+            float fill = radius * progress;
+            FxDraw.ring(rim, base, 0.0D, 0.05D, 0.0D, Math.max(0.0F, fill - 0.12F), fill + 0.12F, 32, 0.0F, 4.0F, 1.0F, 0.29F, 0.16F, 0.7F * pulse, 0.7F * pulse);
+            if (progress > 0.45F && ClientConfig.VFX_ENABLED.get()) {
+                VertexConsumer spores = buffers.getBuffer(FxRenderTypes.soft(MinoFxManager.SPORE_CLOUD));
+                for (int i = 0; i < 3; i++) {
+                    float cycle = age * 0.08F + i / 3.0F;
+                    float t = cycle - Mth.floor(cycle);
+                    float angle = (Mth.floor(cycle) * 2.4F + i * 2.1F) % Mth.TWO_PI;
+                    FxDraw.sprite(spores, base, Mth.cos(angle) * 0.2F * t, 0.55F + 0.9F * t, Mth.sin(angle) * 0.2F * t, 0.35F + 0.6F * t, angle,
+                        0.91F, 0.84F, 0.65F, 0.7F * (1.0F - t) * (progress - 0.45F) / 0.55F);
+                }
+            }
         }
         float swell = 1.0F + 0.4F * progress * progress;
         float shakeX = 0.0F;

@@ -3,14 +3,13 @@ package com.twilightbossplus.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.client.fx.FxDraw;
+import com.twilightbossplus.client.fx.FxRenderTypes;
+import com.twilightbossplus.client.fx.FxTextures;
 import com.twilightbossplus.config.ClientConfig;
 import com.twilightbossplus.entity.ThrownAxe;
 import java.util.List;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -22,7 +21,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
 public class ThrownAxeRenderer extends EntityRenderer<ThrownAxe> {
-    private static final ResourceLocation TRAIL = new ResourceLocation(TwilightBossPlus.MOD_ID, "textures/fx/mino/axe_trail.png");
     private final ItemRenderer itemRenderer;
 
     public ThrownAxeRenderer(EntityRendererProvider.Context context) {
@@ -36,7 +34,7 @@ public class ThrownAxeRenderer extends EntityRenderer<ThrownAxe> {
         float age = entity.tickCount + partialTick;
         Vec3 here = new Vec3(Mth.lerp(partialTick, entity.xo, entity.getX()), Mth.lerp(partialTick, entity.yo, entity.getY()), Mth.lerp(partialTick, entity.zo, entity.getZ()));
         if (ClientConfig.VFX_ENABLED.get()) {
-            this.renderTrail(entity, here, poseStack, buffers);
+            this.renderTrail(entity, here, age, poseStack, buffers);
         }
         ItemStack stack = entity.getItem();
         if (!stack.isEmpty()) {
@@ -51,50 +49,51 @@ public class ThrownAxeRenderer extends EntityRenderer<ThrownAxe> {
         super.render(entity, entityYaw, partialTick, poseStack, buffers, packedLight);
     }
 
-    private void renderTrail(ThrownAxe entity, Vec3 here, PoseStack poseStack, MultiBufferSource buffers) {
+    private void renderTrail(ThrownAxe entity, Vec3 here, float age, PoseStack poseStack, MultiBufferSource buffers) {
         List<Vec3> trail = entity.trail;
-        if (trail.size() < 2) {
-            return;
-        }
-        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         Vec3 lift = new Vec3(0.0D, entity.getBbHeight() * 0.5D, 0.0D);
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucent(TRAIL));
-        PoseStack.Pose pose = poseStack.last();
+        Vec3 center = here.add(lift);
+        FxDraw.camera(this.entityRenderDispatcher.camera);
+        poseStack.pushPose();
+        poseStack.translate(-here.x, -here.y, -here.z);
+        PoseStack.Pose world = poseStack.last();
+        VertexConsumer glow = buffers.getBuffer(FxRenderTypes.glow(FxTextures.GLOW));
+        FxDraw.sprite(glow, world, center.x, center.y, center.z, 1.6F, 0.0F, 1.0F, 0.29F, 0.16F, 0.3F + 0.08F * Mth.sin(age * 0.9F));
         int count = trail.size();
-        for (int i = 0; i < count - 1; i++) {
-            Vec3 from = here;
-            if (i > 0) {
-                from = trail.get(i);
+        if (count >= 2) {
+            Vec3[] points = new Vec3[count];
+            float[] outer = new float[count];
+            float[] inner = new float[count];
+            float[] outerAlpha = new float[count];
+            float[] innerAlpha = new float[count];
+            for (int k = 0; k < count; k++) {
+                int index = count - 1 - k;
+                if (index == 0) {
+                    points[k] = center;
+                } else {
+                    points[k] = trail.get(index).add(lift);
+                }
+                float t = (float) k / (count - 1);
+                outer[k] = 0.55F * t;
+                inner[k] = 0.2F * t;
+                outerAlpha[k] = 0.45F * t * t;
+                innerAlpha[k] = 0.85F * t * t;
             }
-            Vec3 to = trail.get(i + 1);
-            Vec3 dir = to.subtract(from);
-            Vec3 view = camera.subtract(from.add(to).scale(0.5D).add(lift));
-            Vec3 side = dir.cross(view);
-            if (side.lengthSqr() < 1.0E-8D) {
-                continue;
+            VertexConsumer beam = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+            FxDraw.trail(beam, world, points, count, outer, outerAlpha, 0.0F, 0.5F, 0.91F, 0.84F, 0.65F);
+            FxDraw.trail(beam, world, points, count, inner, innerAlpha, 0.0F, 0.5F, 1.0F, 0.29F, 0.16F);
+            VertexConsumer sparks = buffers.getBuffer(FxRenderTypes.glow(FxTextures.SPARK));
+            for (int k = 1; k < count - 1; k += 2) {
+                float t = (float) k / (count - 1);
+                FxDraw.sprite(sparks, world, points[k].x, points[k].y + Mth.sin(age * 0.7F + k) * 0.15D, points[k].z, 0.18F * t + 0.06F, age * 0.3F + k,
+                    1.0F, 0.6F, 0.3F, 0.8F * t);
             }
-            side = side.normalize();
-            float w0 = 0.55F * (1.0F - (float) i / count);
-            float w1 = 0.55F * (1.0F - (float) (i + 1) / count);
-            float a0 = 0.7F * (1.0F - (float) i / count);
-            float a1 = 0.7F * (1.0F - (float) (i + 1) / count);
-            float u0 = (float) i / count;
-            float u1 = (float) (i + 1) / count;
-            Vec3 f = from.subtract(here).add(lift);
-            Vec3 t = to.subtract(here).add(lift);
-            Vec3 normal = view.normalize();
-            float nx = (float) normal.x;
-            float ny = (float) normal.y;
-            float nz = (float) normal.z;
-            FxDraw.vertex(consumer, pose, (float) (f.x - side.x * w0), (float) (f.y - side.y * w0), (float) (f.z - side.z * w0), u0, 0.0F, 1.0F, 1.0F, 1.0F, a0, FxDraw.FULL_BRIGHT, nx, ny, nz);
-            FxDraw.vertex(consumer, pose, (float) (f.x + side.x * w0), (float) (f.y + side.y * w0), (float) (f.z + side.z * w0), u0, 1.0F, 1.0F, 1.0F, 1.0F, a0, FxDraw.FULL_BRIGHT, nx, ny, nz);
-            FxDraw.vertex(consumer, pose, (float) (t.x + side.x * w1), (float) (t.y + side.y * w1), (float) (t.z + side.z * w1), u1, 1.0F, 1.0F, 1.0F, 1.0F, a1, FxDraw.FULL_BRIGHT, nx, ny, nz);
-            FxDraw.vertex(consumer, pose, (float) (t.x - side.x * w1), (float) (t.y - side.y * w1), (float) (t.z - side.z * w1), u1, 0.0F, 1.0F, 1.0F, 1.0F, a1, FxDraw.FULL_BRIGHT, nx, ny, nz);
         }
+        poseStack.popPose();
     }
 
     @Override
     public ResourceLocation getTextureLocation(ThrownAxe entity) {
-        return TRAIL;
+        return FxTextures.GLOW;
     }
 }

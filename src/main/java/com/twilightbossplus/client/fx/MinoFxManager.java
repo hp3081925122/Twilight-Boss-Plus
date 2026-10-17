@@ -37,7 +37,6 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.joml.Quaternionf;
 import twilightforest.entity.boss.Minoshroom;
 import twilightforest.entity.monster.Minotaur;
 
@@ -46,17 +45,16 @@ public final class MinoFxManager {
     private static final ResourceLocation ARROW = tex("arrow");
     private static final ResourceLocation FAIRY_RING = tex("fairy_ring");
     private static final ResourceLocation CRACK = tex("crack");
-    private static final ResourceLocation SPORE_CLOUD = tex("spore_cloud");
+    public static final ResourceLocation SPORE_CLOUD = tex("px/spore_cloud");
     private static final ResourceLocation SPORE_RING = tex("spore_ring");
+    private static final ResourceLocation DUST_WALL = tex("dust_wall");
+    public static final ResourceLocation CRATER = tex("crater");
     private static final ResourceLocation BITS = tex("bits");
 
     private static final int ARROW_FADE = 6;
-    private static final int WAVE_FADE = 8;
-    private static final int CLOUD_GROW = 6;
-    private static final int CLOUD_LIFE = 34;
-    private static final int SMALL_CLOUD_LIFE = 14;
-    private static final int RING_LIFE = 10;
-    private static final int ROAR_LIFE = 16;
+    private static final int WAVE_FADE = 10;
+    private static final int RING_LIFE = 12;
+    private static final int ROAR_LIFE = 18;
     private static final int STUN_FADE = 6;
     private static final int HORN_FADE = 8;
     private static final int HORN_TIMEOUT = 1200;
@@ -65,6 +63,12 @@ public final class MinoFxManager {
     private static final float SPORE_R = 0.91F;
     private static final float SPORE_G = 0.84F;
     private static final float SPORE_B = 0.65F;
+    private static final float BROWN_R = 0.55F;
+    private static final float BROWN_G = 0.42F;
+    private static final float BROWN_B = 0.29F;
+    private static final float MYC_R = 0.49F;
+    private static final float MYC_G = 0.43F;
+    private static final float MYC_B = 0.53F;
     private static final float RAGE_R = 1.0F;
     private static final float RAGE_G = 0.29F;
     private static final float RAGE_B = 0.16F;
@@ -74,7 +78,6 @@ public final class MinoFxManager {
     private static final List<Stun> STUNS = new ArrayList<>();
     private static final List<WaveFx> WAVES = new ArrayList<>();
     private static final List<PillarWarn> WARNS = new ArrayList<>();
-    private static final List<Cloud> CLOUDS = new ArrayList<>();
     private static final List<Ring> RINGS = new ArrayList<>();
     private static final Map<Integer, Horn> HORNS = new HashMap<>();
     private static final Map<Integer, ItemStack> HIDDEN_AXES = new HashMap<>();
@@ -96,6 +99,23 @@ public final class MinoFxManager {
             return t;
         }
         return 1.0F - t;
+    }
+
+    private static float lightAt(ClientLevel level, double x, double y, double z) {
+        return 0.3F + 0.7F * level.getMaxLocalRawBrightness(BlockPos.containing(x, y + 0.5D, z)) / 15.0F;
+    }
+
+    private static void dustPuff(ClientLevel level, RandomSource random, double x, double y, double z, int count, double speed, float size, float life) {
+        float light = lightAt(level, x, y, z);
+        for (int i = 0; i < count; i++) {
+            double angle = random.nextDouble() * Math.PI * 2.0D;
+            double horizontal = speed * (0.4D + random.nextDouble() * 0.6D);
+            FxParticles.soft(FxTextures.DUST, x + Math.cos(angle) * 0.3D, y + 0.1D + random.nextDouble() * 0.3D, z + Math.sin(angle) * 0.3D,
+                    Math.cos(angle) * horizontal, 0.02D + random.nextDouble() * 0.04D, Math.sin(angle) * horizontal, (int) (life * (0.8F + random.nextFloat() * 0.4F)),
+                    size * (0.7F + random.nextFloat() * 0.5F))
+                .color(BROWN_R * light * 1.3F, BROWN_G * light * 1.3F, BROWN_B * light * 1.3F).alpha(0.7F).grow(size * 2.8F).drag(0.88D).fade(0.08F, 1.3F)
+                .spin(random.nextFloat() * 6.0F, (random.nextFloat() - 0.5F) * 0.06F);
+        }
     }
 
     public static void handle(int type, int entityId, float[] data) {
@@ -120,42 +140,72 @@ public final class MinoFxManager {
             Entity entity = level.getEntity(entityId);
             if (entity != null) {
                 BlockState ground = groundAt(level, entity.getX(), entity.getY(), entity.getZ());
-                burstChunks(level, random, entity.getX(), entity.getY() + entity.getBbHeight() * 0.6D, entity.getZ(), 10, 0.18D, spriteOf(ground), 1.0F, 1.0F, 1.0F);
+                burstChunks(random, entity.getX(), entity.getY() + entity.getBbHeight() * 0.6D, entity.getZ(), 16, 0.22D, spriteOf(ground), 1.0F, 1.0F, 1.0F);
+                dustPuff(level, random, entity.getX(), entity.getY(), entity.getZ(), 14, 0.16D, 1.2F, 30.0F);
+                FxShake.at(entity.getX(), entity.getY(), entity.getZ(), 1.1F, 18.0F, 12);
+                RINGS.add(new Ring(entity.getX(), entity.getY() + 0.04D, entity.getZ(), 3.0F, 4, false));
             }
         } else if (type == MinoFxPacket.WAVE && data.length >= 6) {
             BlockState ground = groundAt(level, data[0], data[1], data[2]);
-            WAVES.add(new WaveFx(data[0], data[1], data[2], data[3], data[4], (int) data[5], spriteOf(ground)));
+            WAVES.add(new WaveFx(data[0], data[1], data[2], data[3], data[4], (int) data[5], spriteOf(ground), lightAt(level, data[0], data[1], data[2])));
         } else if (type == MinoFxPacket.PILLAR_WARN && data.length >= 5) {
-            WARNS.add(new PillarWarn(data[0], data[1], data[2], Math.max(1, (int) data[3])));
+            WARNS.add(new PillarWarn(data[0], data[1], data[2], Math.max(1, (int) data[3]), lightAt(level, data[0], data[1], data[2])));
         } else if (type == MinoFxPacket.PILLAR_RISE && data.length >= 4) {
             TextureAtlasSprite ground = spriteOf(groundAt(level, data[0], data[1], data[2]));
-            burstChunks(level, random, data[0], data[1] + 0.2D, data[2], 16, 0.22D, ground, 1.0F, 1.0F, 1.0F);
-            RINGS.add(new Ring(data[0], data[1] + 0.03D, data[2], 1.6F, 1, false));
+            burstChunks(random, data[0], data[1] + 0.2D, data[2], 18, 0.24D, ground, 1.0F, 1.0F, 1.0F);
+            dustPuff(level, random, data[0], data[1], data[2], 10, 0.12D, 1.0F, 26.0F);
+            RINGS.add(new Ring(data[0], data[1] + 0.03D, data[2], 1.9F, 1, false));
+            FxShake.at(data[0], data[1], data[2], 0.45F, 12.0F, 8);
         } else if (type == MinoFxPacket.PILLAR_BREAK && data.length >= 4) {
             float[] cap = MushroomPillarRenderer.RED_SIDE;
+            float sr = 0.78F;
+            float sg = 0.24F;
+            float sb = 0.2F;
             if ((int) data[3] == 1) {
                 cap = MushroomPillarRenderer.BROWN_SIDE;
+                sr = 0.62F;
+                sg = 0.48F;
+                sb = 0.34F;
             }
             float[] stem = MushroomPillarRenderer.STEM;
-            burstChunks(level, random, data[0], data[1] + 2.6D, data[2], 12, 0.2D, cap[0], cap[1], cap[2], cap[3], true, 1.0F, 1.0F, 1.0F);
+            burstChunks(random, data[0], data[1] + 2.6D, data[2], 14, 0.22D, cap[0], cap[1], cap[2], cap[3], true, 1.0F, 1.0F, 1.0F);
             for (int i = 0; i < 3; i++) {
-                burstChunks(level, random, data[0], data[1] + 0.5D + i * 0.7D, data[2], 4, 0.12D, stem[0], stem[1], stem[2], stem[3], true, 1.0F, 1.0F, 1.0F);
+                burstChunks(random, data[0], data[1] + 0.5D + i * 0.7D, data[2], 5, 0.13D, stem[0], stem[1], stem[2], stem[3], true, 1.0F, 1.0F, 1.0F);
             }
+            float light = lightAt(level, data[0], data[1] + 2.0D, data[2]);
+            for (int i = 0; i < 8; i++) {
+                double angle = random.nextDouble() * Math.PI * 2.0D;
+                FxParticles.soft(SPORE_CLOUD, data[0] + Math.cos(angle) * 0.5D, data[1] + 2.2D + random.nextDouble() * 0.8D, data[2] + Math.sin(angle) * 0.5D,
+                        Math.cos(angle) * 0.06D, 0.02D, Math.sin(angle) * 0.06D, 26 + random.nextInt(10), 0.8F)
+                    .color(sr * light, sg * light, sb * light).alpha(0.75F).grow(2.0F).drag(0.92D).fade(0.05F, 1.4F).spin(random.nextFloat() * 6.0F, 0.03F);
+            }
+            FxShake.at(data[0], data[1], data[2], 0.5F, 12.0F, 8);
         } else if (type == MinoFxPacket.SPORE_BURST && data.length >= 5) {
             boolean big = data[4] > 0.5F;
             float radius = data[3];
-            int count = 2;
+            int count = 3;
+            int life = 16;
             if (big) {
-                count = 6;
+                count = 12;
+                life = 36;
+                RINGS.add(new Ring(data[0], data[1] - 0.3D, data[2], radius, 0, true));
+                FxShake.at(data[0], data[1], data[2], 0.35F, 10.0F, 6);
             }
+            float light = lightAt(level, data[0], data[1], data[2]);
             for (int i = 0; i < count; i++) {
                 double angle = random.nextDouble() * Math.PI * 2.0D;
-                double distance = random.nextDouble() * radius * 0.5D;
-                CLOUDS.add(new Cloud(data[0] + Math.cos(angle) * distance, data[1] + random.nextDouble() * 0.6D, data[2] + Math.sin(angle) * distance,
-                    radius * (0.5F + random.nextFloat() * 0.3F), big, random.nextFloat() * 360.0F));
+                double speed = radius * (0.04D + random.nextDouble() * 0.04D);
+                FxParticles.soft(SPORE_CLOUD, data[0], data[1] + random.nextDouble() * 0.6D, data[2], Math.cos(angle) * speed, 0.015D + random.nextDouble() * 0.02D,
+                        Math.sin(angle) * speed, life + random.nextInt(8), radius * 0.5F)
+                    .color(SPORE_R * light, SPORE_G * light, SPORE_B * light).alpha(0.85F).grow(radius * (1.1F + random.nextFloat() * 0.5F)).drag(0.9D).fade(0.05F, 1.6F)
+                    .spin(random.nextFloat() * 6.0F, (random.nextFloat() - 0.5F) * 0.05F);
             }
-            if (big) {
-                RINGS.add(new Ring(data[0], data[1] - 0.3D, data[2], radius, 0, true));
+            for (int i = 0; i < count * 3; i++) {
+                double angle = random.nextDouble() * Math.PI * 2.0D;
+                double speed = radius * (0.03D + random.nextDouble() * 0.05D);
+                FxParticles.soft(FxTextures.MOTE, data[0], data[1] + 0.3D + random.nextDouble() * 0.5D, data[2], Math.cos(angle) * speed, 0.03D + random.nextDouble() * 0.03D,
+                        Math.sin(angle) * speed, life + 10 + random.nextInt(14), 0.1F + random.nextFloat() * 0.08F)
+                    .color(SPORE_R * light, SPORE_G * light, SPORE_B * light).alpha(0.9F).drag(0.93D).gravity(-0.001D);
             }
         } else if (type == MinoFxPacket.HORN && data.length >= 1) {
             boolean on = data[0] > 0.5F;
@@ -174,8 +224,10 @@ public final class MinoFxManager {
                 }
             }
         } else if (type == MinoFxPacket.ROAR && data.length >= 3) {
-            RINGS.add(new Ring(data[0], data[1] + 0.05D, data[2], 6.0F, 2, false));
-            RINGS.add(new Ring(data[0], data[1] + 0.06D, data[2], 4.0F, 3, false));
+            RINGS.add(new Ring(data[0], data[1] + 0.05D, data[2], 7.0F, 2, false));
+            RINGS.add(new Ring(data[0], data[1] + 0.06D, data[2], 4.5F, 3, false));
+            FxShake.at(data[0], data[1], data[2], 0.9F, 24.0F, 18);
+            dustPuff(level, random, data[0], data[1], data[2], 16, 0.22D, 1.3F, 32.0F);
         }
     }
 
@@ -194,12 +246,11 @@ public final class MinoFxManager {
         return Minecraft.getInstance().getBlockRenderer().getBlockModelShaper().getParticleIcon(state);
     }
 
-    private static void burstChunks(ClientLevel level, RandomSource random, double x, double y, double z, int count, double speed,
-                                    TextureAtlasSprite sprite, float r, float g, float b) {
-        burstChunks(level, random, x, y, z, count, speed, sprite.getU0(), sprite.getV0(), sprite.getU1(), sprite.getV1(), false, r, g, b);
+    private static void burstChunks(RandomSource random, double x, double y, double z, int count, double speed, TextureAtlasSprite sprite, float r, float g, float b) {
+        burstChunks(random, x, y, z, count, speed, sprite.getU0(), sprite.getV0(), sprite.getU1(), sprite.getV1(), false, r, g, b);
     }
 
-    private static void burstChunks(ClientLevel level, RandomSource random, double x, double y, double z, int count, double speed,
+    private static void burstChunks(RandomSource random, double x, double y, double z, int count, double speed,
                                     float u0, float v0, float u1, float v1, boolean pillar, float r, float g, float b) {
         if (!ClientConfig.VFX_ENABLED.get()) {
             return;
@@ -245,17 +296,30 @@ public final class MinoFxManager {
                 continue;
             }
             Entity entity = level.getEntity(arrow.entityId);
-            if (decorative && arrow.endAge < 0 && entity instanceof Minotaur minotaur && minotaur.isCharging() && CHUNKS.size() < MAX_CHUNKS) {
+            if (decorative && arrow.endAge < 0 && entity instanceof Minotaur minotaur && minotaur.isCharging()) {
                 TextureAtlasSprite sprite = spriteOf(groundAt(level, entity.getX(), entity.getY(), entity.getZ()));
                 Vec3 back = Vec3.directionFromRotation(0.0F, arrow.yaw).scale(-0.8D);
-                for (int i = 0; i < 2; i++) {
+                for (int i = 0; i < 2 && CHUNKS.size() < MAX_CHUNKS; i++) {
                     Chunk chunk = new Chunk(entity.getX() + back.x + (random.nextDouble() - 0.5D) * entity.getBbWidth(), entity.getY() + 0.1D,
                         entity.getZ() + back.z + (random.nextDouble() - 0.5D) * entity.getBbWidth(), sprite, random);
                     chunk.vx = back.x * 0.12D + (random.nextDouble() - 0.5D) * 0.08D;
-                    chunk.vy = 0.12D + random.nextDouble() * 0.12D;
+                    chunk.vy = 0.14D + random.nextDouble() * 0.14D;
                     chunk.vz = back.z * 0.12D + (random.nextDouble() - 0.5D) * 0.08D;
                     chunk.size *= 0.8F;
                     CHUNKS.add(chunk);
+                }
+                float light = lightAt(level, entity.getX(), entity.getY(), entity.getZ());
+                for (int i = 0; i < 2; i++) {
+                    double side = (random.nextDouble() - 0.5D) * entity.getBbWidth();
+                    FxParticles.soft(FxTextures.DUST, entity.getX() + back.x + back.z * side, entity.getY() + 0.2D, entity.getZ() + back.z - back.x * side,
+                            back.x * 0.06D, 0.03D + random.nextDouble() * 0.03D, back.z * 0.06D, 22 + random.nextInt(10), 0.9F)
+                        .color(BROWN_R * light * 1.3F, BROWN_G * light * 1.3F, BROWN_B * light * 1.3F).alpha(0.6F).grow(2.6F).drag(0.9D).fade(0.1F, 1.3F)
+                        .spin(random.nextFloat() * 6.0F, 0.03F);
+                }
+                if (arrow.red && arrow.age % 2 == 0) {
+                    FxParticles.glow(FxTextures.SPARK, entity.getX() + back.x, entity.getY() + entity.getBbHeight() * 0.8D, entity.getZ() + back.z,
+                            back.x * 0.15D, 0.05D, back.z * 0.15D, 8, 0.14F)
+                        .color(1.0F, 0.6F, 0.35F).fadeTo(RAGE_R, RAGE_G, RAGE_B).drag(0.88D).streak(2.0F);
                 }
             }
         }
@@ -269,27 +333,46 @@ public final class MinoFxManager {
             chunk.x += chunk.vx;
             chunk.y += chunk.vy;
             chunk.z += chunk.vz;
-            chunk.vy -= 0.04D;
+            chunk.vy -= 0.045D;
             chunk.vx *= 0.94D;
             chunk.vz *= 0.94D;
             BlockPos pos = BlockPos.containing(chunk.x, chunk.y, chunk.z);
             if (chunk.vy < 0.0D && !level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()) {
                 chunk.y = chunk.py;
-                chunk.vy = 0.0D;
+                chunk.vy = -chunk.vy * 0.25D;
                 chunk.vx *= 0.5D;
                 chunk.vz *= 0.5D;
+                chunk.spin *= 0.5F;
             }
             if (++chunk.age > chunk.life) {
                 chunks.remove();
             }
         }
 
-        STUNS.removeIf(stun -> ++stun.age > stun.duration + STUN_FADE || level.getEntity(stun.entityId) == null);
+        Iterator<Stun> stuns = STUNS.iterator();
+        while (stuns.hasNext()) {
+            Stun stun = stuns.next();
+            stun.age++;
+            Entity entity = level.getEntity(stun.entityId);
+            if (stun.age > stun.duration + STUN_FADE || entity == null) {
+                stuns.remove();
+            } else if (decorative && stun.age < stun.duration && stun.age % 4 == 0) {
+                double angle = random.nextDouble() * Math.PI * 2.0D;
+                float light = lightAt(level, entity.getX(), entity.getY(), entity.getZ());
+                FxParticles.soft(FxTextures.MOTE, entity.getX() + Math.cos(angle) * 0.6D, entity.getY() + entity.getBbHeight() + 0.4D, entity.getZ() + Math.sin(angle) * 0.6D,
+                        0.0D, 0.02D, 0.0D, 20, 0.14F)
+                    .color(SPORE_R * light, SPORE_G * light, SPORE_B * light).alpha(0.9F).drag(0.95D);
+            }
+        }
 
         Iterator<WaveFx> waves = WAVES.iterator();
         while (waves.hasNext()) {
             WaveFx wave = waves.next();
             wave.age++;
+            if (wave.age == wave.delay + 1) {
+                FxShake.at(wave.x, wave.y, wave.z, 0.85F, 16.0F, 12);
+                dustPuff(level, random, wave.x, wave.y, wave.z, 10, 0.2D, 1.4F, 30.0F);
+            }
             float radius = wave.radius(0.0F);
             if (radius >= wave.maxRadius) {
                 wave.doneAge++;
@@ -298,15 +381,22 @@ public final class MinoFxManager {
                 }
                 continue;
             }
-            if (decorative && radius > 0.5F && CHUNKS.size() < MAX_CHUNKS) {
+            if (decorative && radius > 0.5F) {
                 int count = Math.min(5, 1 + (int) (radius * 0.6F));
-                for (int i = 0; i < count; i++) {
+                for (int i = 0; i < count && CHUNKS.size() < MAX_CHUNKS; i++) {
                     double angle = random.nextDouble() * Math.PI * 2.0D;
                     Chunk chunk = new Chunk(wave.x + Math.cos(angle) * radius, wave.y + 0.15D, wave.z + Math.sin(angle) * radius, wave.sprite, random);
-                    chunk.vx = Math.cos(angle) * 0.08D;
-                    chunk.vy = 0.18D + random.nextDouble() * 0.12D;
-                    chunk.vz = Math.sin(angle) * 0.08D;
+                    chunk.vx = Math.cos(angle) * 0.1D;
+                    chunk.vy = 0.2D + random.nextDouble() * 0.14D;
+                    chunk.vz = Math.sin(angle) * 0.1D;
                     CHUNKS.add(chunk);
+                }
+                for (int i = 0; i < 3; i++) {
+                    double angle = random.nextDouble() * Math.PI * 2.0D;
+                    FxParticles.soft(FxTextures.DUST, wave.x + Math.cos(angle) * radius, wave.y + 0.2D, wave.z + Math.sin(angle) * radius,
+                            Math.cos(angle) * 0.05D, 0.03D + random.nextDouble() * 0.03D, Math.sin(angle) * 0.05D, 22 + random.nextInt(10), 1.0F)
+                        .color(BROWN_R * wave.light * 1.3F, BROWN_G * wave.light * 1.3F, BROWN_B * wave.light * 1.3F).alpha(0.55F).grow(2.6F).drag(0.9D)
+                        .fade(0.1F, 1.3F).spin(random.nextFloat() * 6.0F, 0.03F);
                 }
             }
         }
@@ -319,22 +409,12 @@ public final class MinoFxManager {
                 warns.remove();
                 continue;
             }
-            if (decorative && warn.age % 4 == 0) {
-                burstChunks(level, random, warn.x, warn.y + 0.1D, warn.z, 2, 0.1D, spriteOf(groundAt(level, warn.x, warn.y, warn.z)), 1.0F, 1.0F, 1.0F);
-            }
-        }
-
-        Iterator<Cloud> clouds = CLOUDS.iterator();
-        while (clouds.hasNext()) {
-            Cloud cloud = clouds.next();
-            cloud.age++;
-            cloud.y += 0.01D;
-            int life = SMALL_CLOUD_LIFE;
-            if (cloud.big) {
-                life = CLOUD_LIFE;
-            }
-            if (cloud.age > life) {
-                clouds.remove();
+            if (decorative && warn.age % 3 == 0) {
+                burstChunks(random, warn.x, warn.y + 0.1D, warn.z, 2, 0.1D + 0.06D * warn.age / warn.duration, spriteOf(groundAt(level, warn.x, warn.y, warn.z)),
+                    1.0F, 1.0F, 1.0F);
+                FxParticles.soft(FxTextures.DUST, warn.x + (random.nextDouble() - 0.5D) * 1.2D, warn.y + 0.1D, warn.z + (random.nextDouble() - 0.5D) * 1.2D,
+                        0.0D, 0.03D, 0.0D, 18, 0.5F)
+                    .color(MYC_R * warn.light * 1.4F, MYC_G * warn.light * 1.4F, MYC_B * warn.light * 1.4F).alpha(0.5F).grow(1.4F).drag(0.9D).fade(0.15F, 1.3F);
             }
         }
 
@@ -365,7 +445,6 @@ public final class MinoFxManager {
         STUNS.clear();
         WAVES.clear();
         WARNS.clear();
-        CLOUDS.clear();
         RINGS.clear();
         HORNS.clear();
         HIDDEN_AXES.clear();
@@ -413,13 +492,13 @@ public final class MinoFxManager {
         if (level == null) {
             return;
         }
-        if (ARROWS.isEmpty() && CHUNKS.isEmpty() && STUNS.isEmpty() && WAVES.isEmpty() && WARNS.isEmpty() && CLOUDS.isEmpty() && RINGS.isEmpty()) {
+        if (ARROWS.isEmpty() && CHUNKS.isEmpty() && STUNS.isEmpty() && WAVES.isEmpty() && WARNS.isEmpty() && RINGS.isEmpty()) {
             return;
         }
         boolean decorative = ClientConfig.VFX_ENABLED.get();
         float partialTick = event.getPartialTick();
+        FxDraw.camera(event.getCamera());
         Vec3 camera = event.getCamera().getPosition();
-        Quaternionf cameraRotation = event.getCamera().rotation();
         PoseStack poseStack = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
         poseStack.pushPose();
@@ -429,7 +508,7 @@ public final class MinoFxManager {
             renderPillarWarn(poseStack, buffers, warn, partialTick);
         }
         for (ChargeArrow arrow : ARROWS) {
-            renderArrow(poseStack, buffers, arrow, partialTick);
+            renderArrow(poseStack, buffers, level, arrow, partialTick);
         }
         for (WaveFx wave : WAVES) {
             renderWave(poseStack, buffers, level, wave, partialTick, decorative);
@@ -439,13 +518,10 @@ public final class MinoFxManager {
         }
         for (Ring ring : RINGS) {
             if (ring.functional || decorative) {
-                renderRing(poseStack, buffers, ring, partialTick);
+                renderRing(poseStack, buffers, level, ring, partialTick);
             }
         }
         if (decorative) {
-            for (Cloud cloud : CLOUDS) {
-                renderCloud(poseStack, buffers, cloud, cameraRotation, partialTick);
-            }
             renderChunks(poseStack, buffers, level, partialTick);
         }
 
@@ -453,43 +529,17 @@ public final class MinoFxManager {
         buffers.endBatch();
     }
 
-    private static void flatQuad(VertexConsumer consumer, PoseStack.Pose pose, Vec3 a0, Vec3 a1, Vec3 b1, Vec3 b0, float u0, float u1, float v0, float v1,
-                                 float r, float g, float b, float alpha) {
-        FxDraw.vertex(consumer, pose, (float) a0.x, (float) a0.y, (float) a0.z, u0, v0, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-        FxDraw.vertex(consumer, pose, (float) a1.x, (float) a1.y, (float) a1.z, u1, v0, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-        FxDraw.vertex(consumer, pose, (float) b1.x, (float) b1.y, (float) b1.z, u1, v1, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-        FxDraw.vertex(consumer, pose, (float) b0.x, (float) b0.y, (float) b0.z, u0, v1, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-    }
-
-    private static void annulus(VertexConsumer consumer, PoseStack.Pose pose, float inner, float outer, int segments, float uRepeat,
-                                float r, float g, float b, float innerAlpha, float outerAlpha) {
-        for (int i = 0; i < segments; i++) {
-            float a0 = Mth.TWO_PI * i / segments;
-            float a1 = Mth.TWO_PI * (i + 1) / segments;
-            float c0 = Mth.cos(a0);
-            float s0 = Mth.sin(a0);
-            float c1 = Mth.cos(a1);
-            float s1 = Mth.sin(a1);
-            float u0 = uRepeat * i / segments;
-            float u1 = uRepeat * (i + 1) / segments;
-            FxDraw.vertex(consumer, pose, c0 * inner, 0.0F, s0 * inner, u0, 0.0F, r, g, b, innerAlpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-            FxDraw.vertex(consumer, pose, c0 * outer, 0.0F, s0 * outer, u0, 1.0F, r, g, b, outerAlpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-            FxDraw.vertex(consumer, pose, c1 * outer, 0.0F, s1 * outer, u1, 1.0F, r, g, b, outerAlpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-            FxDraw.vertex(consumer, pose, c1 * inner, 0.0F, s1 * inner, u1, 0.0F, r, g, b, innerAlpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-        }
-    }
-
-    private static void renderArrow(PoseStack poseStack, MultiBufferSource buffers, ChargeArrow arrow, float partialTick) {
+    private static void renderArrow(PoseStack poseStack, MultiBufferSource buffers, ClientLevel level, ChargeArrow arrow, float partialTick) {
         float age = arrow.age + partialTick;
         float appear = Mth.clamp(age / 5.0F, 0.0F, 1.0F);
         float alpha;
         if (age < arrow.windup) {
-            alpha = 0.35F + 0.45F * (age / arrow.windup);
+            alpha = 0.5F + 0.4F * (age / arrow.windup);
             if (arrow.windup - age < 4.0F) {
-                alpha += 0.2F * Mth.sin(age * 2.2F);
+                alpha += 0.15F * Mth.sin(age * 2.2F);
             }
         } else {
-            alpha = 0.55F;
+            alpha = 0.65F;
         }
         if (arrow.endAge >= 0) {
             alpha *= Mth.clamp(1.0F - (age - arrow.endAge) / ARROW_FADE, 0.0F, 1.0F);
@@ -498,9 +548,10 @@ public final class MinoFxManager {
         if (alpha <= 0.01F) {
             return;
         }
-        float r = SPORE_R;
-        float g = SPORE_G;
-        float b = SPORE_B;
+        float light = lightAt(level, arrow.x, arrow.y, arrow.z);
+        float r = SPORE_R * light;
+        float g = SPORE_G * light;
+        float b = SPORE_B * light;
         if (arrow.red) {
             r = RAGE_R;
             g = RAGE_G;
@@ -514,12 +565,32 @@ public final class MinoFxManager {
         Vec3 end = start.add(dir.scale(reach));
         float tiles = (float) (reach / (half * 2.0D));
         float scroll = age * 0.12F;
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucent(ARROW));
-        flatQuad(consumer, poseStack.last(), start.subtract(side.scale(half)), start.add(side.scale(half)), end.add(side.scale(half)), end.subtract(side.scale(half)),
-            0.0F, 1.0F, -scroll, tiles - scroll, r, g, b, alpha);
-        Vec3 tip = end.add(dir.scale(half * 1.2D));
-        flatQuad(consumer, poseStack.last(), end.subtract(side.scale(half * 1.6D)), end.add(side.scale(half * 1.6D)), tip.add(side.scale(0.05D)), tip.subtract(side.scale(0.05D)),
-            0.06F, 0.94F, 0.0F, 0.25F, r, g, b, Math.min(1.0F, alpha * 1.4F));
+        if (age < arrow.windup) {
+            scroll = age * (0.06F + 0.2F * age / arrow.windup);
+        }
+        Vec3 tip = end.add(dir.scale(half * 1.3D));
+        PoseStack.Pose pose = poseStack.last();
+        VertexConsumer shadow = buffers.getBuffer(FxRenderTypes.soft(FxTextures.SOLID));
+        FxDraw.quad(shadow, pose, start.subtract(side.scale(half)).add(0.0D, -0.005D, 0.0D), end.subtract(side.scale(half)).add(0.0D, -0.005D, 0.0D),
+            end.add(side.scale(half)).add(0.0D, -0.005D, 0.0D), start.add(side.scale(half)).add(0.0D, -0.005D, 0.0D), 0.0F, 0.0F, 1.0F, 1.0F,
+            0.08F, 0.06F, 0.04F, alpha * 0.25F);
+        VertexConsumer consumer = buffers.getBuffer(FxRenderTypes.soft(ARROW));
+        FxDraw.quad(consumer, pose, start.subtract(side.scale(half)), end.subtract(side.scale(half)), end.add(side.scale(half)), start.add(side.scale(half)),
+            0.0F, -scroll, 1.0F, tiles - scroll, r, g, b, alpha);
+        FxDraw.quad(consumer, pose, end.subtract(side.scale(half * 1.6D)), tip.subtract(side.scale(0.05D)), tip.add(side.scale(0.05D)), end.add(side.scale(half * 1.6D)),
+            0.0F, 0.0F, 1.0F, 0.2F, r, g, b, Math.min(1.0F, alpha * 1.3F));
+        if (arrow.red) {
+            VertexConsumer glow = buffers.getBuffer(FxRenderTypes.glow(ARROW));
+            float pulse = 0.6F + 0.4F * Mth.sin(age * 0.8F);
+            FxDraw.quad(glow, pose, start.subtract(side.scale(half)), end.subtract(side.scale(half)), end.add(side.scale(half)), start.add(side.scale(half)),
+                0.0F, -scroll, 1.0F, tiles - scroll, RAGE_R, RAGE_G, RAGE_B, alpha * pulse);
+            VertexConsumer edge = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+            Vec3 lift = new Vec3(0.0D, 0.01D, 0.0D);
+            FxDraw.quad(edge, pose, start.subtract(side.scale(half + 0.15D)).add(lift), end.subtract(side.scale(half + 0.15D)).add(lift),
+                end.subtract(side.scale(half - 0.15D)).add(lift), start.subtract(side.scale(half - 0.15D)).add(lift), 0.0F, 0.0F, 1.0F, 1.0F, RAGE_R, RAGE_G, RAGE_B, alpha * 0.8F);
+            FxDraw.quad(edge, pose, start.add(side.scale(half - 0.15D)).add(lift), end.add(side.scale(half - 0.15D)).add(lift),
+                end.add(side.scale(half + 0.15D)).add(lift), start.add(side.scale(half + 0.15D)).add(lift), 0.0F, 0.0F, 1.0F, 1.0F, RAGE_R, RAGE_G, RAGE_B, alpha * 0.8F);
+        }
     }
 
     private static void renderWave(PoseStack poseStack, MultiBufferSource buffers, ClientLevel level, WaveFx wave, float partialTick, boolean decorative) {
@@ -531,13 +602,26 @@ public final class MinoFxManager {
         if (wave.doneAge > 0) {
             sink = Mth.clamp(1.0F - (wave.doneAge + partialTick) / WAVE_FADE, 0.0F, 1.0F);
         }
+        float light = wave.light;
+        PoseStack.Pose pose = poseStack.last();
+        int segments = Mth.clamp((int) (radius * 6.0F), 16, 64);
         if (decorative) {
-            poseStack.pushPose();
-            poseStack.translate(wave.x, wave.y + 0.03D, wave.z);
-            VertexConsumer ring = buffers.getBuffer(RenderType.entityTranslucent(FAIRY_RING));
-            float inner = Math.max(0.0F, radius - 1.1F);
-            annulus(ring, poseStack.last(), inner, radius, Math.max(16, (int) (radius * 6.0F)), Math.max(2.0F, radius * 1.5F), 1.0F, 1.0F, 1.0F, 0.0F, 0.85F * sink);
-            poseStack.popPose();
+            VertexConsumer crater = buffers.getBuffer(FxRenderTypes.soft(CRATER));
+            FxDraw.flat(crater, pose, wave.x, wave.y + 0.02D, wave.z, 2.6F, wave.seed * 0.1F, light, light, light, 0.9F * sink);
+            if (radius > 1.2F) {
+                float outer = radius - 0.25F;
+                float inner = Math.max(0.3F, radius - 1.2F);
+                float circumference = Mth.TWO_PI * (inner + outer) * 0.5F;
+                VertexConsumer fairy = buffers.getBuffer(FxRenderTypes.soft(FAIRY_RING));
+                FxDraw.ring(fairy, pose, wave.x, wave.y + 0.025D, wave.z, inner, outer, segments, wave.seed * 0.37F, Math.max(2.0F, Math.round(circumference / 1.6F)),
+                    light, light, light, 0.95F * sink, 0.95F * sink);
+            }
+            VertexConsumer dust = buffers.getBuffer(FxRenderTypes.soft(DUST_WALL));
+            float wallRepeat = Math.max(2.0F, Math.round(Mth.TWO_PI * radius / 2.5F));
+            FxDraw.wall(dust, pose, wave.x, wave.y - 0.05D, wave.z, radius - 0.35F, 1.5F * sink, segments, wallRepeat, 0.0F,
+                BROWN_R * light * 1.4F, BROWN_G * light * 1.4F, BROWN_B * light * 1.4F, 0.55F * sink, 0.0F);
+            FxDraw.wallArc(dust, pose, wave.x, wave.y - 0.05D, wave.z, radius + 0.1F, radius + 0.45F, 0.9F * sink, 0.0F, Mth.TWO_PI, segments, wallRepeat * 1.3F, 0.0F,
+                BROWN_R * light * 1.6F, BROWN_G * light * 1.6F, BROWN_B * light * 1.6F, 0.7F * sink, 0.0F);
         }
         TextureAtlasSprite sprite = wave.sprite;
         float su0 = sprite.getU0();
@@ -545,23 +629,24 @@ public final class MinoFxManager {
         float su1 = sprite.getU0() + (sprite.getU1() - sprite.getU0()) * 0.5F;
         float sv1 = sprite.getV0() + (sprite.getV1() - sprite.getV0()) * 0.4F;
         VertexConsumer slabs = buffers.getBuffer(RenderType.entityTranslucentCull(InventoryMenu.BLOCK_ATLAS));
-        int segments = Mth.clamp((int) (radius * 5.0F), 10, 48);
-        float tangent = Mth.TWO_PI * radius / segments * 0.48F;
-        for (int i = 0; i < segments; i++) {
-            float angle = Mth.TWO_PI * (i + 0.5F) / segments;
+        int slabCount = Mth.clamp((int) (radius * 5.0F), 10, 48);
+        float tangent = Mth.TWO_PI * radius / slabCount * 0.5F;
+        for (int i = 0; i < slabCount; i++) {
+            float angle = Mth.TWO_PI * (i + 0.5F) / slabCount;
             double px = wave.x + Mth.cos(angle) * radius;
             double pz = wave.z + Mth.sin(angle) * radius;
             int hash = (i * 73 + wave.seed) & 7;
-            float height = (0.32F + hash * 0.03F) * sink;
+            float roll = Mth.sin(wave.age * 0.9F + i * 1.7F) * 0.06F;
+            float height = (0.34F + hash * 0.03F + roll) * sink;
             if (height <= 0.01F) {
                 continue;
             }
-            int light = LevelRenderer.getLightColor(level, BlockPos.containing(px, wave.y + 0.5D, pz));
+            int lightColor = LevelRenderer.getLightColor(level, BlockPos.containing(px, wave.y + 0.5D, pz));
             poseStack.pushPose();
             poseStack.translate(px, wave.y - 0.05D, pz);
             poseStack.mulPose(Axis.YP.rotation(-angle));
             poseStack.mulPose(Axis.ZP.rotationDegrees(-28.0F - hash * 3.0F));
-            FxDraw.box(slabs, poseStack.last(), -0.07F, 0.0F, -tangent, 0.07F, height, tangent, su0, sv0, su1, sv1, 1.0F, 1.0F, 1.0F, 1.0F, light);
+            FxDraw.box(slabs, poseStack.last(), -0.08F, 0.0F, -tangent, 0.08F, height, tangent, su0, sv0, su1, sv1, 1.0F, 1.0F, 1.0F, 1.0F, lightColor);
             poseStack.popPose();
         }
     }
@@ -569,22 +654,26 @@ public final class MinoFxManager {
     private static void renderPillarWarn(PoseStack poseStack, MultiBufferSource buffers, PillarWarn warn, float partialTick) {
         float age = warn.age + partialTick;
         float t = Mth.clamp(age / warn.duration, 0.0F, 1.0F);
-        float alpha = 0.4F + 0.6F * t;
+        float alpha = 0.55F + 0.45F * t;
         if (age > warn.duration) {
             alpha *= Mth.clamp(1.0F - (age - warn.duration) / 2.0F, 0.0F, 1.0F);
         }
-        int stage = Math.min(3, (int) (t * 4.0F));
-        float local = t * 4.0F - stage;
-        float pop = 1.0F + 0.12F * Math.max(0.0F, 1.0F - local * 5.0F);
-        float size = (0.55F + 0.55F * (stage + 1) / 4.0F) * pop;
+        float grow = 1.0F - (1.0F - t) * (1.0F - t);
+        float size = 0.5F + 0.9F * grow;
         float shake = 0.02F + 0.06F * t;
         float jx = shake * Mth.sin(age * 7.3F + warn.spin * 11.0F);
         float jz = shake * Mth.cos(age * 8.9F + warn.spin * 5.0F);
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucent(CRACK));
-        FxDraw.flatSquare(consumer, poseStack.last(), (float) warn.x + jx * 0.3F, (float) warn.y + 0.03F, (float) warn.z + jz * 0.3F, size, warn.spin,
-            1.0F, 1.0F, 1.0F, alpha, FxDraw.FULL_BRIGHT);
-        FxDraw.flatSquare(consumer, poseStack.last(), (float) warn.x + jx, (float) warn.y + 0.035F, (float) warn.z + jz, size * 0.45F, warn.spin + Mth.HALF_PI * 0.5F,
-            RAGE_R, 0.55F, 0.35F, alpha * 0.6F, FxDraw.FULL_BRIGHT);
+        PoseStack.Pose pose = poseStack.last();
+        float light = warn.light;
+        VertexConsumer ring = buffers.getBuffer(FxRenderTypes.soft(SPORE_RING));
+        FxDraw.flat(ring, pose, warn.x, warn.y + 0.025D, warn.z, 1.0F, age * 0.02F + warn.spin, MYC_R * light * 1.5F, MYC_G * light * 1.5F, MYC_B * light * 1.5F,
+            alpha * 0.6F);
+        VertexConsumer crack = buffers.getBuffer(FxRenderTypes.soft(CRACK));
+        FxDraw.flat(crack, pose, warn.x + jx * 0.3F, warn.y + 0.03D, warn.z + jz * 0.3F, size, warn.spin, light + 0.2F, light + 0.2F, light + 0.2F, alpha);
+        FxDraw.flat(crack, pose, warn.x + jx, warn.y + 0.035D, warn.z + jz, size * 0.55F, warn.spin + 1.3F, light + 0.2F, light + 0.2F, light + 0.2F, alpha * 0.8F);
+        VertexConsumer glow = buffers.getBuffer(FxRenderTypes.glow(FxTextures.GLOW));
+        float pulse = 0.5F + 0.5F * Mth.sin(age * (0.4F + t * 0.8F));
+        FxDraw.flat(glow, pose, warn.x, warn.y + 0.04D, warn.z, 0.35F + 0.35F * t, 0.0F, RAGE_R, 0.35F, 0.2F, (0.3F + 0.5F * t) * pulse * alpha);
     }
 
     private static void renderStun(PoseStack poseStack, MultiBufferSource buffers, ClientLevel level, Stun stun, float partialTick) {
@@ -618,60 +707,47 @@ public final class MinoFxManager {
         }
     }
 
-    private static void renderRing(PoseStack poseStack, MultiBufferSource buffers, Ring ring, float partialTick) {
+    private static void renderRing(PoseStack poseStack, MultiBufferSource buffers, ClientLevel level, Ring ring, float partialTick) {
         float age = ring.age + partialTick;
         float t = Mth.clamp(age / ring.life(), 0.0F, 1.0F);
         float grow = 1.0F - (1.0F - t) * (1.0F - t) * (1.0F - t);
         float alpha = 1.0F - t;
-        float r = SPORE_R;
-        float g = SPORE_G;
-        float b = SPORE_B;
+        float light = ring.light;
+        float r = SPORE_R * light;
+        float g = SPORE_G * light;
+        float b = SPORE_B * light;
         if (ring.kind == 1) {
-            r = 0.49F;
-            g = 0.43F;
-            b = 0.53F;
+            r = MYC_R * light * 1.5F;
+            g = MYC_G * light * 1.5F;
+            b = MYC_B * light * 1.5F;
         } else if (ring.kind == 3) {
-            r = RAGE_R;
-            g = 0.55F;
-            b = 0.35F;
+            r = 0.95F * light;
+            g = 0.5F * light;
+            b = 0.35F * light;
+        } else if (ring.kind == 4) {
+            r = BROWN_R * light * 1.4F;
+            g = BROWN_G * light * 1.4F;
+            b = BROWN_B * light * 1.4F;
         }
-        poseStack.pushPose();
-        poseStack.translate(ring.x, ring.y, ring.z);
-        poseStack.mulPose(Axis.YP.rotation(age * 0.04F));
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucent(SPORE_RING));
         float radius = ring.radius * grow;
         if (ring.kind == 0) {
             radius = ring.radius;
-            alpha = Mth.clamp(1.0F - Math.abs(t - 0.3F) / 0.7F, 0.0F, 1.0F);
+            alpha = Mth.clamp(1.0F - Math.abs(t - 0.25F) / 0.75F, 0.0F, 1.0F);
         }
-        FxDraw.flatSquare(consumer, poseStack.last(), 0.0F, 0.0F, 0.0F, radius, 0.0F, r, g, b, alpha * 0.9F, FxDraw.FULL_BRIGHT);
-        poseStack.popPose();
-    }
-
-    private static void renderCloud(PoseStack poseStack, MultiBufferSource buffers, Cloud cloud, Quaternionf cameraRotation, float partialTick) {
-        float age = cloud.age + partialTick;
-        int life = SMALL_CLOUD_LIFE;
-        if (cloud.big) {
-            life = CLOUD_LIFE;
-        }
-        float grow = Mth.clamp(age / CLOUD_GROW, 0.0F, 1.0F);
-        grow = 1.0F - (1.0F - grow) * (1.0F - grow);
-        float alpha = Mth.clamp((life - age) / (life * 0.5F), 0.0F, 1.0F) * 0.85F;
-        if (alpha <= 0.01F) {
-            return;
-        }
-        float size = cloud.size * (0.3F + 0.7F * grow) * (1.0F + age * 0.006F);
-        poseStack.pushPose();
-        poseStack.translate(cloud.x, cloud.y + 0.01D * partialTick, cloud.z);
-        poseStack.mulPose(cameraRotation);
-        poseStack.mulPose(Axis.ZP.rotationDegrees(cloud.rot + age * 0.8F));
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucent(SPORE_CLOUD));
         PoseStack.Pose pose = poseStack.last();
-        FxDraw.vertex(consumer, pose, -size, -size, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        FxDraw.vertex(consumer, pose, size, -size, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        FxDraw.vertex(consumer, pose, size, size, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 1.0F, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        FxDraw.vertex(consumer, pose, -size, size, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        poseStack.popPose();
+        if (ring.kind >= 2) {
+            VertexConsumer shock = buffers.getBuffer(FxRenderTypes.soft(FxTextures.SHOCK));
+            FxDraw.flat(shock, pose, ring.x, ring.y - 0.01D, ring.z, radius * 1.1F, 0.0F, r, g, b, alpha * 0.75F);
+            if (ring.kind == 4) {
+                return;
+            }
+        }
+        VertexConsumer consumer = buffers.getBuffer(FxRenderTypes.soft(SPORE_RING));
+        FxDraw.flat(consumer, pose, ring.x, ring.y, ring.z, radius, age * 0.04F, r, g, b, alpha * 0.9F);
+        if (ring.kind == 3) {
+            VertexConsumer glow = buffers.getBuffer(FxRenderTypes.glow(SPORE_RING));
+            FxDraw.flat(glow, pose, ring.x, ring.y + 0.01D, ring.z, radius, age * 0.04F, RAGE_R, RAGE_G, RAGE_B, alpha * 0.8F);
+        }
     }
 
     private static void renderChunks(PoseStack poseStack, MultiBufferSource buffers, ClientLevel level, float partialTick) {
@@ -689,7 +765,7 @@ public final class MinoFxManager {
                     continue;
                 }
                 float age = chunk.age + partialTick;
-                float size = chunk.size * Mth.clamp(1.0F - (age - chunk.life * 0.6F) / (chunk.life * 0.4F), 0.0F, 1.0F);
+                float size = chunk.size * Mth.clamp(1.0F - (age - chunk.life * 0.7F) / (chunk.life * 0.3F), 0.0F, 1.0F);
                 if (size <= 0.0F) {
                     continue;
                 }
@@ -771,9 +847,9 @@ public final class MinoFxManager {
             this.px = x;
             this.py = y;
             this.pz = z;
-            this.size = 0.05F + random.nextFloat() * 0.06F;
+            this.size = 0.05F + random.nextFloat() * random.nextFloat() * 0.11F;
             this.spin = (random.nextFloat() - 0.5F) * 40.0F;
-            this.life = 16 + random.nextInt(10);
+            this.life = 18 + random.nextInt(12);
             float du = (regionU1 - regionU0) * 0.25F;
             float dv = (regionV1 - regionV0) * 0.25F;
             this.u0 = regionU0 + du * random.nextInt(3);
@@ -803,10 +879,11 @@ public final class MinoFxManager {
         final int delay;
         final TextureAtlasSprite sprite;
         final int seed;
+        final float light;
         int age;
         int doneAge;
 
-        WaveFx(double x, double y, double z, float maxRadius, float speed, int delay, TextureAtlasSprite sprite) {
+        WaveFx(double x, double y, double z, float maxRadius, float speed, int delay, TextureAtlasSprite sprite, float light) {
             this.x = x;
             this.y = y;
             this.z = z;
@@ -815,6 +892,7 @@ public final class MinoFxManager {
             this.delay = delay;
             this.sprite = sprite;
             this.seed = (int) (x * 31.0D + z * 17.0D);
+            this.light = light;
         }
 
         float radius(float partialTick) {
@@ -828,33 +906,16 @@ public final class MinoFxManager {
         final double z;
         final int duration;
         final float spin;
+        final float light;
         int age;
 
-        PillarWarn(double x, double y, double z, int duration) {
+        PillarWarn(double x, double y, double z, int duration, float light) {
             this.x = x;
             this.y = y;
             this.z = z;
             this.duration = duration;
             this.spin = (float) ((x * 7.0D + z * 13.0D) % Mth.TWO_PI);
-        }
-    }
-
-    private static final class Cloud {
-        final double x;
-        double y;
-        final double z;
-        final float size;
-        final boolean big;
-        final float rot;
-        int age;
-
-        Cloud(double x, double y, double z, float size, boolean big, float rot) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-            this.size = size;
-            this.big = big;
-            this.rot = rot;
+            this.light = light;
         }
     }
 
@@ -865,6 +926,7 @@ public final class MinoFxManager {
         final float radius;
         final int kind;
         final boolean functional;
+        float light = 1.0F;
         int age;
 
         Ring(double x, double y, double z, float radius, int kind, boolean functional) {
@@ -874,6 +936,10 @@ public final class MinoFxManager {
             this.radius = radius;
             this.kind = kind;
             this.functional = functional;
+            ClientLevel level = Minecraft.getInstance().level;
+            if (level != null) {
+                this.light = lightAt(level, x, y, z);
+            }
         }
 
         int life() {

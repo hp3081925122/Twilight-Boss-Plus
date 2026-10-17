@@ -3,12 +3,13 @@ package com.twilightbossplus.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.twilightbossplus.client.fx.FxDraw;
+import com.twilightbossplus.client.fx.FxRenderTypes;
+import com.twilightbossplus.client.fx.FxTextures;
 import com.twilightbossplus.client.fx.UrGhastFxManager;
 import com.twilightbossplus.config.ClientConfig;
 import com.twilightbossplus.config.UrGhastConfig;
 import com.twilightbossplus.entity.PrimalTear;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -50,14 +51,17 @@ public class PrimalTearRenderer extends EntityRenderer<PrimalTear> {
         float radius = UrGhastConfig.TEAR_RADIUS.get().floatValue();
         float size = radius * (1.5F - 0.5F * progress);
         float pulse = 0.55F + 0.3F * Mth.sin(age * (0.25F + 0.5F * progress));
-        VertexConsumer marker = buffers.getBuffer(RenderType.entityTranslucent(UrGhastFxManager.MARKER));
-        FxDraw.flatSquare(marker, poseStack.last(), (float) ox, (float) oy + 0.06F, (float) oz, size, age * 0.02F,
-            UrGhastFxManager.CRIMSON_R, UrGhastFxManager.CRIMSON_G, UrGhastFxManager.CRIMSON_B, pulse, FxDraw.FULL_BRIGHT);
+        VertexConsumer marker = buffers.getBuffer(FxRenderTypes.glow(UrGhastFxManager.MARKER));
+        FxDraw.flat(marker, poseStack.last(), ox, oy + 0.06D, oz, size, age * 0.02F,
+            UrGhastFxManager.CRIMSON_R, UrGhastFxManager.CRIMSON_G, UrGhastFxManager.CRIMSON_B, pulse);
+        VertexConsumer rim = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+        FxDraw.ring(rim, poseStack.last(), ox, oy + 0.05D, oz, radius - 0.2F, radius + 0.2F, 40, 0.0F, 1.0F,
+            UrGhastFxManager.CRIMSON_R, UrGhastFxManager.CRIMSON_G, UrGhastFxManager.CRIMSON_B, 0.4F + 0.3F * progress, 0.4F + 0.3F * progress);
 
         if (!ClientConfig.VFX_ENABLED.get()) {
             return;
         }
-        VertexConsumer trail = buffers.getBuffer(RenderType.entityTranslucent(UrGhastFxManager.TEAR));
+        VertexConsumer trail = buffers.getBuffer(FxRenderTypes.glow(UrGhastFxManager.TEAR));
         for (int i = 1; i <= 5; i++) {
             float back = progress - i * 0.03F;
             if (back <= 0.0F) {
@@ -65,8 +69,8 @@ public class PrimalTearRenderer extends EntityRenderer<PrimalTear> {
             }
             Vec3 trailPos = entity.positionAt(back);
             float fade = 1.0F - i / 6.0F;
-            UrGhastFxManager.billboardRect(poseStack, trail, cameraRotation, trailPos.x - baseX, trailPos.y - baseY + 0.8D,
-                trailPos.z - baseZ, 0.3F * fade, 0.45F * fade,
+            UrGhastFxManager.billboard(poseStack, trail, cameraRotation, trailPos.x - baseX, trailPos.y - baseY + 0.8D,
+                trailPos.z - baseZ, 0.4F * fade, 0.4F * fade, 0.0F,
                 UrGhastFxManager.BLUE_R, UrGhastFxManager.BLUE_G, UrGhastFxManager.BLUE_B, 0.6F * fade);
         }
     }

@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -39,16 +40,16 @@ import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.joml.Quaternionf;
 import twilightforest.entity.boss.AlphaYeti;
 import twilightforest.entity.projectile.FallingIce;
 
 @Mod.EventBusSubscriber(modid = TwilightBossPlus.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class YetiFxManager {
     public static final ResourceLocation SNOW = tex("snow");
-    private static final ResourceLocation PUFF = tex("puff");
+    public static final ResourceLocation MIST = tex("mist");
     private static final ResourceLocation RIME = tex("rime");
     private static final ResourceLocation CRACK = tex("crack");
+    private static final ResourceLocation CRACK_THIN = tex("crack_thin");
     private static final ResourceLocation PLUME = tex("plume");
     private static final ResourceLocation SHADOW = tex("shadow");
     private static final ResourceLocation ICICLE = tex("icicle");
@@ -86,7 +87,6 @@ public final class YetiFxManager {
     private static final int ROAR_LIFE = 20;
     private static final double ROAR_RADIUS = 18.0D;
     private static final int MAX_PUFFS = 400;
-    private static final int MAX_FLECKS = 300;
 
     private static final Map<Integer, BossTrack> TRACKS = new HashMap<>();
     private static final Set<Integer> FALLING_ICE = new HashSet<>();
@@ -100,13 +100,12 @@ public final class YetiFxManager {
     private static final List<WaveFx> WAVES = new ArrayList<>();
     private static final List<RingFx> RINGS = new ArrayList<>();
     private static final List<Puff> PUFFS = new ArrayList<>();
-    private static final List<Fleck> FLECKS = new ArrayList<>();
 
     private YetiFxManager() {
     }
 
     private static ResourceLocation tex(String name) {
-        return new ResourceLocation(TwilightBossPlus.MOD_ID, "textures/fx/yeti/" + name + ".png");
+        return new ResourceLocation(TwilightBossPlus.MOD_ID, "textures/fx/yeti/px/" + name + ".png");
     }
 
     private static BossTrack track(int id) {
@@ -131,6 +130,7 @@ public final class YetiFxManager {
             if (track.pose == AlphaYetiBossController.POSE_ROAR && entity != null) {
                 RINGS.add(new RingFx(entity.getX(), entity.getY() + 2.5D, entity.getZ(), 0));
                 RINGS.add(new RingFx(entity.getX(), entity.getY() + 2.5D, entity.getZ(), -8));
+                FxShake.at(entity.getX(), entity.getY(), entity.getZ(), 0.7F, 22.0F, 14);
             }
         } else if (type == YetiFxPacket.BREATH && data.length >= 7) {
             BREATHS.add(new BreathFx(entityId, data[0], data[1], data[2], data[3], (int) data[4], (int) data[5], data[6]));
@@ -144,20 +144,22 @@ public final class YetiFxManager {
             SLUSHES.add(new DecalFx(data[0], data[1], data[2], data[3], Math.max(1, (int) data[4])));
         } else if (type == YetiFxPacket.WAVE && data.length >= 5) {
             WAVES.add(new WaveFx(data[0], data[1], data[2], data[3], data[4]));
+            FxShake.at(data[0], data[1], data[2], 0.5F, 16.0F, 10);
         } else if (type == YetiFxPacket.BOULDER_BREAK && data.length >= 4) {
             BURSTS.add(new BurstFx(data[0], data[1], data[2], data[3] * 1.4F));
             spawnFlecks(level.getRandom(), data[0], data[1] + data[3] * 0.5D, data[2], 30, 0.35D);
+            FxShake.at(data[0], data[1], data[2], 0.6F, 14.0F, 10);
         }
     }
 
     private static void spawnFlecks(RandomSource random, double x, double y, double z, int count, double speed) {
-        if (!ClientConfig.VFX_ENABLED.get()) {
-            return;
-        }
-        for (int i = 0; i < count && FLECKS.size() < MAX_FLECKS; i++) {
+        for (int i = 0; i < count; i++) {
             double angle = random.nextDouble() * Math.PI * 2.0D;
             double s = speed * (0.4D + random.nextDouble() * 0.6D);
-            FLECKS.add(new Fleck(new Vec3(x, y, z), new Vec3(Math.cos(angle) * s, 0.15D + random.nextDouble() * 0.3D, Math.sin(angle) * s)));
+            FxParticles.soft(FLECK, x, y, z, Math.cos(angle) * s, 0.15D + random.nextDouble() * 0.3D, Math.sin(angle) * s, 20 + random.nextInt(8),
+                    0.2F + random.nextFloat() * 0.2F)
+                .color(SNOW_R, SNOW_G, SNOW_B).fadeTo(MIST_R, MIST_G, MIST_B).gravity(0.05D).drag(0.92D)
+                .spin(random.nextFloat() * 6.0F, (random.nextFloat() - 0.5F) * 0.6F).fade(0.0F, 4.0F);
         }
     }
 
@@ -276,7 +278,6 @@ public final class YetiFxManager {
         WAVES.clear();
         RINGS.clear();
         PUFFS.clear();
-        FLECKS.clear();
     }
 
     private static Vec3 forward(float yaw) {
@@ -311,10 +312,27 @@ public final class YetiFxManager {
             if (yeti.isRampaging() || yeti.isTired()) {
                 track.pose = AlphaYetiBossController.POSE_NONE;
             }
-            if (decorative && yeti.isTired() && track.age % 8 == 0 && PUFFS.size() < MAX_PUFFS) {
+            if (decorative && yeti.isTired() && track.age % 8 == 0) {
                 Vec3 look = forward(yeti.yBodyRot);
-                Vec3 start = yeti.position().add(look.x * 1.2D, 3.4D, look.z * 1.2D);
-                PUFFS.add(new Puff(start, new Vec3(look.x * 0.03D, 0.05D, look.z * 0.03D), 24, 0.4F, 1.3F, 0.55F));
+                FxParticles.soft(MIST, yeti.getX() + look.x * 1.2D, yeti.getY() + 3.4D, yeti.getZ() + look.z * 1.2D, look.x * 0.03D, 0.05D, look.z * 0.03D, 24, 0.5F)
+                    .color(SNOW_R, SNOW_G, SNOW_B).fadeTo(MIST_R, MIST_G, MIST_B).alpha(0.6F).grow(1.5F).drag(0.95D).spin(random.nextFloat() * 6.0F, 0.04F);
+            }
+            if (decorative && track.pose == AlphaYetiBossController.POSE_BOULDER && track.age % 2 == 0) {
+                Vec3 look = forward(yeti.yBodyRot);
+                double angle = random.nextDouble() * Math.PI * 2.0D;
+                double dist = 2.0D + random.nextDouble() * 2.5D;
+                double tx = yeti.getX() + look.x * 2.0D;
+                double tz = yeti.getZ() + look.z * 2.0D;
+                double sx = tx + Math.cos(angle) * dist;
+                double sz = tz + Math.sin(angle) * dist;
+                FxParticles.soft(FLECK, sx, yeti.getY() + 0.2D, sz, (tx - sx) * 0.08D, 0.2D, (tz - sz) * 0.08D, 12, 0.3F)
+                    .color(SNOW_R, SNOW_G, SNOW_B).gravity(0.015D).drag(0.95D).spin(random.nextFloat() * 6.0F, 0.3F);
+            }
+            if (decorative && yeti.isRampaging() && track.age % 2 == 0) {
+                double angle = random.nextDouble() * Math.PI * 2.0D;
+                FxParticles.soft(FLECK, yeti.getX() + Math.cos(angle) * 3.4D, yeti.getY() + random.nextDouble() * 5.0D, yeti.getZ() + Math.sin(angle) * 3.4D,
+                        -Math.sin(angle) * 0.3D, 0.02D, Math.cos(angle) * 0.3D, 14, 0.25F)
+                    .color(SNOW_R, SNOW_G, SNOW_B).drag(0.9D).spin(random.nextFloat() * 6.0F, 0.4F);
             }
         }
         Iterator<BreathFx> breaths = BREATHS.iterator();
@@ -340,7 +358,7 @@ public final class YetiFxManager {
                 double pitch = -0.45D + random.nextDouble() * 0.35D;
                 double speed = breath.range / 16.0D;
                 Vec3 vel = new Vec3(dir.x * speed, pitch * speed, dir.z * speed);
-                PUFFS.add(new Puff(mouth, vel, 16 + random.nextInt(4), 0.5F, 2.2F, 0.8F));
+                PUFFS.add(new Puff(mouth, vel, 16 + random.nextInt(4), 0.6F, 2.6F, 0.85F));
             }
         }
         Iterator<RiftFx> rifts = RIFTS.iterator();
@@ -348,6 +366,9 @@ public final class YetiFxManager {
             RiftFx rift = rifts.next();
             rift.age++;
             int step = rift.age - rift.windup;
+            if (step == 1) {
+                FxShake.at(rift.x, rift.y, rift.z, 0.55F, 18.0F, 10);
+            }
             if (step >= 1 && step <= rift.spread) {
                 double reach = rift.length * step / rift.spread;
                 for (float yaw : rift.yaws) {
@@ -373,11 +394,23 @@ public final class YetiFxManager {
                 icicles.remove();
                 BURSTS.add(new BurstFx(icicle.x, icicle.y, icicle.z, icicle.radius * 1.6F));
                 spawnFlecks(random, icicle.x, icicle.y + 0.2D, icicle.z, 14, 0.25D);
+                FxShake.at(icicle.x, icicle.y, icicle.z, 0.35F, 8.0F, 6);
             }
         }
         BURSTS.removeIf(burst -> ++burst.age > BURST_LIFE);
         SLUSHES.removeIf(slush -> ++slush.age >= slush.ticks);
         WAVES.removeIf(wave -> ++wave.age * wave.speed > wave.max);
+        if (decorative) {
+            for (WaveFx wave : WAVES) {
+                float radius = wave.age * wave.speed;
+                for (int k = 0; k < 6; k++) {
+                    double angle = random.nextDouble() * Math.PI * 2.0D;
+                    FxParticles.soft(FLECK, wave.x + Math.cos(angle) * radius, wave.y + 1.1D, wave.z + Math.sin(angle) * radius,
+                            Math.cos(angle) * wave.speed * 0.6D, 0.15D + random.nextDouble() * 0.12D, Math.sin(angle) * wave.speed * 0.6D, 14, 0.28F)
+                        .color(SNOW_R, SNOW_G, SNOW_B).gravity(0.04D).drag(0.92D).spin(random.nextFloat() * 6.0F, 0.3F);
+                }
+            }
+        }
         RINGS.removeIf(ring -> ++ring.age > ROAR_LIFE);
         Iterator<Puff> puffs = PUFFS.iterator();
         while (puffs.hasNext()) {
@@ -387,16 +420,6 @@ public final class YetiFxManager {
             puff.vel = puff.vel.scale(0.94D);
             if (++puff.age > puff.life) {
                 puffs.remove();
-            }
-        }
-        Iterator<Fleck> flecks = FLECKS.iterator();
-        while (flecks.hasNext()) {
-            Fleck fleck = flecks.next();
-            fleck.prev = fleck.pos;
-            fleck.pos = fleck.pos.add(fleck.vel);
-            fleck.vel = new Vec3(fleck.vel.x * 0.92D, fleck.vel.y - 0.05D, fleck.vel.z * 0.92D);
-            if (++fleck.age > 22) {
-                flecks.remove();
             }
         }
         Iterator<Integer> ice = FALLING_ICE.iterator();
@@ -416,7 +439,7 @@ public final class YetiFxManager {
 
     private static boolean hasWork() {
         return !TRACKS.isEmpty() || !BREATHS.isEmpty() || !RIFTS.isEmpty() || !PLUMES.isEmpty() || !ICICLES.isEmpty() || !BURSTS.isEmpty()
-            || !SLUSHES.isEmpty() || !WAVES.isEmpty() || !RINGS.isEmpty() || !PUFFS.isEmpty() || !FLECKS.isEmpty();
+            || !SLUSHES.isEmpty() || !WAVES.isEmpty() || !RINGS.isEmpty() || !PUFFS.isEmpty();
     }
 
     @SubscribeEvent
@@ -431,61 +454,89 @@ public final class YetiFxManager {
         }
         boolean decorative = ClientConfig.VFX_ENABLED.get();
         float partialTick = event.getPartialTick();
-        Vec3 camera = event.getCamera().getPosition();
-        Quaternionf cameraRotation = event.getCamera().rotation();
+        Camera camera = event.getCamera();
+        FxDraw.camera(camera);
+        Vec3 cameraPos = camera.getPosition();
         PoseStack poseStack = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
         poseStack.pushPose();
-        poseStack.translate(-camera.x, -camera.y, -camera.z);
+        poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+        PoseStack.Pose pose = poseStack.last();
 
         for (BreathFx breath : BREATHS) {
-            renderRime(poseStack, buffers, breath, partialTick);
+            renderRime(pose, buffers, level, breath, partialTick);
         }
         for (RiftFx rift : RIFTS) {
-            renderRift(poseStack, buffers, rift, partialTick);
+            renderRift(pose, buffers, rift, partialTick);
         }
         if (!PLUMES.isEmpty()) {
-            VertexConsumer plumes = buffers.getBuffer(RenderType.entityTranslucent(PLUME));
+            VertexConsumer base = buffers.getBuffer(FxRenderTypes.glow(FxTextures.GLOW));
             for (PlumeFx plume : PLUMES) {
                 float t = Mth.clamp((plume.age + partialTick) / PLUME_LIFE, 0.0F, 1.0F);
-                float height = 3.2F * Math.min(1.0F, t * 3.0F);
-                float width = 0.6F + 0.6F * t;
-                float alpha = 0.9F * (1.0F - t);
-                crossQuad(poseStack, plumes, plume.x, plume.y, plume.z, width, height, SNOW_R, SNOW_G, SNOW_B, alpha);
+                FxDraw.flat(base, pose, plume.x, plume.y + 0.08D, plume.z, 1.4F, 0.0F, RIFT_R, RIFT_G, RIFT_B, 0.6F * (1.0F - t));
+            }
+            VertexConsumer plumes = buffers.getBuffer(FxRenderTypes.soft(PLUME));
+            for (PlumeFx plume : PLUMES) {
+                float t = Mth.clamp((plume.age + partialTick) / PLUME_LIFE, 0.0F, 1.0F);
+                float height = 3.4F * Math.min(1.0F, t * 3.0F);
+                float width = 0.7F + 0.6F * t;
+                crossQuad(pose, plumes, plume.x, plume.y, plume.z, width, height, SNOW_R, SNOW_G, SNOW_B, 0.95F * (1.0F - t * t));
             }
         }
         for (IcicleFx icicle : ICICLES) {
-            renderIcicle(poseStack, buffers, icicle, partialTick, level);
+            renderIcicle(poseStack, pose, buffers, icicle, partialTick, level);
         }
         if (!BURSTS.isEmpty()) {
-            VertexConsumer bursts = buffers.getBuffer(RenderType.entityTranslucent(SHADOW));
+            VertexConsumer bursts = buffers.getBuffer(FxRenderTypes.glow(FxTextures.SHOCK));
             for (BurstFx burst : BURSTS) {
                 float t = Mth.clamp((burst.age + partialTick) / BURST_LIFE, 0.0F, 1.0F);
-                FxDraw.flatSquare(bursts, poseStack.last(), burst.x, burst.y + 0.07F, burst.z, burst.radius * (float) Math.sqrt(t), 0.0F, SNOW_R, SNOW_G, SNOW_B, 0.8F * (1.0F - t), FxDraw.FULL_BRIGHT);
+                FxDraw.flat(bursts, pose, burst.x, burst.y + 0.07D, burst.z, burst.radius * (float) Math.sqrt(t), 0.0F, FROST_R, FROST_G, FROST_B, 0.7F * (1.0F - t));
             }
         }
         if (!SLUSHES.isEmpty()) {
-            VertexConsumer slush = buffers.getBuffer(RenderType.entityTranslucent(SLUSH));
+            VertexConsumer slush = buffers.getBuffer(FxRenderTypes.soft(SLUSH));
             for (DecalFx decal : SLUSHES) {
                 float age = decal.age + partialTick;
                 float grow = Mth.clamp(age / 5.0F, 0.0F, 1.0F);
                 float fade = Mth.clamp((decal.ticks - age) / 25.0F, 0.0F, 1.0F);
-                FxDraw.flatSquare(slush, poseStack.last(), decal.x, decal.y + 0.05F, decal.z, decal.radius * grow, decal.x * 0.37F, MIST_R, MIST_G, MIST_B, 0.85F * fade, FxDraw.FULL_BRIGHT);
+                FxDraw.flat(slush, pose, decal.x, decal.y + 0.05D, decal.z, decal.radius * grow, decal.x * 0.37F, 1.0F, 1.0F, 1.0F, 0.9F * fade);
             }
         }
-        for (WaveFx wave : WAVES) {
-            float radius = (wave.age + partialTick) * wave.speed;
-            float fade = Mth.clamp((wave.max - radius) / 2.0F, 0.0F, 1.0F);
-            ring(poseStack, buffers, WAVE, wave.x, wave.y, wave.y + 0.9F, wave.z, radius, 0.0F, SNOW_R, SNOW_G, SNOW_B, 0.9F * fade);
-        }
-        for (RingFx ring : RINGS) {
-            if (ring.age < 0) {
-                continue;
+        if (!WAVES.isEmpty()) {
+            VertexConsumer waves = buffers.getBuffer(FxRenderTypes.soft(WAVE));
+            for (WaveFx wave : WAVES) {
+                float radius = (wave.age + partialTick) * wave.speed;
+                float fade = Mth.clamp((wave.max - radius) / 2.0F, 0.0F, 1.0F);
+                ring(waves, pose, wave.x, wave.y, wave.y + 1.3F, wave.z, radius, 2.0F, 0.0F, SNOW_R, SNOW_G, SNOW_B, 0.95F * fade);
             }
-            float t = Mth.clamp((ring.age + partialTick) / ROAR_LIFE, 0.0F, 1.0F);
-            float radius = (float) (ROAR_RADIUS * (1.0F - (1.0F - t) * (1.0F - t)));
-            float half = 1.5F * (1.0F - t * 0.5F);
-            ring(poseStack, buffers, ROAR, ring.x, ring.y - half, ring.y + half, ring.z, radius, t * 2.0F, SNOW_R, SNOW_G, SNOW_B, 0.6F * (1.0F - t));
+            VertexConsumer front = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+            for (WaveFx wave : WAVES) {
+                float radius = (wave.age + partialTick) * wave.speed;
+                float fade = Mth.clamp((wave.max - radius) / 2.0F, 0.0F, 1.0F);
+                FxDraw.ring(front, pose, wave.x, wave.y + 0.06D, wave.z, Math.max(0.0F, radius - 0.5F), radius + 0.3F, 48, 0.0F, 1.0F,
+                    FROST_R, FROST_G, FROST_B, 0.6F * fade, 0.6F * fade);
+            }
+        }
+        if (!RINGS.isEmpty()) {
+            VertexConsumer roar = buffers.getBuffer(FxRenderTypes.glow(ROAR));
+            for (RingFx ring : RINGS) {
+                if (ring.age < 0) {
+                    continue;
+                }
+                float t = Mth.clamp((ring.age + partialTick) / ROAR_LIFE, 0.0F, 1.0F);
+                float radius = (float) (ROAR_RADIUS * (1.0F - (1.0F - t) * (1.0F - t)));
+                float half = 1.5F * (1.0F - t * 0.5F);
+                ring(roar, pose, ring.x, ring.y - half, ring.y + half, ring.z, radius, 2.0F, t * 2.0F, SNOW_R, SNOW_G, SNOW_B, 0.75F * (1.0F - t));
+            }
+            VertexConsumer shock = buffers.getBuffer(FxRenderTypes.glow(FxTextures.SHOCK));
+            for (RingFx ring : RINGS) {
+                if (ring.age < 0) {
+                    continue;
+                }
+                float t = Mth.clamp((ring.age + partialTick) / ROAR_LIFE, 0.0F, 1.0F);
+                float radius = (float) (ROAR_RADIUS * (1.0F - (1.0F - t) * (1.0F - t)));
+                FxDraw.flat(shock, pose, ring.x, ring.y - 2.45D, ring.z, radius, 0.0F, MIST_R, MIST_G, MIST_B, 0.5F * (1.0F - t));
+            }
         }
         for (Map.Entry<Integer, BossTrack> entry : TRACKS.entrySet()) {
             if (!(level.getEntity(entry.getKey()) instanceof AlphaYeti yeti) || !yeti.isAlive()) {
@@ -498,12 +549,13 @@ public final class YetiFxManager {
             if (decorative && yeti.isRampaging()) {
                 Vec3 pos = yeti.getPosition(partialTick);
                 float time = track.age + partialTick;
-                ring(poseStack, buffers, VEIL, (float) pos.x, (float) pos.y, (float) pos.y + 5.5F, (float) pos.z, 3.2F, time * 0.05F, SNOW_R, SNOW_G, SNOW_B, 0.4F);
-                ring(poseStack, buffers, VEIL, (float) pos.x, (float) pos.y + 0.5F, (float) pos.y + 6.0F, (float) pos.z, 3.7F, -time * 0.035F, MIST_R, MIST_G, MIST_B, 0.3F);
+                VertexConsumer veil = buffers.getBuffer(FxRenderTypes.soft(VEIL));
+                ring(veil, pose, (float) pos.x, (float) pos.y, (float) pos.y + 5.5F, (float) pos.z, 3.2F, 3.0F, time * 0.05F, SNOW_R, SNOW_G, SNOW_B, 0.7F);
+                ring(veil, pose, (float) pos.x, (float) pos.y + 0.5F, (float) pos.y + 6.0F, (float) pos.z, 3.7F, 3.0F, -time * 0.035F, MIST_R, MIST_G, MIST_B, 0.5F);
             }
         }
         if (!FALLING_ICE.isEmpty() && !TRACKS.isEmpty()) {
-            VertexConsumer shadows = buffers.getBuffer(RenderType.entityTranslucent(SHADOW));
+            VertexConsumer shadows = buffers.getBuffer(FxRenderTypes.soft(SHADOW));
             for (int id : FALLING_ICE) {
                 Entity entity = level.getEntity(id);
                 Double ground = ICE_GROUND.get(id);
@@ -511,28 +563,19 @@ public final class YetiFxManager {
                     continue;
                 }
                 Vec3 pos = entity.getPosition(partialTick);
-                float pulse = 0.5F + 0.2F * Mth.sin((entity.tickCount + partialTick) * 0.4F);
-                FxDraw.flatSquare(shadows, poseStack.last(), (float) pos.x, ground.floatValue() + 0.06F, (float) pos.z, 1.3F, 0.0F, DEEP_R, DEEP_G, DEEP_B, pulse, FxDraw.FULL_BRIGHT);
+                float pulse = 0.55F + 0.2F * Mth.sin((entity.tickCount + partialTick) * 0.4F);
+                FxDraw.flat(shadows, pose, pos.x, ground + 0.06D, pos.z, 1.3F, 0.0F, DEEP_R, DEEP_G, DEEP_B, pulse);
             }
         }
         if (!PUFFS.isEmpty()) {
-            VertexConsumer puffs = buffers.getBuffer(RenderType.entityTranslucent(PUFF));
+            VertexConsumer puffs = buffers.getBuffer(FxRenderTypes.soft(MIST));
             for (Puff puff : PUFFS) {
                 float t = Mth.clamp((puff.age + partialTick) / puff.life, 0.0F, 1.0F);
                 Vec3 pos = puff.prev.lerp(puff.pos, partialTick);
                 float size = Mth.lerp(t, puff.startSize, puff.endSize);
-                billboard(poseStack, puffs, cameraRotation, pos.x, pos.y, pos.z, size, (puff.age + partialTick) * 2.0F + puff.spin, FROST_R, FROST_G, FROST_B, puff.alpha * (1.0F - t * t));
-            }
-        }
-        if (decorative && !FLECKS.isEmpty()) {
-            VertexConsumer flecks = buffers.getBuffer(RenderType.entityTranslucent(FLECK));
-            for (Fleck fleck : FLECKS) {
-                float life = 1.0F - (fleck.age + partialTick) / 22.0F;
-                if (life <= 0.0F) {
-                    continue;
-                }
-                Vec3 pos = fleck.prev.lerp(fleck.pos, partialTick);
-                billboard(poseStack, flecks, cameraRotation, pos.x, pos.y, pos.z, 0.14F, fleck.age * 12.0F, SNOW_R, SNOW_G, SNOW_B, Math.min(1.0F, life * 2.0F));
+                float roll = ((puff.age + partialTick) * 2.0F + puff.spin) * Mth.DEG_TO_RAD;
+                FxDraw.sprite(puffs, pose, pos.x, pos.y, pos.z, size, roll, Mth.lerp(t, SNOW_R, FROST_R), Mth.lerp(t, SNOW_G, FROST_G), Mth.lerp(t, SNOW_B, FROST_B),
+                    puff.alpha * (1.0F - t * t));
             }
         }
 
@@ -540,50 +583,50 @@ public final class YetiFxManager {
         buffers.endBatch();
     }
 
-    private static void renderRime(PoseStack poseStack, MultiBufferSource buffers, BreathFx breath, float partialTick) {
+    private static void renderRime(PoseStack.Pose pose, MultiBufferSource buffers, ClientLevel level, BreathFx breath, float partialTick) {
         float age = breath.age + partialTick;
         float radius = breath.range;
-        float alpha = 0.6F;
+        float alpha = 0.75F;
         if (age < breath.inhale) {
             radius = breath.range * Mth.clamp(age / breath.inhale, 0.05F, 1.0F);
-            alpha = 0.45F;
+            alpha = 0.55F;
         } else if (age > breath.inhale + breath.blow) {
-            alpha = 0.6F * Mth.clamp(1.0F - (age - breath.inhale - breath.blow) / BREATH_FADE, 0.0F, 1.0F);
+            alpha = 0.75F * Mth.clamp(1.0F - (age - breath.inhale - breath.blow) / BREATH_FADE, 0.0F, 1.0F);
         }
         if (alpha <= 0.01F) {
             return;
         }
         float yaw = breath.yawAt(age);
-        Vec3 origin = new Vec3(breath.originX, breath.groundY + 0.04D, breath.originZ);
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level != null && minecraft.level.getEntity(breath.bossId) instanceof AlphaYeti yeti) {
+        if (level.getEntity(breath.bossId) instanceof AlphaYeti yeti) {
             breath.originX = yeti.getX();
             breath.originZ = yeti.getZ();
-            origin = new Vec3(breath.originX, breath.groundY + 0.04D, breath.originZ);
         }
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucent(RIME));
-        PoseStack.Pose pose = poseStack.last();
+        double cx = breath.originX;
+        double cz = breath.originZ;
+        double y = breath.groundY + 0.04D;
+        VertexConsumer frost = buffers.getBuffer(FxRenderTypes.soft(RIME));
         int segments = 14;
-        float y = (float) origin.y;
         for (int s = 0; s < segments; s++) {
-            float a0 = yaw - breath.half + 2.0F * breath.half * s / segments;
-            float a1 = yaw - breath.half + 2.0F * breath.half * (s + 1) / segments;
-            Vec3 d0 = forward(a0);
-            Vec3 d1 = forward(a1);
-            float x0 = (float) (origin.x + d0.x * radius);
-            float z0 = (float) (origin.z + d0.z * radius);
-            float x1 = (float) (origin.x + d1.x * radius);
-            float z1 = (float) (origin.z + d1.z * radius);
-            float cx = (float) origin.x;
-            float cz = (float) origin.z;
-            FxDraw.vertex(consumer, pose, cx, y, cz, cx / 4.0F, cz / 4.0F, FROST_R, FROST_G, FROST_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-            FxDraw.vertex(consumer, pose, x0, y, z0, x0 / 4.0F, z0 / 4.0F, FROST_R, FROST_G, FROST_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-            FxDraw.vertex(consumer, pose, x1, y, z1, x1 / 4.0F, z1 / 4.0F, FROST_R, FROST_G, FROST_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-            FxDraw.vertex(consumer, pose, cx, y, cz, cx / 4.0F, cz / 4.0F, FROST_R, FROST_G, FROST_B, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
+            Vec3 d0 = forward(yaw - breath.half + 2.0F * breath.half * s / segments);
+            Vec3 d1 = forward(yaw - breath.half + 2.0F * breath.half * (s + 1) / segments);
+            double x0 = cx + d0.x * radius;
+            double z0 = cz + d0.z * radius;
+            double x1 = cx + d1.x * radius;
+            double z1 = cz + d1.z * radius;
+            FxDraw.glowVertex(frost, pose, cx, y, cz, (float) cx / 3.0F, (float) cz / 3.0F, FROST_R, FROST_G, FROST_B, alpha);
+            FxDraw.glowVertex(frost, pose, x0, y, z0, (float) x0 / 3.0F, (float) z0 / 3.0F, SNOW_R, SNOW_G, SNOW_B, alpha);
+            FxDraw.glowVertex(frost, pose, x1, y, z1, (float) x1 / 3.0F, (float) z1 / 3.0F, SNOW_R, SNOW_G, SNOW_B, alpha);
+            FxDraw.glowVertex(frost, pose, cx, y, cz, (float) cx / 3.0F, (float) cz / 3.0F, FROST_R, FROST_G, FROST_B, alpha);
         }
+        VertexConsumer edge = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+        float start = (yaw - breath.half) * Mth.DEG_TO_RAD + Mth.HALF_PI;
+        float end = (yaw + breath.half) * Mth.DEG_TO_RAD + Mth.HALF_PI;
+        FxDraw.arc(edge, pose, cx, y + 0.01D, cz, radius - 0.25F, radius + 0.25F, start, end, 20, 1.0F, FROST_R, FROST_G, FROST_B, alpha, alpha);
+        groundStrip(edge, pose, (float) cx, (float) cz, forward(yaw - breath.half), 0.5F, radius, (float) y + 0.01F, 0.4F, 1.0F, FROST_R, FROST_G, FROST_B, alpha * 0.8F);
+        groundStrip(edge, pose, (float) cx, (float) cz, forward(yaw + breath.half), 0.5F, radius, (float) y + 0.01F, 0.4F, 1.0F, FROST_R, FROST_G, FROST_B, alpha * 0.8F);
     }
 
-    private static void renderRift(PoseStack poseStack, MultiBufferSource buffers, RiftFx rift, float partialTick) {
+    private static void renderRift(PoseStack.Pose pose, MultiBufferSource buffers, RiftFx rift, float partialTick) {
         float age = rift.age + partialTick;
         float reach = 0.0F;
         if (age > rift.windup) {
@@ -594,46 +637,57 @@ public final class YetiFxManager {
         if (age > end) {
             fade = Mth.clamp(1.0F - (age - end) / RIFT_FADE, 0.0F, 1.0F);
         }
-        float preview = 0.25F + 0.35F * Mth.clamp(age / rift.windup, 0.0F, 1.0F);
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucent(CRACK));
+        float preview = 0.35F + 0.5F * Mth.clamp(age / rift.windup, 0.0F, 1.0F);
         float y = rift.y + 0.05F;
-        for (float yaw : rift.yaws) {
-            Vec3 dir = forward(yaw);
-            if (reach < rift.length) {
-                groundStrip(poseStack, consumer, rift.x, rift.z, dir, reach, rift.length, y, 0.35F, MIST_R, MIST_G, MIST_B, preview * fade);
+        if (reach < rift.length) {
+            VertexConsumer thin = buffers.getBuffer(FxRenderTypes.soft(CRACK_THIN));
+            for (float yaw : rift.yaws) {
+                groundStrip(thin, pose, rift.x, rift.z, forward(yaw), reach, rift.length, y, 0.6F, 1.0F / 1.2F, SNOW_R, SNOW_G, SNOW_B, preview * fade);
             }
-            if (reach > 0.0F) {
-                groundStrip(poseStack, consumer, rift.x, rift.z, dir, 0.6F, reach, y + 0.01F, 1.2F, RIFT_R, RIFT_G, RIFT_B, 0.95F * fade);
+        }
+        if (reach > 0.0F) {
+            float glowPulse = 0.45F + 0.15F * Mth.sin(age * 0.5F);
+            VertexConsumer under = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+            for (float yaw : rift.yaws) {
+                groundStrip(under, pose, rift.x, rift.z, forward(yaw), 0.6F, reach, y + 0.005F, 2.6F, 1.0F, RIFT_R, RIFT_G, RIFT_B, glowPulse * fade);
+            }
+            VertexConsumer crack = buffers.getBuffer(FxRenderTypes.soft(CRACK));
+            for (float yaw : rift.yaws) {
+                groundStrip(crack, pose, rift.x, rift.z, forward(yaw), 0.6F, reach, y + 0.01F, 1.3F, 1.0F / 2.6F, 1.0F, 1.0F, 1.0F, fade);
             }
         }
     }
 
-    private static void groundStrip(PoseStack poseStack, VertexConsumer consumer, float cx, float cz, Vec3 dir, float from, float to, float y, float width,
+    private static void groundStrip(VertexConsumer consumer, PoseStack.Pose pose, float cx, float cz, Vec3 dir, float from, float to, float y, float width, float uScale,
                                     float r, float g, float b, float alpha) {
         if (to - from < 0.05F || alpha <= 0.01F) {
             return;
         }
-        float sx = (float) (-dir.z * width * 0.5D);
-        float sz = (float) (dir.x * width * 0.5D);
-        float x0 = (float) (cx + dir.x * from);
-        float z0 = (float) (cz + dir.z * from);
-        float x1 = (float) (cx + dir.x * to);
-        float z1 = (float) (cz + dir.z * to);
-        float u0 = from / 4.0F;
-        float u1 = to / 4.0F;
-        PoseStack.Pose pose = poseStack.last();
-        FxDraw.vertex(consumer, pose, x0 + sx, y, z0 + sz, u0, 0.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-        FxDraw.vertex(consumer, pose, x0 - sx, y, z0 - sz, u0, 1.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-        FxDraw.vertex(consumer, pose, x1 - sx, y, z1 - sz, u1, 1.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-        FxDraw.vertex(consumer, pose, x1 + sx, y, z1 + sz, u1, 0.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
+        double sx = -dir.z * width * 0.5D;
+        double sz = dir.x * width * 0.5D;
+        double x0 = cx + dir.x * from;
+        double z0 = cz + dir.z * from;
+        double x1 = cx + dir.x * to;
+        double z1 = cz + dir.z * to;
+        float u0 = from * uScale;
+        float u1 = to * uScale;
+        FxDraw.glowVertex(consumer, pose, x0 + sx, y, z0 + sz, u0, 0.0F, r, g, b, alpha);
+        FxDraw.glowVertex(consumer, pose, x0 - sx, y, z0 - sz, u0, 1.0F, r, g, b, alpha);
+        FxDraw.glowVertex(consumer, pose, x1 - sx, y, z1 - sz, u1, 1.0F, r, g, b, alpha);
+        FxDraw.glowVertex(consumer, pose, x1 + sx, y, z1 + sz, u1, 0.0F, r, g, b, alpha);
     }
 
-    private static void renderIcicle(PoseStack poseStack, MultiBufferSource buffers, IcicleFx icicle, float partialTick, ClientLevel level) {
+    private static void renderIcicle(PoseStack poseStack, PoseStack.Pose world, MultiBufferSource buffers, IcicleFx icicle, float partialTick, ClientLevel level) {
         float age = icicle.age + partialTick;
         float warn = Mth.clamp(age / icicle.warning, 0.0F, 1.0F);
-        VertexConsumer shadow = buffers.getBuffer(RenderType.entityTranslucent(SHADOW));
-        FxDraw.flatSquare(shadow, poseStack.last(), icicle.x, icicle.y + 0.06F, icicle.z, icicle.radius * (1.8F - 0.8F * warn), age * 0.03F,
-            DEEP_R, DEEP_G, DEEP_B, 0.4F + 0.45F * warn, FxDraw.FULL_BRIGHT);
+        VertexConsumer shadow = buffers.getBuffer(FxRenderTypes.soft(SHADOW));
+        FxDraw.flat(shadow, world, icicle.x, icicle.y + 0.06D, icicle.z, icicle.radius * (1.8F - 0.8F * warn), 0.0F, DEEP_R, DEEP_G, DEEP_B, 0.5F + 0.45F * warn);
+        if (age > icicle.warning - 10) {
+            float cue = Mth.clamp((age - icicle.warning + 10) / 10.0F, 0.0F, 1.0F);
+            VertexConsumer line = buffers.getBuffer(FxRenderTypes.glow(FxTextures.BEAM));
+            FxDraw.beam(line, world, new Vec3(icicle.x, icicle.top - ICICLE_LENGTH, icicle.z), new Vec3(icicle.x, icicle.y, icicle.z), 0.05F, 0.12F, 0.0F, 1.0F,
+                FROST_R, FROST_G, FROST_B, 0.0F, 0.5F * cue);
+        }
         float tip = icicle.top - (float) ICICLE_LENGTH;
         float wobble = 0.0F;
         if (age > icicle.warning - 10) {
@@ -683,36 +737,31 @@ public final class YetiFxManager {
         poseStack.popPose();
     }
 
-    private static void ring(PoseStack poseStack, MultiBufferSource buffers, ResourceLocation texture, float cx, float y0, float y1, float cz, float radius, float scroll,
+    private static void ring(VertexConsumer consumer, PoseStack.Pose pose, float cx, float y0, float y1, float cz, float radius, float tile, float scroll,
                              float r, float g, float b, float alpha) {
         if (radius < 0.05F || alpha <= 0.01F) {
             return;
         }
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucent(texture));
-        PoseStack.Pose pose = poseStack.last();
         int segments = Mth.clamp((int) (radius * 6.0F), 12, 64);
-        float circumference = (float) (Math.PI * 2.0D * radius);
+        float repeat = Math.max(1, Math.round((float) (Math.PI * 2.0D * radius) / tile));
         for (int s = 0; s < segments; s++) {
             double a0 = Math.PI * 2.0D * s / segments;
             double a1 = Math.PI * 2.0D * (s + 1) / segments;
-            float x0 = (float) (cx + Math.cos(a0) * radius);
-            float z0 = (float) (cz + Math.sin(a0) * radius);
-            float x1 = (float) (cx + Math.cos(a1) * radius);
-            float z1 = (float) (cz + Math.sin(a1) * radius);
-            float u0 = circumference * s / segments / 4.0F + scroll;
-            float u1 = circumference * (s + 1) / segments / 4.0F + scroll;
-            float nx = (float) Math.cos((a0 + a1) * 0.5D);
-            float nz = (float) Math.sin((a0 + a1) * 0.5D);
-            FxDraw.vertex(consumer, pose, x0, y1, z0, u0, 0.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, nx, 0.0F, nz);
-            FxDraw.vertex(consumer, pose, x0, y0, z0, u0, 1.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, nx, 0.0F, nz);
-            FxDraw.vertex(consumer, pose, x1, y0, z1, u1, 1.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, nx, 0.0F, nz);
-            FxDraw.vertex(consumer, pose, x1, y1, z1, u1, 0.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, nx, 0.0F, nz);
+            double x0 = cx + Math.cos(a0) * radius;
+            double z0 = cz + Math.sin(a0) * radius;
+            double x1 = cx + Math.cos(a1) * radius;
+            double z1 = cz + Math.sin(a1) * radius;
+            float u0 = repeat * s / segments + scroll;
+            float u1 = repeat * (s + 1) / segments + scroll;
+            FxDraw.glowVertex(consumer, pose, x0, y1, z0, u0, 0.0F, r, g, b, alpha);
+            FxDraw.glowVertex(consumer, pose, x0, y0, z0, u0, 1.0F, r, g, b, alpha);
+            FxDraw.glowVertex(consumer, pose, x1, y0, z1, u1, 1.0F, r, g, b, alpha);
+            FxDraw.glowVertex(consumer, pose, x1, y1, z1, u1, 0.0F, r, g, b, alpha);
         }
     }
 
-    private static void crossQuad(PoseStack poseStack, VertexConsumer consumer, float x, float y, float z, float halfWidth, float height,
+    private static void crossQuad(PoseStack.Pose pose, VertexConsumer consumer, float x, float y, float z, float halfWidth, float height,
                                   float r, float g, float b, float alpha) {
-        PoseStack.Pose pose = poseStack.last();
         for (int i = 0; i < 2; i++) {
             float dx = halfWidth;
             float dz = 0.0F;
@@ -720,26 +769,11 @@ public final class YetiFxManager {
                 dx = 0.0F;
                 dz = halfWidth;
             }
-            FxDraw.vertex(consumer, pose, x - dx, y + height, z - dz, 0.0F, 0.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-            FxDraw.vertex(consumer, pose, x - dx, y, z - dz, 0.0F, 1.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-            FxDraw.vertex(consumer, pose, x + dx, y, z + dz, 1.0F, 1.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
-            FxDraw.vertex(consumer, pose, x + dx, y + height, z + dz, 1.0F, 0.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
+            FxDraw.glowVertex(consumer, pose, x - dx, y + height, z - dz, 0.0F, 0.0F, r, g, b, alpha);
+            FxDraw.glowVertex(consumer, pose, x - dx, y, z - dz, 0.0F, 1.0F, r, g, b, alpha);
+            FxDraw.glowVertex(consumer, pose, x + dx, y, z + dz, 1.0F, 1.0F, r, g, b, alpha);
+            FxDraw.glowVertex(consumer, pose, x + dx, y + height, z + dz, 1.0F, 0.0F, r, g, b, alpha);
         }
-    }
-
-    private static void billboard(PoseStack poseStack, VertexConsumer consumer, Quaternionf cameraRotation, double x, double y, double z, float size, float spin,
-                                  float r, float g, float b, float alpha) {
-        poseStack.pushPose();
-        poseStack.translate(x, y, z);
-        poseStack.mulPose(cameraRotation);
-        poseStack.mulPose(Axis.ZP.rotationDegrees(spin));
-        PoseStack.Pose pose = poseStack.last();
-        float half = size * 0.5F;
-        FxDraw.vertex(consumer, pose, -half, -half, 0.0F, 0.0F, 1.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        FxDraw.vertex(consumer, pose, half, -half, 0.0F, 1.0F, 1.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        FxDraw.vertex(consumer, pose, half, half, 0.0F, 1.0F, 0.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        FxDraw.vertex(consumer, pose, -half, half, 0.0F, 0.0F, 0.0F, r, g, b, alpha, FxDraw.FULL_BRIGHT, 0.0F, 0.0F, 1.0F);
-        poseStack.popPose();
     }
 
     private static final class BossTrack {
@@ -915,19 +949,6 @@ public final class YetiFxManager {
             this.endSize = endSize;
             this.alpha = alpha;
             this.spin = (float) (pos.x * 37.0D % 360.0D);
-        }
-    }
-
-    private static final class Fleck {
-        private Vec3 pos;
-        private Vec3 prev;
-        private Vec3 vel;
-        private int age;
-
-        private Fleck(Vec3 pos, Vec3 vel) {
-            this.pos = pos;
-            this.prev = pos;
-            this.vel = vel;
         }
     }
 }
