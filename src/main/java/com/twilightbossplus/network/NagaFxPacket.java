@@ -8,14 +8,23 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
 public final class NagaFxPacket {
-    public static final int RING = 0;
-    public static final int SWEEP = 1;
-    public static final int SHED = 2;
-    public static final int REND_POINT = 3;
-    public static final int BITE = 4;
-    public static final int CONSTRICT_START = 5;
-    public static final int CONSTRICT_END = 6;
-    public static final int WEAK_HIT = 7;
+    public static final int DECAL = 0;
+    public static final int FANG_WINDUP = 1;
+    public static final int FANG_BITE = 2;
+    public static final int IMPACT = 3;
+    public static final int BARRAGE_WINDUP = 4;
+    public static final int SWEEP = 5;
+    public static final int SHED = 6;
+    public static final int MOLT_BURST = 7;
+    public static final int SLAM = 8;
+    public static final int REND_POINT = 9;
+    public static final int SPIKE = 10;
+    public static final int BITE = 11;
+    public static final int TEMPEST_WINDUP = 12;
+    public static final int TEMPEST_WAVE = 13;
+    public static final int CONSTRICT_START = 14;
+    public static final int CONSTRICT_END = 15;
+    public static final int WEAK_HIT = 16;
 
     private final int type;
     private final int entityId;

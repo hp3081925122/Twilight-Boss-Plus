@@ -8,6 +8,24 @@ public final class ClientConfig {
     public static final ForgeConfigSpec.BooleanValue SCREEN_SHAKE;
     public static final ForgeConfigSpec.DoubleValue SHAKE_STRENGTH;
     public static final ForgeConfigSpec.IntValue PARTICLE_LIMIT;
+    public static final ForgeConfigSpec.EnumValue<Quality> QUALITY;
+    public static final ForgeConfigSpec.BooleanValue SCREEN_PULSE;
+
+    public enum Quality {
+        LOW(0.35F),
+        MEDIUM(0.65F),
+        HIGH(1.0F);
+
+        private final float factor;
+
+        Quality(float factor) {
+            this.factor = factor;
+        }
+
+        public float factor() {
+            return this.factor;
+        }
+    }
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
@@ -24,6 +42,12 @@ public final class ClientConfig {
         PARTICLE_LIMIT = builder
             .comment("本模组自绘特效粒子的同时存在上限", "Maximum number of custom effect particles alive at once")
             .defineInRange("particle_limit", 2000, 100, 8000);
+        QUALITY = builder
+            .comment("特效画质：LOW 粒子约 35%，MEDIUM 约 65%，HIGH 全量", "Effect quality: LOW ~35% particles, MEDIUM ~65%, HIGH full")
+            .defineEnum("quality", Quality.HIGH);
+        SCREEN_PULSE = builder
+            .comment("近距离重击时的屏幕边缘泛光", "Screen edge glow pulse on nearby heavy impacts")
+            .define("screen_pulse", true);
         builder.pop();
         SPEC = builder.build();
     }

@@ -1,5 +1,8 @@
 package com.twilightbossplus.entity;
 
+import com.twilightbossplus.client.fx.NagaFxManager;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -27,6 +30,9 @@ public class VenomPool extends Entity {
     public void tick() {
         super.tick();
         if (this.level().isClientSide()) {
+            if (this.tickCount == 1) {
+                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> NagaFxManager.poolSplash(this.getX(), this.getY(), this.getZ()));
+            }
             return;
         }
         if (this.tickCount >= LIFETIME) {

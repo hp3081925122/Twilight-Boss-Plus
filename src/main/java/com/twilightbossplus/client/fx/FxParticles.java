@@ -8,13 +8,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -27,7 +25,6 @@ public final class FxParticles {
     public static final int FLAT = 2;
 
     private static final List<Particle> PARTICLES = new ArrayList<>();
-    private static final List<RenderType> TYPES = new ArrayList<>();
     private static final Particle DISCARDED = new Particle();
 
     private FxParticles() {
@@ -39,6 +36,14 @@ public final class FxParticles {
 
     public static Particle soft(ResourceLocation texture, double x, double y, double z, double vx, double vy, double vz, int life, float size) {
         return spawn(FxRenderTypes.soft(texture), x, y, z, vx, vy, vz, life, size);
+    }
+
+    public static Particle add(ResourceLocation texture, double x, double y, double z, double vx, double vy, double vz, int life, float size) {
+        return spawn(FxRenderTypes.add(texture), x, y, z, vx, vy, vz, life, size);
+    }
+
+    public static Particle alpha(ResourceLocation texture, double x, double y, double z, double vx, double vy, double vz, int life, float size) {
+        return spawn(FxRenderTypes.alpha(texture), x, y, z, vx, vy, vz, life, size);
     }
 
     private static Particle spawn(RenderType type, double x, double y, double z, double vx, double vy, double vz, int life, float size) {
@@ -113,36 +118,24 @@ public final class FxParticles {
         }
     }
 
-    @SubscribeEvent
-    public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS || PARTICLES.isEmpty()) {
+    static void renderAll(PoseStack.Pose pose, float partialTick) {
+        if (PARTICLES.isEmpty()) {
             return;
         }
-        Minecraft minecraft = Minecraft.getInstance();
-        FxDraw.camera(event.getCamera());
-        float partialTick = event.getPartialTick();
-        Vec3 camera = event.getCamera().getPosition();
-        PoseStack poseStack = event.getPoseStack();
-        MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
-        poseStack.pushPose();
-        poseStack.translate(-camera.x, -camera.y, -camera.z);
-        PoseStack.Pose pose = poseStack.last();
-        TYPES.clear();
-        for (Particle particle : PARTICLES) {
-            if (!TYPES.contains(particle.type)) {
-                TYPES.add(particle.type);
-            }
-        }
-        for (RenderType type : TYPES) {
-            VertexConsumer consumer = buffers.getBuffer(type);
-            for (Particle p : PARTICLES) {
-                if (p.type == type) {
-                    renderParticle(consumer, pose, p, partialTick);
+        for (Particle p : PARTICLES) {
+            if (p.flowing) {
+                float t = Mth.clamp((p.age + partialTick) / p.life, 0.0F, 1.0F);
+                float dissolve = 0.0F;
+                if (p.dissolveFrom < 1.0F && t > p.dissolveFrom) {
+                    dissolve = (t - p.dissolveFrom) / (1.0F - p.dissolveFrom) * 0.9F;
                 }
+                FxDraw.params(dissolve, 0.12F, p.scrollU, p.scrollV, p.hot, p.noise, p.flow);
+            } else {
+                FxDraw.resetParams();
             }
+            renderParticle(FxBuffers.get(p.type), pose, p, partialTick);
         }
-        poseStack.popPose();
-        buffers.endBatch();
+        FxDraw.resetParams();
     }
 
     private static void renderParticle(VertexConsumer consumer, PoseStack.Pose pose, Particle p, float partialTick) {
@@ -219,8 +212,36 @@ public final class FxParticles {
         private float streak = 2.0F;
         private float flicker;
         private float seed;
+        private boolean flowing;
+        private float hot;
+        private float flow;
+        private float noise = 1.0F;
+        private float scrollU;
+        private float scrollV;
+        private float dissolveFrom = 1.0F;
 
         private Particle() {
+        }
+
+        public Particle shade(float hot, float flow, float noise) {
+            this.flowing = true;
+            this.hot = hot;
+            this.flow = flow;
+            this.noise = noise;
+            return this;
+        }
+
+        public Particle scroll(float u, float v) {
+            this.flowing = true;
+            this.scrollU = u;
+            this.scrollV = v;
+            return this;
+        }
+
+        public Particle dissolve(float from) {
+            this.flowing = true;
+            this.dissolveFrom = Mth.clamp(from, 0.0F, 0.99F);
+            return this;
         }
 
         public Particle color(float r, float g, float b) {

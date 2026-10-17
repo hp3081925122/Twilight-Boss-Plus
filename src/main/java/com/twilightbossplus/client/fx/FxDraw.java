@@ -23,8 +23,42 @@ public final class FxDraw {
     private static float upX;
     private static float upY = 1.0F;
     private static float upZ;
+    private static boolean flowMode;
+    private static int dissolveParam;
+    private static int edgeParam = 80;
+    private static int scrollUParam = 16000;
+    private static int scrollVParam = 16000;
+    private static float hotParam;
+    private static float scaleParam = 0.125F;
+    private static float flowParam;
 
     private FxDraw() {
+    }
+
+    public static void params(float dissolve, float edge, float scrollU, float scrollV, float hot, float noiseScale, float flow) {
+        flowMode = true;
+        dissolveParam = Mth.clamp((int) (dissolve * 1000.0F), 0, 1000);
+        edgeParam = Mth.clamp((int) (edge * 1000.0F), 1, 1000);
+        scrollUParam = 16000 + Mth.clamp((int) (scrollU * 1000.0F), -15000, 15000);
+        scrollVParam = 16000 + Mth.clamp((int) (scrollV * 1000.0F), -15000, 15000);
+        hotParam = Mth.clamp(hot, 0.0F, 1.0F);
+        scaleParam = Mth.clamp(noiseScale / 8.0F, 0.0F, 1.0F);
+        flowParam = Mth.clamp(flow, 0.0F, 1.0F);
+    }
+
+    public static void flow(float scrollU, float scrollV, float hot, float noiseScale, float flow) {
+        params(0.0F, 0.08F, scrollU, scrollV, hot, noiseScale, flow);
+    }
+
+    public static void resetParams() {
+        flowMode = false;
+        dissolveParam = 0;
+        edgeParam = 80;
+        scrollUParam = 16000;
+        scrollVParam = 16000;
+        hotParam = 0.0F;
+        scaleParam = 0.125F;
+        flowParam = 0.0F;
     }
 
     public static void camera(Camera camera) {
@@ -68,6 +102,16 @@ public final class FxDraw {
 
     public static void glowVertex(VertexConsumer consumer, PoseStack.Pose pose, double x, double y, double z, float u, float v,
                                   float r, float g, float b, float a) {
+        if (flowMode) {
+            consumer.vertex(pose.pose(), (float) x, (float) y, (float) z)
+                .color(r, g, b, Mth.clamp(a, 0.0F, 1.0F))
+                .uv(u, v)
+                .overlayCoords(dissolveParam, edgeParam)
+                .uv2(scrollUParam, scrollVParam)
+                .normal(hotParam, scaleParam, flowParam)
+                .endVertex();
+            return;
+        }
         vertex(consumer, pose, (float) x, (float) y, (float) z, u, v, r, g, b, Mth.clamp(a, 0.0F, 1.0F), FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
     }
 
@@ -369,5 +413,91 @@ public final class FxDraw {
         vertex(consumer, pose, cx - cos - sin, y, cz - sin + cos, 0.0F, 1.0F, r, g, b, a, light, 0.0F, 1.0F, 0.0F);
         vertex(consumer, pose, cx + cos - sin, y, cz + sin + cos, 1.0F, 1.0F, r, g, b, a, light, 0.0F, 1.0F, 0.0F);
         vertex(consumer, pose, cx + cos + sin, y, cz + sin - cos, 1.0F, 0.0F, r, g, b, a, light, 0.0F, 1.0F, 0.0F);
+    }
+
+    public static void cube(VertexConsumer consumer, PoseStack.Pose pose, double cx, double cy, double cz, float half, float height, float yaw,
+                            float r, float g, float b, float a) {
+        if (a <= 0.003F || half <= 0.0F) {
+            return;
+        }
+        float cos = Mth.cos(yaw);
+        float sin = Mth.sin(yaw);
+        double[] xs = new double[4];
+        double[] zs = new double[4];
+        float[] lx = {-half, half, half, -half};
+        float[] lz = {-half, -half, half, half};
+        for (int i = 0; i < 4; i++) {
+            xs[i] = cx + lx[i] * cos - lz[i] * sin;
+            zs[i] = cz + lx[i] * sin + lz[i] * cos;
+        }
+        double top = cy + height;
+        for (int i = 0; i < 4; i++) {
+            int j = (i + 1) % 4;
+            glowVertex(consumer, pose, xs[i], top, zs[i], 0.0F, 0.0F, r, g, b, a);
+            glowVertex(consumer, pose, xs[i], cy, zs[i], 0.0F, 1.0F, r, g, b, a);
+            glowVertex(consumer, pose, xs[j], cy, zs[j], 1.0F, 1.0F, r, g, b, a);
+            glowVertex(consumer, pose, xs[j], top, zs[j], 1.0F, 0.0F, r, g, b, a);
+        }
+        glowVertex(consumer, pose, xs[0], top, zs[0], 0.0F, 0.0F, r, g, b, a);
+        glowVertex(consumer, pose, xs[3], top, zs[3], 0.0F, 1.0F, r, g, b, a);
+        glowVertex(consumer, pose, xs[2], top, zs[2], 1.0F, 1.0F, r, g, b, a);
+        glowVertex(consumer, pose, xs[1], top, zs[1], 1.0F, 0.0F, r, g, b, a);
+    }
+
+    public static void spike(VertexConsumer consumer, PoseStack.Pose pose, double bx, double by, double bz, double tx, double ty, double tz,
+                             float radius, int sides, float twist, float r, float g, float b, float a) {
+        if (a <= 0.003F || radius <= 0.0F) {
+            return;
+        }
+        Vec3 axis = new Vec3(tx - bx, ty - by, tz - bz);
+        double length = axis.length();
+        if (length < 1.0E-4D) {
+            return;
+        }
+        axis = axis.scale(1.0D / length);
+        Vec3 helper = new Vec3(0.0D, 1.0D, 0.0D);
+        if (Math.abs(axis.y) > 0.9D) {
+            helper = new Vec3(1.0D, 0.0D, 0.0D);
+        }
+        Vec3 e1 = axis.cross(helper).normalize();
+        Vec3 e2 = axis.cross(e1).normalize();
+        for (int i = 0; i < sides; i++) {
+            float a0 = twist + Mth.TWO_PI * i / sides;
+            float a1 = twist + Mth.TWO_PI * (i + 1) / sides;
+            Vec3 p0 = new Vec3(bx, by, bz).add(e1.scale(Mth.cos(a0) * radius)).add(e2.scale(Mth.sin(a0) * radius));
+            Vec3 p1 = new Vec3(bx, by, bz).add(e1.scale(Mth.cos(a1) * radius)).add(e2.scale(Mth.sin(a1) * radius));
+            float u0 = (float) i / sides;
+            float u1 = (float) (i + 1) / sides;
+            float shade = 0.65F + 0.35F * Math.abs(Mth.cos(a0 * 0.5F + 0.4F));
+            glowVertex(consumer, pose, tx, ty, tz, (u0 + u1) * 0.5F, 0.0F, r * shade, g * shade, b * shade, a);
+            glowVertex(consumer, pose, p0.x, p0.y, p0.z, u0, 1.0F, r * shade, g * shade, b * shade, a);
+            glowVertex(consumer, pose, p1.x, p1.y, p1.z, u1, 1.0F, r * shade, g * shade, b * shade, a);
+            glowVertex(consumer, pose, tx, ty, tz, (u0 + u1) * 0.5F, 0.0F, r * shade, g * shade, b * shade, a);
+        }
+    }
+
+    public static void arcRibbon(VertexConsumer consumer, PoseStack.Pose pose, Vec3 center, Vec3 e1, Vec3 e2, float inner, float outer,
+                                 float fromAngle, float toAngle, int segments, float r, float g, float b, float tailAlpha, float headAlpha) {
+        if ((tailAlpha <= 0.003F && headAlpha <= 0.003F) || outer <= inner) {
+            return;
+        }
+        for (int i = 0; i < segments; i++) {
+            float t0 = (float) i / segments;
+            float t1 = (float) (i + 1) / segments;
+            float a0 = fromAngle + (toAngle - fromAngle) * t0;
+            float a1 = fromAngle + (toAngle - fromAngle) * t1;
+            Vec3 d0 = e1.scale(Mth.cos(a0)).add(e2.scale(Mth.sin(a0)));
+            Vec3 d1 = e1.scale(Mth.cos(a1)).add(e2.scale(Mth.sin(a1)));
+            float al0 = Mth.lerp(t0, tailAlpha, headAlpha);
+            float al1 = Mth.lerp(t1, tailAlpha, headAlpha);
+            Vec3 i0 = center.add(d0.scale(inner));
+            Vec3 o0 = center.add(d0.scale(outer));
+            Vec3 o1 = center.add(d1.scale(outer));
+            Vec3 i1 = center.add(d1.scale(inner));
+            glowVertex(consumer, pose, i0.x, i0.y, i0.z, t0, 0.0F, r, g, b, al0);
+            glowVertex(consumer, pose, o0.x, o0.y, o0.z, t0, 1.0F, r, g, b, al0);
+            glowVertex(consumer, pose, o1.x, o1.y, o1.z, t1, 1.0F, r, g, b, al1);
+            glowVertex(consumer, pose, i1.x, i1.y, i1.z, t1, 0.0F, r, g, b, al1);
+        }
     }
 }

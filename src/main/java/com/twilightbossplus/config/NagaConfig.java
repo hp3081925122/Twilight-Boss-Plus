@@ -13,12 +13,18 @@ public final class NagaConfig {
     public static final ForgeConfigSpec.DoubleValue MELEE_KNOCKBACK;
     public static final ForgeConfigSpec.DoubleValue SEGMENT_DAMAGE_MULTIPLIER;
     public static final ForgeConfigSpec.DoubleValue STUNLESS_BLOCK_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue VENOM_SPIT_MULTIPLIER;
-    public static final ForgeConfigSpec.IntValue VENOM_SPIT_COOLDOWN_TICKS;
-    public static final ForgeConfigSpec.DoubleValue TAIL_SWEEP_MULTIPLIER;
-    public static final ForgeConfigSpec.IntValue TAIL_SWEEP_COOLDOWN_TICKS;
-    public static final ForgeConfigSpec.DoubleValue EARTH_REND_MULTIPLIER;
-    public static final ForgeConfigSpec.IntValue EARTH_REND_COOLDOWN_TICKS;
+    public static final ForgeConfigSpec.DoubleValue FANG_RUSH_MULTIPLIER;
+    public static final ForgeConfigSpec.IntValue FANG_RUSH_COOLDOWN_TICKS;
+    public static final ForgeConfigSpec.DoubleValue VENOM_BARRAGE_MULTIPLIER;
+    public static final ForgeConfigSpec.IntValue VENOM_BARRAGE_COOLDOWN_TICKS;
+    public static final ForgeConfigSpec.DoubleValue TAIL_REAVER_MULTIPLIER;
+    public static final ForgeConfigSpec.IntValue TAIL_REAVER_COOLDOWN_TICKS;
+    public static final ForgeConfigSpec.DoubleValue MOLT_BURST_MULTIPLIER;
+    public static final ForgeConfigSpec.DoubleValue EARTH_DEVOURER_SPIKE_MULTIPLIER;
+    public static final ForgeConfigSpec.DoubleValue EARTH_DEVOURER_JAW_MULTIPLIER;
+    public static final ForgeConfigSpec.IntValue EARTH_DEVOURER_COOLDOWN_TICKS;
+    public static final ForgeConfigSpec.DoubleValue SCALE_TEMPEST_MULTIPLIER;
+    public static final ForgeConfigSpec.IntValue SCALE_TEMPEST_COOLDOWN_TICKS;
     public static final ForgeConfigSpec.DoubleValue CONSTRICT_MULTIPLIER;
     public static final ForgeConfigSpec.IntValue CONSTRICT_COOLDOWN_TICKS;
     public static final ForgeConfigSpec.DoubleValue CONSTRICT_BREAK_DAMAGE_RATIO;
@@ -38,7 +44,7 @@ public final class NagaConfig {
 
         builder.push("phase");
         PHASE_TWO_HEALTH = builder
-            .comment("进入二阶段（裂地）的血量比例", "Health ratio to enter phase two (Earth Rend)")
+            .comment("进入二阶段（裂地）的血量比例，跌破时触发蜕皮爆发", "Health ratio to enter phase two (Earth Rend)")
             .defineInRange("phase_two_health", 0.5D, 0.0D, 1.0D);
         PHASE_THREE_HEALTH = builder
             .comment("进入三阶段（绞杀）的血量比例", "Health ratio to enter phase three (Constrict)")
@@ -60,39 +66,66 @@ public final class NagaConfig {
             .defineInRange("stunless_block_multiplier", 0.8D, 0.0D, 100.0D);
         builder.pop();
 
-        builder.push("venom_spit");
-        VENOM_SPIT_MULTIPLIER = builder
-            .comment("毒牙喷吐直击伤害倍率", "Venom Spit direct hit damage multiplier")
-            .defineInRange("multiplier", 0.6D, 0.0D, 100.0D);
-        VENOM_SPIT_COOLDOWN_TICKS = builder
-            .comment("毒牙喷吐冷却（tick）", "Venom Spit cooldown in ticks")
-            .defineInRange("cooldown_ticks", 160, 1, 12000);
+        builder.push("fang_rush");
+        FANG_RUSH_MULTIPLIER = builder
+            .comment("毒牙连噬每口伤害倍率", "Fang Rush damage multiplier per bite")
+            .defineInRange("multiplier", 0.7D, 0.0D, 100.0D);
+        FANG_RUSH_COOLDOWN_TICKS = builder
+            .comment("毒牙连噬冷却（tick）", "Fang Rush cooldown in ticks")
+            .defineInRange("cooldown_ticks", 180, 1, 12000);
         builder.pop();
 
-        builder.push("tail_sweep");
-        TAIL_SWEEP_MULTIPLIER = builder
-            .comment("尾刃横扫伤害倍率", "Tail Sweep damage multiplier")
+        builder.push("venom_barrage");
+        VENOM_BARRAGE_MULTIPLIER = builder
+            .comment("毒液弹幕直击伤害倍率", "Venom Barrage direct hit damage multiplier")
+            .defineInRange("multiplier", 0.6D, 0.0D, 100.0D);
+        VENOM_BARRAGE_COOLDOWN_TICKS = builder
+            .comment("毒液弹幕冷却（tick）", "Venom Barrage cooldown in ticks")
+            .defineInRange("cooldown_ticks", 220, 1, 12000);
+        builder.pop();
+
+        builder.push("tail_reaver");
+        TAIL_REAVER_MULTIPLIER = builder
+            .comment("尾刃回旋伤害倍率", "Tail Reaver damage multiplier")
             .defineInRange("multiplier", 1.0D, 0.0D, 100.0D);
-        TAIL_SWEEP_COOLDOWN_TICKS = builder
-            .comment("尾刃横扫冷却（tick）", "Tail Sweep cooldown in ticks")
+        TAIL_REAVER_COOLDOWN_TICKS = builder
+            .comment("尾刃回旋冷却（tick）", "Tail Reaver cooldown in ticks")
             .defineInRange("cooldown_ticks", 120, 1, 12000);
         builder.pop();
 
-        builder.push("earth_rend");
-        EARTH_REND_MULTIPLIER = builder
-            .comment("地脉裂袭伤害倍率", "Earth Rend damage multiplier")
-            .defineInRange("multiplier", 1.4D, 0.0D, 100.0D);
-        EARTH_REND_COOLDOWN_TICKS = builder
-            .comment("地脉裂袭冷却（tick）", "Earth Rend cooldown in ticks")
-            .defineInRange("cooldown_ticks", 200, 1, 12000);
+        builder.push("molt_burst");
+        MOLT_BURST_MULTIPLIER = builder
+            .comment("蜕皮爆发毒浪伤害倍率", "Molt Burst venom wave damage multiplier")
+            .defineInRange("multiplier", 0.8D, 0.0D, 100.0D);
+        builder.pop();
+
+        builder.push("earth_devourer");
+        EARTH_DEVOURER_SPIKE_MULTIPLIER = builder
+            .comment("地脉吞噬地刺伤害倍率", "Earth Devourer spike damage multiplier")
+            .defineInRange("spike_multiplier", 0.6D, 0.0D, 100.0D);
+        EARTH_DEVOURER_JAW_MULTIPLIER = builder
+            .comment("地脉吞噬巨颚伤害倍率", "Earth Devourer jaw damage multiplier")
+            .defineInRange("jaw_multiplier", 1.4D, 0.0D, 100.0D);
+        EARTH_DEVOURER_COOLDOWN_TICKS = builder
+            .comment("地脉吞噬冷却（tick）", "Earth Devourer cooldown in ticks")
+            .defineInRange("cooldown_ticks", 240, 1, 12000);
+        builder.pop();
+
+        builder.push("scale_tempest");
+        SCALE_TEMPEST_MULTIPLIER = builder
+            .comment("鳞刃风暴每道环伤害倍率", "Scale Tempest damage multiplier per ring")
+            .defineInRange("multiplier", 0.5D, 0.0D, 100.0D);
+        SCALE_TEMPEST_COOLDOWN_TICKS = builder
+            .comment("鳞刃风暴冷却（tick）", "Scale Tempest cooldown in ticks")
+            .defineInRange("cooldown_ticks", 280, 1, 12000);
         builder.pop();
 
         builder.push("constrict");
         CONSTRICT_MULTIPLIER = builder
-            .comment("绞杀之环每秒伤害倍率", "Constrict damage multiplier per second")
+            .comment("绞杀环墙每秒伤害倍率", "Constrict damage multiplier per second")
             .defineInRange("multiplier", 0.3D, 0.0D, 100.0D);
         CONSTRICT_COOLDOWN_TICKS = builder
-            .comment("绞杀之环冷却（tick）", "Constrict cooldown in ticks")
+            .comment("绞杀环墙冷却（tick）", "Constrict cooldown in ticks")
             .defineInRange("cooldown_ticks", 400, 1, 12000);
         CONSTRICT_BREAK_DAMAGE_RATIO = builder
             .comment("击破逆鳞后娜迦承受的最大生命比例伤害", "Fraction of max health dealt to the Naga when the coil is broken")

@@ -77,7 +77,10 @@ public class VenomGlobRenderer extends EntityRenderer<VenomGlob> {
             FxDraw.beam(beam, world, center, center.subtract(motion.scale(3.0D)), 0.22F, 0.02F, 0.0F, 1.0F, 0.784F, 0.878F, 0.29F, 0.65F, 0.0F);
         }
         if (ClientConfig.VFX_ENABLED.get()) {
-            VertexConsumer drops = buffers.getBuffer(FxRenderTypes.glow(NagaFxManager.DROPLET));
+            FxDraw.params(0.0F, 0.1F, 0.3F, 0.2F, 0.6F, 1.5F, 0.6F);
+            VertexConsumer venomCore = buffers.getBuffer(FxRenderTypes.add(NagaFxManager.DROPLET));
+            FxDraw.sprite(venomCore, world, center.x, center.y, center.z, 0.9F * pulse, age * 0.15F, 0.784F, 0.878F, 0.29F, 0.9F);
+            VertexConsumer drops = buffers.getBuffer(FxRenderTypes.add(NagaFxManager.DROPLET));
             for (int i = 1; i <= 4; i++) {
                 double back = i * 0.6D;
                 double sag = i * i * 0.04D;
@@ -85,6 +88,7 @@ public class VenomGlobRenderer extends EntityRenderer<VenomGlob> {
                 FxDraw.sprite(drops, world, center.x - motion.x * back, center.y - motion.y * back - sag, center.z - motion.z * back, 0.3F * fade + 0.08F, 0.0F,
                     0.784F, 0.878F, 0.29F, 0.85F * fade);
             }
+            FxDraw.resetParams();
         }
         poseStack.popPose();
         super.render(entity, entityYaw, partialTick, poseStack, buffers, packedLight);

@@ -85,7 +85,10 @@ public class VenomPoolRenderer extends EntityRenderer<VenomPool> {
         FxDraw.ring(rim, pose, 0.0D, y + 0.02D, 0.0D, radius - 0.14F, radius + 0.14F, SLICES, age * 0.02F, 4.0F, 0.784F, 0.878F, 0.29F,
             0.55F * alpha * pulse, 0.55F * alpha * pulse);
         if (ClientConfig.VFX_ENABLED.get()) {
-            VertexConsumer fumes = buffers.getBuffer(FxRenderTypes.glow(NagaFxManager.DROPLET));
+            FxDraw.params(0.0F, 0.1F, 0.05F, 0.05F, 0.3F, 1.2F, 0.5F);
+            VertexConsumer surface = buffers.getBuffer(FxRenderTypes.add(NagaFxManager.POOL));
+            FxDraw.flat(surface, pose, 0.0D, y + 0.015D, 0.0D, radius * 1.05F, age * 0.01F, 0.643F, 0.827F, 0.086F, 0.6F * alpha * pulse);
+            VertexConsumer fumes = buffers.getBuffer(FxRenderTypes.add(NagaFxManager.DROPLET));
             for (int i = 0; i < 6; i++) {
                 float cycle = age * 0.03F + i / 6.0F;
                 float phase = cycle - Mth.floor(cycle);
@@ -95,6 +98,7 @@ public class VenomPoolRenderer extends EntityRenderer<VenomPool> {
                 FxDraw.sprite(fumes, pose, Mth.cos(angle) * distance, y + 0.1F + phase * 1.4F, Mth.sin(angle) * distance, 0.22F * (1.0F - phase * 0.5F), 0.0F,
                     0.643F, 0.827F, 0.086F, 0.8F * alpha * Mth.sin(phase * Mth.PI));
             }
+            FxDraw.resetParams();
         }
         super.render(entity, entityYaw, partialTick, poseStack, buffers, packedLight);
     }
