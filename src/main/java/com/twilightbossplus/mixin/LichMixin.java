@@ -1,92 +1,58 @@
 package com.twilightbossplus.mixin;
 
-import com.twilightbossplus.config.LichConfig;
-import com.twilightbossplus.lich.LichBossController;
-import com.twilightbossplus.lich.LichControllerHolder;
-import com.twilightbossplus.network.LichFxPacket;
-import com.twilightbossplus.network.ModNetwork;
-import net.minecraft.nbt.CompoundTag;
+import com.twilightbossplus.lich.LichBrain;
+import com.twilightbossplus.lich.LichBrainHolder;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import twilightforest.entity.boss.Lich;
 
 @Mixin(Lich.class)
-public abstract class LichMixin implements LichControllerHolder {
+public abstract class LichMixin extends Monster implements LichBrainHolder {
     @Unique
-    private LichBossController twilightbossplus$controller;
+    private LichBrain tbp$brain;
+
+    protected LichMixin(EntityType<? extends Monster> type, Level level) {
+        super(type, level);
+    }
 
     @Override
-    public LichBossController twilightbossplus$getController() {
-        if (this.twilightbossplus$controller == null) {
-            this.twilightbossplus$controller = new LichBossController((Lich) (Object) this);
+    public LichBrain tbp$getBrain() {
+        if (this.tbp$brain == null) {
+            this.tbp$brain = new LichBrain((Lich) (Object) this);
         }
-        return this.twilightbossplus$controller;
+        return this.tbp$brain;
     }
 
     @Inject(method = "customServerAiStep", at = @At("TAIL"))
-    private void twilightbossplus$tickController(CallbackInfo ci) {
-        this.twilightbossplus$getController().tick();
+    private void tbp$tickBrain(CallbackInfo ci) {
+        this.tbp$getBrain().tick();
     }
 
-    @ModifyVariable(method = "hurt", at = @At("HEAD"), argsOnly = true)
-    private float twilightbossplus$scaleDamageTaken(float amount) {
-        if (((Lich) (Object) this).isShadowClone()) {
-            return amount;
-        }
-        return amount * this.twilightbossplus$getController().getDamageTakenMultiplier();
-    }
-
-    @Inject(method = "die", at = @At("TAIL"))
-    private void twilightbossplus$onDeath(DamageSource source, CallbackInfo ci) {
-        this.twilightbossplus$getController().onDeath();
-    }
-
-    @Inject(method = "makeTeleportTrail", at = @At("HEAD"), cancellable = true, remap = false)
-    private void twilightbossplus$teleportTrail(double srcX, double srcY, double srcZ, double destX, double destY, double destZ, CallbackInfo ci) {
-        if (!LichConfig.ENABLED.get()) {
+    @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
+    private void tbp$skillInvulnerable(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        if (this.level().isClientSide() || this.tbp$brain == null || !this.tbp$brain.invulnerable()) {
             return;
         }
-        Lich self = (Lich) (Object) this;
-        if (!self.level().isClientSide()) {
-            LichBossController.sendTeleport(self, new Vec3(srcX, srcY, srcZ), new Vec3(destX, destY, destZ));
+        if (!source.is(DamageTypes.FELL_OUT_OF_WORLD) && !source.is(DamageTypes.GENERIC_KILL)) {
+            cir.setReturnValue(false);
         }
-        ci.cancel();
     }
 
-    @Inject(method = "makeMagicTrail", at = @At("HEAD"), cancellable = true, remap = false)
-    private void twilightbossplus$magicTrail(Vec3 source, Vec3 target, float red, float green, float blue, CallbackInfo ci) {
-        if (!LichConfig.ENABLED.get()) {
-            return;
+    @Override
+    public boolean doHurtTarget(Entity target) {
+        if (this.tbp$brain != null && this.tbp$brain.blocksMelee()) {
+            return false;
         }
-        Lich self = (Lich) (Object) this;
-        if (!self.level().isClientSide()) {
-            float r = red;
-            float g = green;
-            float b = blue;
-            if (r + g + b < 0.05F) {
-                r = 0.48F;
-                g = 0.31F;
-                b = 0.82F;
-            }
-            ModNetwork.sendTracking(self, new LichFxPacket(LichFxPacket.BEAM, self.getId(),
-                (float) source.x, (float) source.y, (float) source.z, (float) target.x, (float) target.y, (float) target.z, r, g, b));
-        }
-        ci.cancel();
-    }
-
-    @Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
-    private void twilightbossplus$save(CompoundTag tag, CallbackInfo ci) {
-        this.twilightbossplus$getController().save(tag);
-    }
-
-    @Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
-    private void twilightbossplus$load(CompoundTag tag, CallbackInfo ci) {
-        this.twilightbossplus$getController().load(tag);
+        return super.doHurtTarget(target);
     }
 }
