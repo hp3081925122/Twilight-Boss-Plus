@@ -3,7 +3,7 @@ package com.twilightbossplus.lich.skill;
 import com.twilightbossplus.config.LichConfig;
 import com.twilightbossplus.lich.LichBrain;
 import com.twilightbossplus.lich.LichColors;
-import com.twilightbossplus.network.VfxPacket;
+import com.twilightbossplus.lich.LichFx;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import twilightforest.init.TFSounds;
@@ -36,8 +36,8 @@ public final class ShieldBacklash extends LichSkill {
     public void start() {
         super.start();
         this.center = this.brain.ground(this.lich.position());
-        this.brain.sigil(this.center, this.radius, WINDUP, LichColors.SHIELD);
-        this.brain.orb(this.lich, 1.2, 1.4, WINDUP, LichColors.SHIELD);
+        LichFx.sigil(this.brain, this.center, this.radius, WINDUP, LichColors.SHIELD, LichFx.SIGIL_HEXAGRAM);
+        LichFx.orb(this.brain, this.lich, 1.2, 1.4, WINDUP, LichColors.SHIELD, LichFx.ORB_SHIELD);
         this.sound(TFSounds.SHIELD_ADD.get(), this.lich.position(), 2.0F, 0.6F);
     }
 
@@ -54,8 +54,8 @@ public final class ShieldBacklash extends LichSkill {
                     this.brain.knockFrom(victim, this.center, 0.9, 0.35);
                 }
             }
-            this.brain.burst(this.center, this.radius, VfxPacket.BURST_SOUL, LichColors.SHIELD);
-            this.brain.ring(this.center, 0.9, this.radius, 1.0, 0, LichColors.SHIELD);
+            LichFx.blast(this.brain, this.center, this.radius, LichColors.SHIELD);
+            LichFx.runeWave(this.brain, this.center, 0.9, this.radius, 1.0, 0, LichColors.SHIELD);
             this.brain.shake(this.center, 0.8F, 18.0F, 10);
             this.sound(TFSounds.SHIELD_BREAK.get(), this.lich.position(), 3.0F, 0.5F);
         }

@@ -4,7 +4,7 @@ import com.twilightbossplus.config.NagaConfig;
 import com.twilightbossplus.naga.NagaBrain;
 import com.twilightbossplus.naga.NagaColors;
 import com.twilightbossplus.common.RingWave;
-import com.twilightbossplus.network.VfxPacket;
+import com.twilightbossplus.naga.NagaFx;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -34,7 +34,7 @@ public final class QuakeSlam extends NagaSkill {
     public void start() {
         super.start();
         Vec3 pos = this.naga.position();
-        this.brain.circle(new Vec3(pos.x, this.brain.groundY(pos.x, pos.z, pos.y), pos.z), CENTER_RADIUS, LEAP_TICK + 14, NagaColors.DANGER);
+        NagaFx.warn(this.brain, new Vec3(pos.x, this.brain.groundY(pos.x, pos.z, pos.y), pos.z), CENTER_RADIUS, LEAP_TICK + 14, NagaColors.DANGER);
         this.naga.playSound(TFSounds.NAGA_RATTLE.get(), 3.0F, 0.7F);
     }
 
@@ -72,9 +72,8 @@ public final class QuakeSlam extends NagaSkill {
         double waveMultiplier = NagaConfig.QUAKE_WAVE_MULTIPLIER.get();
         for (int delay : WAVE_DELAYS) {
             this.brain.addHazard(new RingWave(center, WAVE_SPEED, WAVE_RADIUS, WAVE_THICKNESS, delay, waveMultiplier));
-            this.brain.ring(center, WAVE_SPEED, WAVE_RADIUS, WAVE_THICKNESS, delay, NagaColors.EARTH);
         }
-        this.brain.burst(center, CENTER_RADIUS, VfxPacket.BURST_SLAM);
+        NagaFx.quake(this.brain, center, CENTER_RADIUS, WAVE_SPEED, WAVE_RADIUS, WAVE_DELAYS);
         this.brain.shake(center, 1.0F, 24.0F, 14);
         this.naga.level().playSound(null, center.x, center.y, center.z, SoundEvents.GENERIC_EXPLODE, this.naga.getSoundSource(), 1.4F, 0.6F);
     }

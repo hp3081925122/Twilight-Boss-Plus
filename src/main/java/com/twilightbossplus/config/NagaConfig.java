@@ -34,6 +34,8 @@ public final class NagaConfig {
     public static final ForgeConfigSpec.DoubleValue SPIT_POOL_MULTIPLIER;
     public static final ForgeConfigSpec.IntValue SPIT_POOL_TICKS;
     public static final Skill TAIL_LASH;
+    public static final Skill FANG_SNAP;
+    public static final ForgeConfigSpec.IntValue FANG_SNAPS;
     public static final Skill QUAKE_SLAM;
     public static final ForgeConfigSpec.DoubleValue QUAKE_WAVE_MULTIPLIER;
     public static final Skill BURROW_AMBUSH;
@@ -72,6 +74,11 @@ public final class NagaConfig {
 
         b.comment("一阶段：尾鞭横扫，玩家贴近尾部时甩尾", "Phase 1: Tail Lash, swings the tail at players hugging the body");
         TAIL_LASH = new Skill(b, "tail_lash", "尾鞭横扫", "Tail Lash", 100, 0.9);
+        b.pop();
+
+        b.comment("一阶段：毒牙连咬，玩家贴近蛇头时张口连续撕咬前方并施加中毒", "Phase 1: Fang Snap, snaps the jaws at players close to the head and poisons them");
+        FANG_SNAP = new Skill(b, "fang_snap", "毒牙连咬", "Fang Snap", 90, 0.8);
+        FANG_SNAPS = b.comment("毒牙连咬撕咬次数", "Number of bites in Fang Snap").defineInRange("snaps", 2, 1, 5);
         b.pop();
 
         b.comment("二阶段：震地猛击，跃起砸地并扩散三道可跳跃躲避的冲击环", "Phase 2: Quake Slam, leaps and slams, sending three jumpable shockwave rings");

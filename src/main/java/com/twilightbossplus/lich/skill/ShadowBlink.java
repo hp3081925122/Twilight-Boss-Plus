@@ -4,10 +4,9 @@ import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.config.LichConfig;
 import com.twilightbossplus.lich.LichBrain;
 import com.twilightbossplus.lich.LichColors;
-import com.twilightbossplus.network.VfxPacket;
+import com.twilightbossplus.lich.LichFx;
 import java.util.HashSet;
 import java.util.Set;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -60,7 +59,7 @@ public final class ShadowBlink extends LichSkill {
             Vec3 look = Vec3.directionFromRotation(0.0F, target.getYRot());
             this.destination = this.brain.ground(target.position().subtract(look.scale(BEHIND)));
             this.landed = false;
-            this.brain.circle(this.destination, 1.2, MARK, LichColors.VOID);
+            LichFx.sigil(this.brain, this.destination, 1.4, MARK, LichColors.VOID, LichFx.SIGIL_RIFT);
             this.sound(TFSounds.LICH_AMBIENT.get(), this.lich.position(), 1.2F, 1.4F);
         }
         if (cycle < MARK) {
@@ -75,18 +74,11 @@ public final class ShadowBlink extends LichSkill {
                 this.age = this.age - cycle + CYCLE - 1;
                 return true;
             }
-            this.brain.beam(from.add(0.0, 1.2, 0.0), this.lich.position().add(0.0, 1.2, 0.0), 0.35, 0, 8, LichColors.VOID);
+            LichFx.blink(this.brain, from.add(0.0, 1.2, 0.0), this.lich.position().add(0.0, 1.2, 0.0));
             this.sound(TFSounds.LICH_TELEPORT.get(), from, 1.0F, 1.0F);
             this.sound(TFSounds.LICH_TELEPORT.get(), this.lich.position(), 1.0F, 1.2F);
             this.face(target.position(), 360.0F);
-            CompoundTag cone = new CompoundTag();
-            cone.putInt("id", this.lich.getId());
-            cone.putFloat("len", (float) REACH);
-            cone.putFloat("half", HALF_ANGLE);
-            cone.putInt("windup", SWING);
-            cone.putInt("d", SWING + 2);
-            cone.putInt("color", LichColors.DANGER);
-            this.brain.send(VfxPacket.CONE, cone);
+            LichFx.slash(this.brain, this.lich, REACH, HALF_ANGLE, SWING);
         }
         if (this.landed && cycle > MARK && cycle < MARK + SWING) {
             this.face(target.position(), 12.0F);
@@ -117,7 +109,6 @@ public final class ShadowBlink extends LichSkill {
             }
         }
         this.cast();
-        this.brain.slash(origin.add(0.0, 1.1, 0.0), yaw, REACH, HALF_ANGLE * 2.0F, LichColors.VOID);
         this.sound(SoundEvents.PLAYER_ATTACK_SWEEP, origin, 1.6F, 0.6F);
         this.brain.shake(origin, 0.4F, 12.0F, 6);
     }

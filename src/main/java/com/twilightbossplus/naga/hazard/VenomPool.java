@@ -2,8 +2,7 @@ package com.twilightbossplus.naga.hazard;
 
 import com.twilightbossplus.common.BossBrain;
 import com.twilightbossplus.common.BossHazard;
-import com.twilightbossplus.network.VfxPacket;
-import net.minecraft.nbt.CompoundTag;
+import com.twilightbossplus.naga.NagaFx;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -26,11 +25,7 @@ public final class VenomPool implements BossHazard {
     }
 
     public void announce(BossBrain<?> brain) {
-        CompoundTag data = new CompoundTag();
-        BossBrain.putVec(data, "c", this.center);
-        data.putFloat("r", (float) this.radius);
-        data.putInt("d", this.duration);
-        brain.send(VfxPacket.POOL, data);
+        NagaFx.pool(brain, this.center, this.radius, this.duration);
     }
 
     @Override

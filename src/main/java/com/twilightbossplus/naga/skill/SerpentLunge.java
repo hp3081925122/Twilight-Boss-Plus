@@ -1,11 +1,9 @@
 package com.twilightbossplus.naga.skill;
 
 import com.twilightbossplus.naga.NagaBrain;
-import com.twilightbossplus.naga.NagaColors;
-import com.twilightbossplus.network.VfxPacket;
+import com.twilightbossplus.naga.NagaFx;
 import java.util.HashSet;
 import java.util.Set;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -73,13 +71,7 @@ public final class SerpentLunge extends NagaSkill {
         this.remaining--;
         this.setYaw((float) (Math.toDegrees(Math.atan2(this.direction.z, this.direction.x)) - 90.0));
         Vec3 end = from.add(this.direction.scale(this.length));
-        CompoundTag data = new CompoundTag();
-        NagaBrain.putVec(data, "a", new Vec3(from.x, this.brain.groundY(from.x, from.z, from.y), from.z));
-        NagaBrain.putVec(data, "b", new Vec3(end.x, this.brain.groundY(end.x, end.z, from.y), end.z));
-        data.putFloat("w", (float) WIDTH);
-        data.putInt("d", this.windup);
-        data.putInt("color", NagaColors.WARNING);
-        this.brain.send(VfxPacket.LINE, data);
+        NagaFx.lunge(this.brain, new Vec3(from.x, this.brain.groundY(from.x, from.z, from.y), from.z), new Vec3(end.x, this.brain.groundY(end.x, end.z, from.y), end.z), WIDTH, this.windup);
         this.naga.playSound(TFSounds.NAGA_RATTLE.get(), 3.0F, 1.1F + this.naga.getRandom().nextFloat() * 0.2F);
         return true;
     }

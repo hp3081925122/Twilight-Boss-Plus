@@ -5,8 +5,11 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "twilightbossplus.refmap.json",
   "mixins": [
-    "LichMixin", "NagaMixin",
+    "ChargeAttackGoalMixin", "GroundAttackGoalMixin", "HydraHeadContainerMixin", "HydraMixin", "LichMixin", "MinoshroomMixin", "NagaMixin",
     "NagaMovementPatternMixin"
+  ],
+  "client": [
+    "MinoshroomModelMixin"
   ],
   "injectors": {
     "defaultRequire": 1

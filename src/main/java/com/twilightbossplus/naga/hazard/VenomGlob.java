@@ -2,8 +2,7 @@ package com.twilightbossplus.naga.hazard;
 
 import com.twilightbossplus.common.BossBrain;
 import com.twilightbossplus.common.BossHazard;
-import com.twilightbossplus.network.VfxPacket;
-import net.minecraft.nbt.CompoundTag;
+import com.twilightbossplus.naga.NagaFx;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -36,14 +35,7 @@ public final class VenomGlob implements BossHazard {
     }
 
     public void announce(BossBrain<?> brain) {
-        CompoundTag data = new CompoundTag();
-        BossBrain.putVec(data, "o", this.origin);
-        BossBrain.putVec(data, "v", this.velocity);
-        BossBrain.putVec(data, "l", this.landing);
-        data.putDouble("g", this.gravity);
-        data.putInt("t", this.flight);
-        data.putFloat("r", (float) SPLASH_RADIUS);
-        brain.send(VfxPacket.GLOB, data);
+        NagaFx.glob(brain, this.origin, this.velocity, this.gravity, this.flight, this.landing, SPLASH_RADIUS);
     }
 
     @Override

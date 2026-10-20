@@ -4,6 +4,7 @@ import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.config.NagaConfig;
 import com.twilightbossplus.common.BossBrain;
 import com.twilightbossplus.naga.skill.BurrowAmbush;
+import com.twilightbossplus.naga.skill.FangSnap;
 import com.twilightbossplus.naga.skill.FrenziedHiss;
 import com.twilightbossplus.naga.skill.NagaSkill;
 import com.twilightbossplus.naga.skill.QuakeSlam;
@@ -11,12 +12,10 @@ import com.twilightbossplus.naga.skill.SerpentLunge;
 import com.twilightbossplus.naga.skill.TailLash;
 import com.twilightbossplus.naga.skill.VenomBreath;
 import com.twilightbossplus.naga.skill.VenomSpit;
-import com.twilightbossplus.network.VfxPacket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -31,7 +30,7 @@ public final class NagaBrain extends BossBrain<Naga> {
     private static final double SKILL_RANGE = 40.0;
 
     private enum SkillId {
-        SERPENT_LUNGE, VENOM_SPIT, TAIL_LASH, QUAKE_SLAM, BURROW_AMBUSH, VENOM_BREATH, SERPENT_CHAIN
+        SERPENT_LUNGE, VENOM_SPIT, TAIL_LASH, QUAKE_SLAM, BURROW_AMBUSH, VENOM_BREATH, SERPENT_CHAIN, FANG_SNAP
     }
 
     private final Naga naga;
@@ -99,10 +98,7 @@ public final class NagaBrain extends BossBrain<Naga> {
             return;
         }
         if (this.stageThree && this.naga.tickCount % 100 == 0) {
-            CompoundTag aura = new CompoundTag();
-            aura.putInt("id", this.naga.getId());
-            aura.putInt("duration", 120);
-            this.send(VfxPacket.AURA, aura);
+            NagaFx.aura(this, this.naga, 120);
         }
         if (this.checkStages()) {
             return;
@@ -190,6 +186,10 @@ public final class NagaBrain extends BossBrain<Naga> {
             this.startSkill(SkillId.TAIL_LASH, new TailLash(this));
             return;
         }
+        if (this.ready(SkillId.FANG_SNAP, NagaConfig.FANG_SNAP) && distance < FangSnap.TRIGGER_RANGE) {
+            this.startSkill(SkillId.FANG_SNAP, new FangSnap(this));
+            return;
+        }
         if (this.naga.getMovementAI().getState() != NagaMovementPattern.MovementState.CIRCLE) {
             return;
         }
@@ -232,6 +232,7 @@ public final class NagaBrain extends BossBrain<Naga> {
             case BURROW_AMBUSH -> new BurrowAmbush(this);
             case VENOM_BREATH -> new VenomBreath(this);
             case SERPENT_CHAIN -> new SerpentLunge(this, NagaConfig.CHAIN_COUNT.get(), Math.max(6, NagaConfig.LUNGE_WINDUP.get() * 3 / 5), NagaConfig.SERPENT_CHAIN.multiplier.get());
+            case FANG_SNAP -> new FangSnap(this);
         };
     }
 
@@ -275,6 +276,7 @@ public final class NagaBrain extends BossBrain<Naga> {
             case BURROW_AMBUSH -> NagaConfig.BURROW_AMBUSH;
             case VENOM_BREATH -> NagaConfig.VENOM_BREATH;
             case SERPENT_CHAIN -> NagaConfig.SERPENT_CHAIN;
+            case FANG_SNAP -> NagaConfig.FANG_SNAP;
         };
     }
 

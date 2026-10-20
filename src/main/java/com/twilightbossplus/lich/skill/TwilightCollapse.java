@@ -4,7 +4,7 @@ import com.twilightbossplus.common.RingWave;
 import com.twilightbossplus.config.LichConfig;
 import com.twilightbossplus.lich.LichBrain;
 import com.twilightbossplus.lich.LichColors;
-import com.twilightbossplus.network.VfxPacket;
+import com.twilightbossplus.lich.LichFx;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -48,9 +48,9 @@ public final class TwilightCollapse extends LichSkill {
         super.start();
         this.center = this.brain.ground(this.lich.position());
         this.lich.setNoGravity(true);
-        this.brain.vortex(this.center, PULL_RADIUS, RISE + PULL, LichColors.VOID);
-        this.brain.circle(this.center, BLAST_RADIUS, RISE + PULL, LichColors.DANGER);
-        this.brain.orb(this.lich, 1.1, 1.8, RISE + PULL, LichColors.VOID);
+        LichFx.vortex(this.brain, this.center, PULL_RADIUS, RISE + PULL);
+        LichFx.sigil(this.brain, this.center, BLAST_RADIUS, RISE + PULL, LichColors.DANGER, LichFx.SIGIL_SKULL);
+        LichFx.orb(this.brain, this.lich, 1.1, 1.8, RISE + PULL, LichColors.VOID, LichFx.ORB_VOID);
         this.sound(TFSounds.LICH_AMBIENT.get(), this.lich.position(), 3.0F, 0.4F);
         this.sound(SoundEvents.BEACON_POWER_SELECT, this.lich.position(), 3.0F, 0.5F);
     }
@@ -88,9 +88,9 @@ public final class TwilightCollapse extends LichSkill {
                 }
             }
             this.brain.addHazard(new RingWave(this.center, WAVE_SPEED, WAVE_RADIUS, WAVE_THICKNESS, 4, LichConfig.COLLAPSE_WAVE_MULTIPLIER.get()));
-            this.brain.ring(this.center, WAVE_SPEED, WAVE_RADIUS, WAVE_THICKNESS, 4, LichColors.VOID);
-            this.brain.burst(this.center, BLAST_RADIUS, VfxPacket.BURST_SOUL, LichColors.VOID);
-            this.brain.pillar(this.center, 2.4, 14.0, 18, LichColors.VOID);
+            LichFx.runeWave(this.brain, this.center, WAVE_SPEED, WAVE_RADIUS, WAVE_THICKNESS, 4, LichColors.VOID);
+            LichFx.blast(this.brain, this.center, BLAST_RADIUS, LichColors.VOID);
+            LichFx.flame(this.brain, this.center, 2.4, 14.0, 22, LichColors.VOID);
             this.brain.shake(this.center, 1.6F, 32.0F, 20);
             this.cast();
             this.sound(SoundEvents.GENERIC_EXPLODE, this.center, 3.0F, 0.6F);

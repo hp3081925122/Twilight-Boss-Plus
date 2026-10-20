@@ -2,8 +2,7 @@ package com.twilightbossplus.lich.hazard;
 
 import com.twilightbossplus.common.BossBrain;
 import com.twilightbossplus.common.BossHazard;
-import com.twilightbossplus.lich.LichColors;
-import com.twilightbossplus.network.VfxPacket;
+import com.twilightbossplus.lich.LichFx;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -25,7 +24,7 @@ public final class StarFall implements BossHazard {
     }
 
     public void announce(BossBrain<?> brain) {
-        brain.sigil(this.center, RADIUS, this.fuse, LichColors.TWILIGHT);
+        LichFx.star(brain, this.center, RADIUS, HEIGHT, this.fuse);
     }
 
     @Override
@@ -42,8 +41,6 @@ public final class StarFall implements BossHazard {
                 brain.knockFrom(victim, this.center, 0.2, 0.55);
             }
         }
-        brain.pillar(this.center, RADIUS * 0.8, HEIGHT, 14, LichColors.TWILIGHT);
-        brain.burst(this.center, RADIUS, VfxPacket.BURST_SOUL, LichColors.TWILIGHT);
         brain.level().playSound(null, this.center.x, this.center.y, this.center.z, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 2.0F, 0.6F);
         brain.level().playSound(null, this.center.x, this.center.y, this.center.z, SoundEvents.FIREWORK_ROCKET_BLAST, SoundSource.HOSTILE, 1.2F, 0.5F);
         return false;

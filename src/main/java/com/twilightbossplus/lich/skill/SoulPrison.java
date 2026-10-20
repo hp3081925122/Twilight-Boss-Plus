@@ -3,6 +3,7 @@ package com.twilightbossplus.lich.skill;
 import com.twilightbossplus.config.LichConfig;
 import com.twilightbossplus.lich.LichBrain;
 import com.twilightbossplus.lich.LichColors;
+import com.twilightbossplus.lich.LichFx;
 import com.twilightbossplus.lich.hazard.PrisonWall;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
@@ -33,9 +34,9 @@ public final class SoulPrison extends LichSkill {
         }
         this.center = this.brain.ground(target.position());
         int duration = LichConfig.PRISON_TICKS.get();
-        this.brain.sigil(this.center, RADIUS, WARMUP, LichColors.SOUL);
+        LichFx.sigil(this.brain, this.center, RADIUS, WARMUP, LichColors.SOUL, LichFx.SIGIL_HEXAGRAM);
         this.brain.addHazard(new PrisonWall(this.center, RADIUS, WARMUP, duration, LichConfig.SOUL_PRISON.multiplier.get()));
-        this.brain.orb(this.lich, 2.5, 0.55, WARMUP, LichColors.SOUL);
+        LichFx.orb(this.brain, this.lich, 2.5, 0.55, WARMUP, LichColors.SOUL, LichFx.ORB_SOUL);
         this.sound(SoundEvents.EVOKER_PREPARE_WOLOLO, this.lich.position(), 1.6F, 0.6F);
     }
 
@@ -47,7 +48,7 @@ public final class SoulPrison extends LichSkill {
         this.holdStill();
         this.face(this.center, 20.0F);
         if (this.age == WARMUP) {
-            this.brain.wall(this.center, RADIUS, HEIGHT, LichConfig.PRISON_TICKS.get(), LichColors.SOUL);
+            LichFx.prison(this.brain, this.center, RADIUS, HEIGHT, LichConfig.PRISON_TICKS.get());
             this.cast();
             this.sound(SoundEvents.RESPAWN_ANCHOR_SET_SPAWN, this.center, 2.0F, 0.5F);
             this.brain.shake(this.center, 0.5F, 16.0F, 8);

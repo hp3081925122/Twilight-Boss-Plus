@@ -3,6 +3,7 @@ package com.twilightbossplus.lich.skill;
 import com.twilightbossplus.config.LichConfig;
 import com.twilightbossplus.lich.LichBrain;
 import com.twilightbossplus.lich.LichColors;
+import com.twilightbossplus.lich.LichFx;
 import com.twilightbossplus.lich.hazard.StarFall;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
@@ -30,7 +31,7 @@ public final class TwilightConstellation extends LichSkill {
     @Override
     public void start() {
         super.start();
-        this.brain.orb(this.lich, 2.6, 0.6, WINDUP + this.stars * INTERVAL, LichColors.TWILIGHT);
+        LichFx.orb(this.brain, this.lich, 2.6, 0.6, WINDUP + this.stars * INTERVAL, LichColors.TWILIGHT, LichFx.ORB_STAR);
         this.sound(SoundEvents.EVOKER_PREPARE_SUMMON, this.lich.position(), 1.6F, 1.3F);
     }
 

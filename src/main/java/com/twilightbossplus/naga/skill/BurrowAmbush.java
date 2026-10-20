@@ -3,8 +3,7 @@ package com.twilightbossplus.naga.skill;
 import com.twilightbossplus.config.NagaConfig;
 import com.twilightbossplus.naga.NagaBrain;
 import com.twilightbossplus.naga.NagaColors;
-import com.twilightbossplus.network.VfxPacket;
-import net.minecraft.nbt.CompoundTag;
+import com.twilightbossplus.naga.NagaFx;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -35,7 +34,7 @@ public final class BurrowAmbush extends NagaSkill {
     @Override
     public void start() {
         super.start();
-        this.brain.burst(this.naga.position(), 2.5, VfxPacket.BURST_DIRT);
+        NagaFx.erupt(this.brain, this.brain.ground(this.naga.position()), 2.5, false);
         this.naga.playSound(SoundEvents.ROOTED_DIRT_BREAK, 2.0F, 0.6F);
         this.naga.playSound(TFSounds.NAGA_HISS.get(), 2.0F, 0.7F);
     }
@@ -100,7 +99,7 @@ public final class BurrowAmbush extends NagaSkill {
 
     private void lockEruption(Vec3 pos) {
         this.eruption = new Vec3(pos.x, this.brain.groundY(pos.x, pos.z, pos.y), pos.z);
-        this.brain.circle(this.eruption, RADIUS, WARN_TICKS, NagaColors.DANGER);
+        NagaFx.warn(this.brain, this.eruption, RADIUS, WARN_TICKS, NagaColors.DANGER);
         this.naga.playSound(TFSounds.NAGA_RATTLE.get(), 3.0F, 0.9F);
         this.next();
     }
@@ -115,7 +114,7 @@ public final class BurrowAmbush extends NagaSkill {
             this.brain.damage(victim, NagaConfig.BURROW_AMBUSH.multiplier.get());
             this.brain.knockFrom(victim, this.eruption, 0.35, 0.75);
         }
-        this.brain.burst(this.eruption, RADIUS, VfxPacket.BURST_DIRT);
+        NagaFx.erupt(this.brain, this.eruption, RADIUS, true);
         this.brain.shake(this.eruption, 1.2F, 20.0F, 12);
         this.naga.level().playSound(null, this.eruption.x, this.eruption.y, this.eruption.z, SoundEvents.GENERIC_EXPLODE, this.naga.getSoundSource(), 1.2F, 0.8F);
         this.naga.playSound(TFSounds.NAGA_HURT.get(), 2.5F, 0.6F);
@@ -128,10 +127,7 @@ public final class BurrowAmbush extends NagaSkill {
         }
         this.hidden = value;
         this.naga.setInvisible(value);
-        CompoundTag data = new CompoundTag();
-        data.putInt("id", this.naga.getId());
-        data.putBoolean("on", value);
-        this.brain.send(VfxPacket.BURROW, data);
+        NagaFx.burrow(this.brain, this.naga, value);
     }
 
     @Override

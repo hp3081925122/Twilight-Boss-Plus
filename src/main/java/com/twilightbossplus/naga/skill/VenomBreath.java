@@ -2,9 +2,7 @@ package com.twilightbossplus.naga.skill;
 
 import com.twilightbossplus.config.NagaConfig;
 import com.twilightbossplus.naga.NagaBrain;
-import com.twilightbossplus.naga.NagaColors;
-import com.twilightbossplus.network.VfxPacket;
-import net.minecraft.nbt.CompoundTag;
+import com.twilightbossplus.naga.NagaFx;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -35,14 +33,7 @@ public final class VenomBreath extends NagaSkill {
     @Override
     public void start() {
         super.start();
-        CompoundTag data = new CompoundTag();
-        data.putInt("id", this.naga.getId());
-        data.putFloat("len", (float) LENGTH);
-        data.putFloat("half", (float) HALF_ANGLE);
-        data.putInt("windup", WINDUP);
-        data.putInt("d", WINDUP + DURATION);
-        data.putInt("color", NagaColors.VENOM);
-        this.brain.send(VfxPacket.CONE, data);
+        NagaFx.breath(this.brain, this.naga, LENGTH, HALF_ANGLE, WINDUP, WINDUP + DURATION);
         this.naga.playSound(TFSounds.NAGA_RATTLE.get(), 3.0F, 1.2F);
     }
 

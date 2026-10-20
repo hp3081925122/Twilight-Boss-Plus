@@ -3,7 +3,7 @@ package com.twilightbossplus.naga.skill;
 import com.twilightbossplus.config.NagaConfig;
 import com.twilightbossplus.naga.NagaBrain;
 import com.twilightbossplus.naga.NagaColors;
-import com.twilightbossplus.network.VfxPacket;
+import com.twilightbossplus.naga.NagaFx;
 import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.sounds.SoundEvents;
@@ -69,7 +69,7 @@ public final class TailLash extends NagaSkill {
             found = this.naga.position();
         }
         this.pivot = new Vec3(found.x, this.brain.groundY(found.x, found.z, found.y), found.z);
-        this.brain.circle(this.pivot, RADIUS, WINDUP, NagaColors.WARNING);
+        NagaFx.warn(this.brain, this.pivot, RADIUS, WINDUP, NagaColors.WARNING);
         this.naga.playSound(TFSounds.NAGA_RATTLE.get(), 2.0F, 1.4F);
     }
 
@@ -81,7 +81,7 @@ public final class TailLash extends NagaSkill {
                 this.brain.damage(victim, NagaConfig.TAIL_LASH.multiplier.get());
                 this.brain.knockFrom(victim, this.pivot, 0.7, 0.35);
             }
-            this.brain.burst(this.pivot, RADIUS, VfxPacket.BURST_SWEEP);
+            NagaFx.lash(this.brain, this.pivot, RADIUS, this.naga.getYRot());
             this.naga.level().playSound(null, this.pivot.x, this.pivot.y, this.pivot.z, SoundEvents.PLAYER_ATTACK_SWEEP, this.naga.getSoundSource(), 2.0F, 0.5F);
         }
         return this.age < WINDUP + 6;

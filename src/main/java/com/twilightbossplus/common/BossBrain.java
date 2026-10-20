@@ -12,7 +12,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -230,28 +229,6 @@ public abstract class BossBrain<E extends Mob> {
         tag.putDouble(key + "z", vec.z);
     }
 
-    public void circle(Vec3 center, double radius, int duration, int color) {
-        CompoundTag data = new CompoundTag();
-        putVec(data, "c", center);
-        data.putFloat("r", (float) radius);
-        data.putInt("d", duration);
-        data.putInt("color", color);
-        this.send(VfxPacket.CIRCLE, data);
-    }
-
-    public void burst(Vec3 center, double radius, int kind) {
-        this.burst(center, radius, kind, 0);
-    }
-
-    public void burst(Vec3 center, double radius, int kind, int color) {
-        CompoundTag data = new CompoundTag();
-        putVec(data, "c", center);
-        data.putFloat("r", (float) radius);
-        data.putInt("kind", kind);
-        data.putInt("color", color);
-        this.send(VfxPacket.BURST, data);
-    }
-
     public void shake(Vec3 center, float strength, float radius, int duration) {
         CompoundTag data = new CompoundTag();
         putVec(data, "c", center);
@@ -259,99 +236,5 @@ public abstract class BossBrain<E extends Mob> {
         data.putFloat("r", radius);
         data.putInt("d", duration);
         this.send(VfxPacket.SHAKE, data);
-    }
-
-    public void ring(Vec3 center, double speed, double maxRadius, double thickness, int delay, int color) {
-        CompoundTag data = new CompoundTag();
-        putVec(data, "c", center);
-        data.putFloat("speed", (float) speed);
-        data.putFloat("max", (float) maxRadius);
-        data.putFloat("th", (float) thickness);
-        data.putInt("delay", delay);
-        data.putInt("color", color);
-        this.send(VfxPacket.RING, data);
-    }
-
-    public void beam(Vec3 a, Vec3 b, double width, int windup, int duration, int color) {
-        CompoundTag data = new CompoundTag();
-        putVec(data, "a", a);
-        putVec(data, "b", b);
-        data.putFloat("w", (float) width);
-        data.putInt("windup", windup);
-        data.putInt("d", duration);
-        data.putInt("color", color);
-        this.send(VfxPacket.BEAM, data);
-    }
-
-    public void pillar(Vec3 base, double radius, double height, int duration, int color) {
-        CompoundTag data = new CompoundTag();
-        putVec(data, "c", base);
-        data.putFloat("r", (float) radius);
-        data.putFloat("h", (float) height);
-        data.putInt("d", duration);
-        data.putInt("color", color);
-        this.send(VfxPacket.PILLAR, data);
-    }
-
-    public void tether(Entity from, Entity to, int duration, int color) {
-        CompoundTag data = new CompoundTag();
-        data.putInt("from", from.getId());
-        data.putInt("to", to.getId());
-        data.putInt("d", duration);
-        data.putInt("color", color);
-        this.send(VfxPacket.TETHER, data);
-    }
-
-    public void sigil(Vec3 center, double radius, int duration, int color) {
-        CompoundTag data = new CompoundTag();
-        putVec(data, "c", center);
-        data.putFloat("r", (float) radius);
-        data.putInt("d", duration);
-        data.putInt("color", color);
-        this.send(VfxPacket.SIGIL, data);
-    }
-
-    public void vortex(Vec3 center, double radius, int duration, int color) {
-        CompoundTag data = new CompoundTag();
-        putVec(data, "c", center);
-        data.putFloat("r", (float) radius);
-        data.putInt("d", duration);
-        data.putInt("color", color);
-        this.send(VfxPacket.VORTEX, data);
-    }
-
-    public void slash(Vec3 center, float yaw, double radius, float sweep, int color) {
-        CompoundTag data = new CompoundTag();
-        putVec(data, "c", center);
-        data.putFloat("yaw", yaw);
-        data.putFloat("r", (float) radius);
-        data.putFloat("sweep", sweep);
-        data.putInt("color", color);
-        this.send(VfxPacket.SLASH, data);
-    }
-
-    public void orb(Entity entity, double height, double size, int duration, int color) {
-        this.orb(entity, height, size, 0.0, duration, color);
-    }
-
-    public void orb(Entity entity, double height, double size, double ring, int duration, int color) {
-        CompoundTag data = new CompoundTag();
-        data.putFloat("ring", (float) ring);
-        data.putInt("id", entity.getId());
-        data.putFloat("h", (float) height);
-        data.putFloat("s", (float) size);
-        data.putInt("d", duration);
-        data.putInt("color", color);
-        this.send(VfxPacket.ORB, data);
-    }
-
-    public void wall(Vec3 center, double radius, double height, int duration, int color) {
-        CompoundTag data = new CompoundTag();
-        putVec(data, "c", center);
-        data.putFloat("r", (float) radius);
-        data.putFloat("h", (float) height);
-        data.putInt("d", duration);
-        data.putInt("color", color);
-        this.send(VfxPacket.WALL, data);
     }
 }

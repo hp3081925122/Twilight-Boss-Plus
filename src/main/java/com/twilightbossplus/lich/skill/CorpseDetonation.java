@@ -4,7 +4,7 @@ import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.config.LichConfig;
 import com.twilightbossplus.lich.LichBrain;
 import com.twilightbossplus.lich.LichColors;
-import com.twilightbossplus.network.VfxPacket;
+import com.twilightbossplus.lich.LichFx;
 import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.sounds.SoundEvents;
@@ -53,8 +53,8 @@ public final class CorpseDetonation extends LichSkill {
         }
         this.marked.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, this.fuse, 3, false, false));
         this.marked.addEffect(new MobEffectInstance(MobEffects.GLOWING, this.fuse, 0, false, false));
-        this.brain.tether(this.lich, this.marked, this.fuse, LichColors.DRAIN);
-        this.brain.orb(this.marked, 2.3, 0.5, RADIUS, this.fuse, LichColors.DANGER);
+        LichFx.chain(this.brain, this.lich, this.marked, this.fuse, LichColors.DRAIN);
+        LichFx.mark(this.brain, this.marked, RADIUS, this.fuse);
         this.cast();
         this.sound(TFSounds.LICH_POP_MOB.get(), this.marked.position(), 2.0F, 0.5F);
     }
@@ -68,7 +68,7 @@ public final class CorpseDetonation extends LichSkill {
         this.face(this.marked.position(), 20.0F);
         if (!this.marked.isAlive()) {
             TwilightBossPlus.debug("Lich {} lost the marked minion before detonation", this.lich.getId());
-            this.brain.tether(this.lich, this.marked, 0, LichColors.DRAIN);
+            LichFx.chain(this.brain, this.lich, this.marked, 0, LichColors.DRAIN);
             return false;
         }
         if (this.age % 10 == 0) {
@@ -82,8 +82,8 @@ public final class CorpseDetonation extends LichSkill {
                 }
             }
             Vec3 ground = this.brain.ground(center);
-            this.brain.burst(ground, RADIUS, VfxPacket.BURST_SOUL, LichColors.DANGER);
-            this.brain.pillar(ground, 1.4, 4.5, 10, LichColors.DRAIN);
+            LichFx.blast(this.brain, ground, RADIUS, LichColors.DANGER);
+            LichFx.flame(this.brain, ground, 1.4, 4.5, 14, LichColors.DRAIN);
             this.brain.shake(center, 0.9F, 18.0F, 10);
             this.sound(SoundEvents.GENERIC_EXPLODE, center, 1.6F, 0.8F);
             this.sound(TFSounds.MINION_DEATH.get(), center, 1.6F, 0.6F);

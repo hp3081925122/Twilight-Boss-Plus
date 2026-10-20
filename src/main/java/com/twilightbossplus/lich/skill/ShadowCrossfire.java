@@ -3,6 +3,7 @@ package com.twilightbossplus.lich.skill;
 import com.twilightbossplus.config.LichConfig;
 import com.twilightbossplus.lich.LichBrain;
 import com.twilightbossplus.lich.LichColors;
+import com.twilightbossplus.lich.LichFx;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -50,7 +51,7 @@ public final class ShadowCrossfire extends LichSkill {
             Vec3 dir = aim.subtract(eye).normalize();
             Vec3 end = this.clip(eye, eye.add(dir.scale(RANGE)));
             this.lines.add(new Vec3[]{eye, end});
-            this.brain.beam(eye, end, BEAM_RADIUS * 2.0, this.windup, this.windup + AFTER, LichColors.TWILIGHT);
+            LichFx.beam(this.brain, eye, end, BEAM_RADIUS * 2.0, this.windup, this.windup + AFTER, LichColors.TWILIGHT);
             caster.swing(InteractionHand.MAIN_HAND);
         }
         this.sound(TFSounds.LICH_AMBIENT.get(), this.lich.position(), 2.0F, 0.6F);
