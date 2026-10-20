@@ -8,7 +8,9 @@ public enum VfxAtlas {
     NAGA("naga"),
     LICH("lich"),
     MINO("minoshroom"),
-    HYDRA("hydra");
+    HYDRA("hydra"),
+    KNIGHT("knight_phantom"),
+    URGHAST("ur_ghast");
 
     public static final float SIZE = 256.0F;
 

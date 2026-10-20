@@ -47,10 +47,17 @@ public final class ClientVfx {
         if (type >= 300 && type < 400) {
             MinoPose.record(level, type, d);
         }
+        if (type >= 500 && type < 600) {
+            KnightPose.record(level, type, d);
+        }
         if (!ClientConfig.ENABLED.get()) {
             return;
         }
-        if (type >= 400) {
+        if (type >= 600) {
+            UrGhastVfx.handle(level, type, d);
+        } else if (type >= 500) {
+            KnightVfx.handle(level, type, d);
+        } else if (type >= 400) {
             HydraVfx.handle(level, type, d);
         } else if (type >= 300) {
             MinoVfx.handle(level, type, d);
