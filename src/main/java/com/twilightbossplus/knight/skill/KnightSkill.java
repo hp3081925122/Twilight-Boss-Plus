@@ -5,6 +5,7 @@ import com.twilightbossplus.knight.KnightBrain;
 import com.twilightbossplus.knight.KnightFx;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
@@ -90,6 +91,10 @@ public abstract class KnightSkill extends BossSkill<KnightPhantom, KnightBrain> 
         knight.setYRot(yaw);
         knight.yBodyRot = yaw;
         knight.yHeadRot = yaw;
+    }
+
+    protected void sound(Holder<SoundEvent> sound, Vec3 at, float volume, float pitch) {
+        this.sound(sound.value(), at, volume, pitch);
     }
 
     protected void sound(SoundEvent sound, Vec3 at, float volume, float pitch) {

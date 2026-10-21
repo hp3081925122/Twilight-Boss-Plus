@@ -18,7 +18,7 @@ public abstract class PhantomFormationGoalMixin {
     @Final
     private KnightPhantom boss;
 
-    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "tick", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$pauseWhileBusy(CallbackInfo ci) {
         if (KnightConfig.ENABLED.get() && KnightBrain.of(this.boss).busy()) {
             ci.cancel();

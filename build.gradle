@@ -1,97 +1,62 @@
-// 当前文件只保留最小的 Forge 开发、构建和运行配置。
 plugins {
+    id 'java-library'
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
-    id 'org.spongepowered.mixin' version '0.7.+'
-}
-
-repositories {
-    maven {
-        url = 'https://www.cursemaven.com'
-        content {
-            includeGroup 'curse.maven'
-        }
-    }
-    maven {
-        url = 'https://repo.spongepowered.org/repository/maven-public/'
-        content {
-            includeGroup 'org.spongepowered'
-        }
-    }
+    id 'net.neoforged.gradle.userdev' version '7.1.37'
 }
 
 version = project.mod_version
 group = project.mod_group_id
 
-base {
-    archivesName = "${project.mod_id}-${project.minecraft_version}-forge"
+repositories {
+    mavenLocal()
+    maven { url = 'https://maven.neoforged.net/releases' }
+    maven { url = 'https://maven.blamejared.com' }
+    maven {
+        url = 'https://cursemaven.com'
+        content { includeGroup 'curse.maven' }
+    }
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+base { archivesName = "${project.mod_id}-${project.minecraft_version}-neoforge" }
 
-minecraft {
-    mappings channel: project.mapping_channel, version: project.mapping_version
-    copyIdeResources = true
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-    runs {
-        configureEach {
-            workingDirectory project.file('run')
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-
-            mods {
-                "${project.mod_id}" {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        client {
-            property 'forge.enabledGameTestNamespaces', project.mod_id
-        }
-
-        server {
-            args '--nogui'
-        }
-
-        gameTestServer {
-            property 'forge.enabledGameTestNamespaces', project.mod_id
-        }
-
-        data {
-            workingDirectory project.file('run-data')
-            args '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-        }
+runs {
+    configureEach {
+        systemProperty 'forge.logging.markers', 'REGISTRIES'
+        systemProperty 'forge.logging.console.level', 'debug'
+        modSource project.sourceSets.main
+    }
+    client { systemProperty 'forge.enabledGameTestNamespaces', project.mod_id }
+    server {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+        programArgument '--nogui'
+    }
+    data {
+        programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
     }
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
-mixin {
-    add sourceSets.main, "${project.mod_id}.refmap.json"
-    config "${project.mod_id}.mixins.json"
-}
-
 dependencies {
-    minecraft "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
-    implementation fg.deobf("curse.maven:jei-238222:8778011")
-    implementation fg.deobf("curse.maven:just-enough-characters-250702:8771525")
-    implementation fg.deobf("curse.maven:jade-324717:8479276")
-    // 暮色森林 4.3.2508，来自 CurseForge 文件 5468648。
-    implementation fg.deobf("curse.maven:the-twilight-forest-227639:5468648")
-    // GeckoLib 4.8.2，来自 CurseForge 文件 7025129。
-    implementation fg.deobf("curse.maven:geckolib-388172:7025129")
+    implementation "net.neoforged:neoforge:${project.neo_version}"
+    implementation "curse.maven:the-twilight-forest-227639:6472889"
+    implementation "curse.maven:geckolib-388172:8893490"
+    compileOnly "curse.maven:jei-238222:9267535"
+    implementation "curse.maven:just-enough-characters-250702:9163765"
+    implementation "curse.maven:jade-324717:8591319"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
-tasks.named('processResources', ProcessResources).configure {
+tasks.withType(ProcessResources).configureEach {
     def replaceProperties = [
             minecraft_version: project.minecraft_version,
             minecraft_version_range: project.minecraft_version_range,
-            forge_version: project.forge_version,
-            forge_version_range: project.forge_version_range,
+            neo_version: project.neo_version,
+            neo_version_range: project.neo_version_range,
             loader_version_range: project.loader_version_range,
             mod_id: project.mod_id,
             mod_name: project.mod_name,
@@ -101,40 +66,12 @@ tasks.named('processResources', ProcessResources).configure {
             mod_description: project.mod_description
     ]
     inputs.properties replaceProperties
-
-    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
-        expand replaceProperties + [project: project]
-    }
-}
-
-tasks.named('jar', Jar).configure {
-    manifest {
-        attributes([
-                'MixinConfigs': "${project.mod_id}.mixins.json",
-                'Specification-Title': project.mod_id,
-                'Specification-Vendor': project.mod_authors,
-                'Specification-Version': '1',
-                'Implementation-Title': project.name,
-                'Implementation-Version': project.jar.archiveVersion,
-                'Implementation-Vendor': project.mod_authors
-        ])
-    }
-    finalizedBy 'reobfJar'
+    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) { expand replaceProperties }
 }
 
 publishing {
-    publications {
-        register('mavenJava', MavenPublication) {
-            artifact jar
-        }
-    }
-    repositories {
-        maven {
-            url "file://${project.projectDir}/mcmodsrepo"
-        }
-    }
+    publications { register('mavenJava', MavenPublication) { from components.java } }
+    repositories { maven { url "file://${project.projectDir}/repo" } }
 }
 
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-}
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }

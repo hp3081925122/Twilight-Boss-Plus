@@ -923,7 +923,7 @@ public final class KnightVfx {
                     Vec3 dir = new Vec3(Math.cos(a), 0.0, Math.sin(a));
                     Vec3 origin = this.landing.add(0.0, 0.8, 0.0).add(dir.scale(1.2));
                     double reach = this.range;
-                    HitResult hit = level.clip(new ClipContext(origin, origin.add(dir.scale(this.range)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
+                    HitResult hit = level.clip(new ClipContext(origin, origin.add(dir.scale(this.range)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
                     if (hit.getType() != HitResult.Type.MISS) {
                         reach = hit.getLocation().distanceTo(origin);
                     }

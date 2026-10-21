@@ -18,10 +18,10 @@ import twilightforest.entity.boss.Minoshroom;
 public abstract class MinoshroomModelMixin extends HumanoidModel<Minoshroom> {
     @Shadow(remap = false)
     @Final
-    ModelPart leg3;
+    ModelPart rightFrontLeg;
     @Shadow(remap = false)
     @Final
-    ModelPart leg4;
+    ModelPart leftFrontLeg;
 
     protected MinoshroomModelMixin(ModelPart root) {
         super(root);
@@ -33,7 +33,7 @@ public abstract class MinoshroomModelMixin extends HumanoidModel<Minoshroom> {
         return x * x * (3.0F - 2.0F * x);
     }
 
-    @Inject(method = {"setupAnim(Ltwilightforest/entity/boss/Minoshroom;FFFFF)V", "m_6973_(Ltwilightforest/entity/boss/Minoshroom;FFFFF)V"}, at = @At("TAIL"), remap = false, require = 1)
+    @Inject(method = {"setupAnim(Ltwilightforest/entity/boss/Minoshroom;FFFFF)V"}, at = @At("TAIL"), remap = false, require = 1)
     private void tbp$pose(Minoshroom entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
         float lean = 0.0F;
         float twist = 0.0F;
@@ -87,8 +87,8 @@ public abstract class MinoshroomModelMixin extends HumanoidModel<Minoshroom> {
                 leftX = 0.4F;
                 headDown = 0.7F * weight;
                 lean = 0.35F * weight;
-                this.leg3.xRot = Mth.lerp(weight, this.leg3.xRot, Mth.sin(t * 0.9F) * 0.7F - 0.3F);
-                this.leg4.xRot = Mth.lerp(weight, this.leg4.xRot, 0.15F);
+                this.rightFrontLeg.xRot = Mth.lerp(weight, this.rightFrontLeg.xRot, Mth.sin(t * 0.9F) * 0.7F - 0.3F);
+                this.leftFrontLeg.xRot = Mth.lerp(weight, this.leftFrontLeg.xRot, 0.15F);
             }
         }
         if (entity.isCharging() && (state == null || state.kind == MinoPose.PAW)) {

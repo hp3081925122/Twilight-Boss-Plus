@@ -5,6 +5,7 @@ import com.twilightbossplus.hydra.HydraBrain;
 import com.twilightbossplus.hydra.HydraHeads;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
@@ -44,6 +45,10 @@ public abstract class HydraSkill extends BossSkill<Hydra, HydraBrain> {
         this.brain.aim(index, yaw(from, point), pitch(from, point));
     }
 
+    protected void sound(Holder<SoundEvent> sound, Vec3 at, float volume, float pitch) {
+        this.sound(sound.value(), at, volume, pitch);
+    }
+
     protected void sound(SoundEvent sound, Vec3 at, float volume, float pitch) {
         this.brain.level().playSound(null, at.x, at.y, at.z, sound, this.hydra.getSoundSource(), volume, pitch);
     }
@@ -62,7 +67,7 @@ public abstract class HydraSkill extends BossSkill<Hydra, HydraBrain> {
         }
         for (LivingEntity victim : this.brain.victimsOnSegment(from, to, radius)) {
             if (this.brain.damage(victim, multiplier)) {
-                victim.setSecondsOnFire(fireSeconds);
+                victim.setRemainingFireTicks(fireSeconds * 20);
                 this.brain.knock(victim, dir.x, dir.z, 0.25, 0.1);
             }
         }

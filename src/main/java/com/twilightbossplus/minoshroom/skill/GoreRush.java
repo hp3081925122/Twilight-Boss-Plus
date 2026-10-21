@@ -109,7 +109,7 @@ public final class GoreRush extends MinoSkill {
             }
             if (this.shieldBlocked(victim)) {
                 if (victim instanceof Player player) {
-                    player.disableShield(true);
+                    player.disableShield();
                 }
                 this.brain.knock(victim, this.direction.x, this.direction.z, 0.9, 0.3);
                 this.sound(SoundEvents.SHIELD_BREAK, victim.position(), 1.2F, 0.8F);

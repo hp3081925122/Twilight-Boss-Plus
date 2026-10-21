@@ -49,7 +49,7 @@ public abstract class HydraHeadContainerMixin implements HydraHeadControl {
         return this.headNum;
     }
 
-    @Inject(method = "advanceHeadState", at = @At("TAIL"))
+    @Inject(method = "advanceHeadState", at = @At("TAIL"), remap = false)
     private void tbp$applyDuration(CallbackInfo ci) {
         if (this.tbp$pending > 0 && this.ticksProgress == 0) {
             this.ticksNeeded = this.tbp$pending;
@@ -57,7 +57,7 @@ public abstract class HydraHeadContainerMixin implements HydraHeadControl {
         }
     }
 
-    @Inject(method = "setHeadFacing", at = @At("TAIL"))
+    @Inject(method = "setHeadFacing", at = @At("TAIL"), remap = false)
     private void tbp$aim(CallbackInfo ci) {
         if (!HydraConfig.ENABLED.get() || !(this.hydra instanceof HydraBrainHolder holder)) {
             return;
@@ -70,14 +70,14 @@ public abstract class HydraHeadContainerMixin implements HydraHeadControl {
         this.headEntity.setXRot(Mth.approachDegrees(this.headEntity.getXRot(), brain.aimPitch(this.headNum), TBP$PITCH_STEP));
     }
 
-    @Inject(method = "executeAttacks", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "executeAttacks", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$replaceAttacks(CallbackInfo ci) {
         if (HydraConfig.ENABLED.get()) {
             ci.cancel();
         }
     }
 
-    @Inject(method = "addMouthParticles", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "addMouthParticles", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$replaceParticles(CallbackInfo ci) {
         if (HydraConfig.ENABLED.get()) {
             ci.cancel();

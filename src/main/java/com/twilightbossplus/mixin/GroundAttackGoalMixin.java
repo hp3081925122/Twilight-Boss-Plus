@@ -9,7 +9,7 @@ import twilightforest.entity.ai.goal.GroundAttackGoal;
 
 @Mixin(GroundAttackGoal.class)
 public abstract class GroundAttackGoalMixin {
-    @Inject(method = "canUse", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "canUse", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$replacedSlam(CallbackInfoReturnable<Boolean> cir) {
         if (MinoConfig.ENABLED.get()) {
             cir.setReturnValue(false);

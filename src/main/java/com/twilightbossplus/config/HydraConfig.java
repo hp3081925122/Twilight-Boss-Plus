@@ -1,14 +1,14 @@
 package com.twilightbossplus.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class HydraConfig {
     public static final class Skill {
-        public final ForgeConfigSpec.BooleanValue enabled;
-        public final ForgeConfigSpec.IntValue cooldown;
-        public final ForgeConfigSpec.DoubleValue multiplier;
+        public final ModConfigSpec.BooleanValue enabled;
+        public final ModConfigSpec.IntValue cooldown;
+        public final ModConfigSpec.DoubleValue multiplier;
 
-        Skill(ForgeConfigSpec.Builder b, String key, String cn, String en, int cooldown, double multiplier) {
+        Skill(ModConfigSpec.Builder b, String key, String cn, String en, int cooldown, double multiplier) {
             b.push(key);
             this.enabled = b.comment("启用" + cn, "Enable " + en).define("enabled", true);
             this.cooldown = b.comment(cn + "冷却（tick）", en + " cooldown in ticks").defineInRange("cooldown_ticks", cooldown, 1, 12000);
@@ -16,32 +16,32 @@ public final class HydraConfig {
         }
     }
 
-    public static final ForgeConfigSpec SPEC;
-    public static final ForgeConfigSpec.BooleanValue ENABLED;
-    public static final ForgeConfigSpec.DoubleValue HEALTH_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue BASE_ATTACK;
-    public static final ForgeConfigSpec.DoubleValue ATTACK_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue SKILL_KNOCKBACK;
-    public static final ForgeConfigSpec.IntValue SKILL_INTERVAL;
-    public static final ForgeConfigSpec.DoubleValue PHASE_TWO_HEALTH;
-    public static final ForgeConfigSpec.DoubleValue PHASE_THREE_HEALTH;
-    public static final ForgeConfigSpec.DoubleValue RAGE_COOLDOWN_MULTIPLIER;
+    public static final ModConfigSpec SPEC;
+    public static final ModConfigSpec.BooleanValue ENABLED;
+    public static final ModConfigSpec.DoubleValue HEALTH_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue BASE_ATTACK;
+    public static final ModConfigSpec.DoubleValue ATTACK_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue SKILL_KNOCKBACK;
+    public static final ModConfigSpec.IntValue SKILL_INTERVAL;
+    public static final ModConfigSpec.DoubleValue PHASE_TWO_HEALTH;
+    public static final ModConfigSpec.DoubleValue PHASE_THREE_HEALTH;
+    public static final ModConfigSpec.DoubleValue RAGE_COOLDOWN_MULTIPLIER;
 
     public static final Skill MAGMA_VOLLEY;
-    public static final ForgeConfigSpec.IntValue VOLLEY_SHELLS;
-    public static final ForgeConfigSpec.DoubleValue POOL_MULTIPLIER;
-    public static final ForgeConfigSpec.IntValue POOL_TICKS;
+    public static final ModConfigSpec.IntValue VOLLEY_SHELLS;
+    public static final ModConfigSpec.DoubleValue POOL_MULTIPLIER;
+    public static final ModConfigSpec.IntValue POOL_TICKS;
     public static final Skill FLAME_SWEEP;
     public static final Skill JAW_STRIKE;
     public static final Skill MAGMA_STOMP;
-    public static final ForgeConfigSpec.DoubleValue STOMP_WAVE_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue STOMP_WAVE_MULTIPLIER;
     public static final Skill INFERNO_CROWN;
     public static final Skill EMBER_RAIN;
-    public static final ForgeConfigSpec.IntValue RAIN_SHELLS;
+    public static final ModConfigSpec.IntValue RAIN_SHELLS;
     public static final Skill REGROWTH_ROAR;
 
     static {
-        ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder b = new ModConfigSpec.Builder();
         b.push("hydra");
         ENABLED = b.comment("启用九头蛇增强，关闭后保持暮色原版；开启时原版的咬击、喷火与迫击炮被新技能取代", "Enable the Hydra rework; disable to keep vanilla. When enabled the vanilla bite, flame and mortar attacks are replaced").define("enabled", true);
         HEALTH_MULTIPLIER = b.comment("最大生命倍率", "Max health multiplier").defineInRange("health_multiplier", 1.5, 0.1, 100.0);

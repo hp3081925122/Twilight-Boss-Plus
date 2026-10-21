@@ -11,14 +11,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.client.event.ViewportEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ViewportEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 
-@Mod.EventBusSubscriber(modid = TwilightBossPlus.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class ClientVfx {
     private static final List<VfxEffect> EFFECTS = new ArrayList<>();
     private static final List<VfxEffect> PENDING = new ArrayList<>();
@@ -50,10 +48,20 @@ public final class ClientVfx {
         if (type >= 500 && type < 600) {
             KnightPose.record(level, type, d);
         }
+        if (type >= 700 && type < 800) {
+            YetiPose.record(level, type, d);
+        }
+        if (type >= 800 && type < 900) {
+            QueenPose.record(level, type, d);
+        }
         if (!ClientConfig.ENABLED.get()) {
             return;
         }
-        if (type >= 600) {
+        if (type >= 800) {
+            QueenVfx.handle(level, type, d);
+        } else if (type >= 700) {
+            YetiVfx.handle(level, type, d);
+        } else if (type >= 600) {
             UrGhastVfx.handle(level, type, d);
         } else if (type >= 500) {
             KnightVfx.handle(level, type, d);
@@ -96,10 +104,7 @@ public final class ClientVfx {
     }
 
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
+    public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (level == null) {
@@ -143,7 +148,7 @@ public final class ClientVfx {
         PoseStack pose = event.getPoseStack();
         pose.pushPose();
         pose.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-        canvas.begin(level, pose.last().pose(), cameraPos, camera.getLeftVector(), camera.getUpVector(), event.getPartialTick());
+        canvas.begin(level, pose.last().pose(), cameraPos, camera.getLeftVector(), camera.getUpVector(), event.getPartialTick().getGameTimeDeltaPartialTick(false));
         for (VfxEffect effect : EFFECTS) {
             effect.render(canvas);
         }

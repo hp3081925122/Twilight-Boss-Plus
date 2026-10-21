@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraftforge.entity.PartEntity;
+import net.neoforged.neoforge.entity.PartEntity;
 import twilightforest.entity.ai.goal.NagaMovementPattern;
 import twilightforest.entity.boss.Naga;
 
@@ -111,7 +111,7 @@ public final class NagaBrain extends BossBrain<Naga> {
         }
         if (this.pendingDaze) {
             this.pendingDaze = false;
-            this.naga.getMovementAI().doDaze();
+            this.naga.getMovementPattern().doDaze();
         }
         for (int i = 0; i < this.cooldowns.length; i++) {
             if (this.cooldowns[i] > 0) {
@@ -190,7 +190,7 @@ public final class NagaBrain extends BossBrain<Naga> {
             this.startSkill(SkillId.FANG_SNAP, new FangSnap(this));
             return;
         }
-        if (this.naga.getMovementAI().getState() != NagaMovementPattern.MovementState.CIRCLE) {
+        if (this.naga.getMovementPattern().getState() != NagaMovementPattern.MovementState.CIRCLE) {
             return;
         }
         List<SkillId> options = new ArrayList<>();

@@ -32,7 +32,7 @@ public final class MagmaPool implements BossHazard {
         if (this.age % PULSE == 0) {
             for (LivingEntity victim : brain.victimsAround(this.center, this.radius, 1.2)) {
                 if (brain.damage(victim, this.multiplier)) {
-                    victim.setSecondsOnFire(2);
+                    victim.setRemainingFireTicks(2 * 20);
                 }
             }
         }

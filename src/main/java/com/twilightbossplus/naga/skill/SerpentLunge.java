@@ -10,6 +10,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.phys.Vec3;
 import twilightforest.init.TFSounds;
 
@@ -129,7 +130,7 @@ public final class SerpentLunge extends NagaSkill {
 
     private boolean blocked(LivingEntity victim) {
         if (victim instanceof ServerPlayer player) {
-            player.getUseItem().hurtAndBreak(5, player, user -> user.broadcastBreakEvent(player.getUsedItemHand()));
+            player.getUseItem().hurtAndBreak(5, player, player.getUsedItemHand() == net.minecraft.world.InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
         }
         if (victim instanceof Player) {
             this.brain.knock(victim, this.direction.x, this.direction.z, 0.6, 0.25);

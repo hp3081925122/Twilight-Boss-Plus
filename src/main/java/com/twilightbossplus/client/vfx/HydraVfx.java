@@ -677,7 +677,7 @@ public final class HydraVfx {
                 RandomSource random = level.getRandom();
                 for (int i = 0; i < hydra.hc.length; i++) {
                     HydraHead head = hydra.hc[i].headEntity;
-                    if (head == null || !hydra.hc[i].shouldRenderHead()) {
+                    if (head == null || !hydra.hc[i].headEntity.isAlive()) {
                         continue;
                     }
                     Vec3 look = head.getViewVector(1.0F);
@@ -739,7 +739,7 @@ public final class HydraVfx {
             if (this.age % 10 == 0) {
                 int index = random.nextInt(hydra.hc.length);
                 HydraHead head = hydra.hc[index].headEntity;
-                if (head != null && hydra.hc[index].shouldRenderHead()) {
+                if (head != null && hydra.hc[index].headEntity.isAlive()) {
                     Vec3 m = head.position().add(0.0, 1.0, 0.0).add(head.getViewVector(1.0F).scale(MOUTH));
                     smoke(m.x, m.y, m.z, 0.0, 0.05, 0.0, random);
                     flame(m.x, m.y, m.z, 0.0, 0.04, 0.0, 0.4, random);

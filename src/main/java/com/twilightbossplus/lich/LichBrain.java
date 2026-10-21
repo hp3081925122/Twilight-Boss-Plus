@@ -154,8 +154,8 @@ public final class LichBrain extends BossBrain<Lich> {
 
     public List<Lich> clones() {
         List<Lich> result = new ArrayList<>();
-        for (Lich other : this.mob.getNearbyLiches()) {
-            if (other != this.mob && other.isShadowClone() && other.getMasterLich() == this.mob && other.isAlive()) {
+        for (Lich other : this.lich().getAllClones()) {
+            if (other != this.mob && other.isShadowClone() && other.getMaster() == this.mob && other.isAlive()) {
                 result.add(other);
             }
         }

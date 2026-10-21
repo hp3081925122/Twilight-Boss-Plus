@@ -2,6 +2,7 @@ package com.twilightbossplus.lich.skill;
 
 import com.twilightbossplus.common.BossSkill;
 import com.twilightbossplus.lich.LichBrain;
+import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
@@ -24,6 +25,10 @@ public abstract class LichSkill extends BossSkill<Lich, LichBrain> {
 
     protected void cast() {
         this.lich.swing(InteractionHand.MAIN_HAND);
+    }
+
+    protected void sound(Holder<SoundEvent> sound, Vec3 at, float volume, float pitch) {
+        this.sound(sound.value(), at, volume, pitch);
     }
 
     protected void sound(SoundEvent sound, Vec3 at, float volume, float pitch) {

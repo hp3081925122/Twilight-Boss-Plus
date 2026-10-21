@@ -33,12 +33,12 @@ public abstract class LichMixin extends Monster implements LichBrainHolder {
         return this.tbp$brain;
     }
 
-    @Inject(method = "customServerAiStep", at = @At("TAIL"))
+    @Inject(method = "customServerAiStep", at = @At("TAIL"), remap = false)
     private void tbp$tickBrain(CallbackInfo ci) {
         this.tbp$getBrain().tick();
     }
 
-    @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "hurt", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$skillInvulnerable(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         if (this.level().isClientSide() || this.tbp$brain == null || !this.tbp$brain.invulnerable()) {
             return;

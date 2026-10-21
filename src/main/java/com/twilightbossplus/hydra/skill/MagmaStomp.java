@@ -47,7 +47,7 @@ public final class MagmaStomp extends HydraSkill {
             Vec3 center = this.center();
             for (LivingEntity victim : this.brain.victimsAround(center, RADIUS, 3.0)) {
                 if (this.brain.damage(victim, HydraConfig.MAGMA_STOMP.multiplier.get())) {
-                    victim.setSecondsOnFire(3);
+                    victim.setRemainingFireTicks(3 * 20);
                     this.brain.knockFrom(victim, center, 0.8, 0.4);
                 }
             }

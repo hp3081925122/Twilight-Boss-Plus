@@ -16,7 +16,7 @@ public abstract class NagaMovementPatternMixin {
     @Final
     private Naga naga;
 
-    @Inject(method = "canUse", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "canUse", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$yieldToSkills(CallbackInfoReturnable<Boolean> cir) {
         if (((NagaBrainHolder) this.naga).tbp$getBrain().busy()) {
             cir.setReturnValue(false);

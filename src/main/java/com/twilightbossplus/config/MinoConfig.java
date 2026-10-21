@@ -1,14 +1,14 @@
 package com.twilightbossplus.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class MinoConfig {
     public static final class Skill {
-        public final ForgeConfigSpec.BooleanValue enabled;
-        public final ForgeConfigSpec.IntValue cooldown;
-        public final ForgeConfigSpec.DoubleValue multiplier;
+        public final ModConfigSpec.BooleanValue enabled;
+        public final ModConfigSpec.IntValue cooldown;
+        public final ModConfigSpec.DoubleValue multiplier;
 
-        Skill(ForgeConfigSpec.Builder b, String key, String cn, String en, int cooldown, double multiplier) {
+        Skill(ModConfigSpec.Builder b, String key, String cn, String en, int cooldown, double multiplier) {
             b.push(key);
             this.enabled = b.comment("启用" + cn, "Enable " + en).define("enabled", true);
             this.cooldown = b.comment(cn + "冷却（tick）", en + " cooldown in ticks").defineInRange("cooldown_ticks", cooldown, 1, 12000);
@@ -16,36 +16,36 @@ public final class MinoConfig {
         }
     }
 
-    public static final ForgeConfigSpec SPEC;
-    public static final ForgeConfigSpec.BooleanValue ENABLED;
-    public static final ForgeConfigSpec.DoubleValue HEALTH_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue ATTACK_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue SKILL_KNOCKBACK;
-    public static final ForgeConfigSpec.IntValue SKILL_INTERVAL;
-    public static final ForgeConfigSpec.DoubleValue PHASE_TWO_HEALTH;
-    public static final ForgeConfigSpec.DoubleValue PHASE_THREE_HEALTH;
-    public static final ForgeConfigSpec.DoubleValue RAGE_COOLDOWN_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue RAGE_SPEED_BONUS;
-    public static final ForgeConfigSpec.IntValue STUN_TICKS;
-    public static final ForgeConfigSpec.DoubleValue STUN_DAMAGE_BONUS;
+    public static final ModConfigSpec SPEC;
+    public static final ModConfigSpec.BooleanValue ENABLED;
+    public static final ModConfigSpec.DoubleValue HEALTH_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue ATTACK_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue SKILL_KNOCKBACK;
+    public static final ModConfigSpec.IntValue SKILL_INTERVAL;
+    public static final ModConfigSpec.DoubleValue PHASE_TWO_HEALTH;
+    public static final ModConfigSpec.DoubleValue PHASE_THREE_HEALTH;
+    public static final ModConfigSpec.DoubleValue RAGE_COOLDOWN_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue RAGE_SPEED_BONUS;
+    public static final ModConfigSpec.IntValue STUN_TICKS;
+    public static final ModConfigSpec.DoubleValue STUN_DAMAGE_BONUS;
 
     public static final Skill GORE_RUSH;
-    public static final ForgeConfigSpec.IntValue RUSH_WINDUP;
+    public static final ModConfigSpec.IntValue RUSH_WINDUP;
     public static final Skill AXE_FISSURE;
     public static final Skill AXE_CLEAVE;
-    public static final ForgeConfigSpec.DoubleValue CHOP_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue CHOP_MULTIPLIER;
     public static final Skill SPORE_BURST;
-    public static final ForgeConfigSpec.IntValue SPORE_TICKS;
+    public static final ModConfigSpec.IntValue SPORE_TICKS;
     public static final Skill WHIRLWIND;
     public static final Skill LABYRINTH_QUAKE;
-    public static final ForgeConfigSpec.DoubleValue RUBBLE_MULTIPLIER;
-    public static final ForgeConfigSpec.IntValue RUBBLE_COUNT;
+    public static final ModConfigSpec.DoubleValue RUBBLE_MULTIPLIER;
+    public static final ModConfigSpec.IntValue RUBBLE_COUNT;
     public static final Skill MYCELIUM_SNARE;
-    public static final ForgeConfigSpec.IntValue ROOT_TICKS;
+    public static final ModConfigSpec.IntValue ROOT_TICKS;
     public static final Skill BULL_RAGE;
 
     static {
-        ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder b = new ModConfigSpec.Builder();
         b.push("minoshroom");
         ENABLED = b.comment("启用米诺菇增强，关闭后保持暮色原版；开启时原版冲锋与震地被新技能取代", "Enable the Minoshroom rework; disable to keep vanilla. When enabled the vanilla charge and ground slam are replaced").define("enabled", true);
         HEALTH_MULTIPLIER = b.comment("最大生命倍率", "Max health multiplier").defineInRange("health_multiplier", 1.5, 0.1, 100.0);

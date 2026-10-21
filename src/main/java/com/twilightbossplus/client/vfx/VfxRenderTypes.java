@@ -11,9 +11,9 @@ public final class VfxRenderTypes extends RenderType {
     }
 
     public static RenderType glow(String name, ResourceLocation texture) {
-        return create("twilightbossplus_glow_" + name, DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 262144, false, false,
+        return create("twilightbossplus_glow_" + name, DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 262144, false, false,
                 CompositeState.builder()
-                        .setShaderState(POSITION_COLOR_TEX_SHADER)
+                        .setShaderState(POSITION_COLOR_TEX_LIGHTMAP_SHADER)
                         .setTextureState(new TextureStateShard(texture, false, false))
                         .setTransparencyState(LIGHTNING_TRANSPARENCY)
                         .setCullState(NO_CULL)
@@ -23,9 +23,9 @@ public final class VfxRenderTypes extends RenderType {
     }
 
     public static RenderType flat(String name, ResourceLocation texture) {
-        return create("twilightbossplus_flat_" + name, DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 262144, false, false,
+        return create("twilightbossplus_flat_" + name, DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 262144, false, false,
                 CompositeState.builder()
-                        .setShaderState(POSITION_COLOR_TEX_SHADER)
+                        .setShaderState(POSITION_COLOR_TEX_LIGHTMAP_SHADER)
                         .setTextureState(new TextureStateShard(texture, false, false))
                         .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                         .setCullState(NO_CULL)

@@ -4,7 +4,7 @@ import com.twilightbossplus.config.KnightConfig;
 import com.twilightbossplus.knight.KnightBrain;
 import com.twilightbossplus.knight.KnightBrainHolder;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.FlyingMob;
+import twilightforest.entity.boss.BaseTFBoss;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -14,11 +14,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import twilightforest.entity.boss.KnightPhantom;
 
 @Mixin(KnightPhantom.class)
-public abstract class KnightPhantomMixin extends FlyingMob implements KnightBrainHolder {
+public abstract class KnightPhantomMixin extends BaseTFBoss implements KnightBrainHolder {
     @Unique
     private KnightBrain tbp$brain;
 
-    protected KnightPhantomMixin(EntityType<? extends FlyingMob> type, Level level) {
+    protected KnightPhantomMixin(EntityType<? extends BaseTFBoss> type, Level level) {
         super(type, level);
     }
 
@@ -30,7 +30,7 @@ public abstract class KnightPhantomMixin extends FlyingMob implements KnightBrai
         return this.tbp$brain;
     }
 
-    @Inject(method = "aiStep", at = @At("TAIL"))
+    @Inject(method = "aiStep", at = @At("TAIL"), remap = false)
     private void tbp$tickBrain(CallbackInfo ci) {
         if (!this.level().isClientSide()) {
             this.tbp$getBrain().tick();

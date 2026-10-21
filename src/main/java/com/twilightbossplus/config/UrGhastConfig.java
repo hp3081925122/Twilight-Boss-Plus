@@ -1,14 +1,14 @@
 package com.twilightbossplus.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class UrGhastConfig {
     public static final class Skill {
-        public final ForgeConfigSpec.BooleanValue enabled;
-        public final ForgeConfigSpec.IntValue cooldown;
-        public final ForgeConfigSpec.DoubleValue multiplier;
+        public final ModConfigSpec.BooleanValue enabled;
+        public final ModConfigSpec.IntValue cooldown;
+        public final ModConfigSpec.DoubleValue multiplier;
 
-        Skill(ForgeConfigSpec.Builder b, String key, String cn, String en, int cooldown, double multiplier) {
+        Skill(ModConfigSpec.Builder b, String key, String cn, String en, int cooldown, double multiplier) {
             b.push(key);
             this.enabled = b.comment("启用" + cn, "Enable " + en).define("enabled", true);
             this.cooldown = b.comment(cn + "冷却（tick）", en + " cooldown in ticks").defineInRange("cooldown_ticks", cooldown, 1, 12000);
@@ -16,30 +16,30 @@ public final class UrGhastConfig {
         }
     }
 
-    public static final ForgeConfigSpec SPEC;
-    public static final ForgeConfigSpec.BooleanValue ENABLED;
-    public static final ForgeConfigSpec.DoubleValue HEALTH_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue BASE_ATTACK;
-    public static final ForgeConfigSpec.DoubleValue ATTACK_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue SKILL_KNOCKBACK;
-    public static final ForgeConfigSpec.IntValue SKILL_INTERVAL;
-    public static final ForgeConfigSpec.DoubleValue PHASE_TWO_HEALTH;
-    public static final ForgeConfigSpec.DoubleValue PHASE_THREE_HEALTH;
-    public static final ForgeConfigSpec.DoubleValue RAGE_COOLDOWN_MULTIPLIER;
+    public static final ModConfigSpec SPEC;
+    public static final ModConfigSpec.BooleanValue ENABLED;
+    public static final ModConfigSpec.DoubleValue HEALTH_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue BASE_ATTACK;
+    public static final ModConfigSpec.DoubleValue ATTACK_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue SKILL_KNOCKBACK;
+    public static final ModConfigSpec.IntValue SKILL_INTERVAL;
+    public static final ModConfigSpec.DoubleValue PHASE_TWO_HEALTH;
+    public static final ModConfigSpec.DoubleValue PHASE_THREE_HEALTH;
+    public static final ModConfigSpec.DoubleValue RAGE_COOLDOWN_MULTIPLIER;
 
     public static final Skill TEAR_VOLLEY;
-    public static final ForgeConfigSpec.IntValue VOLLEY_TEARS;
+    public static final ModConfigSpec.IntValue VOLLEY_TEARS;
     public static final Skill WAILING_CONE;
-    public static final ForgeConfigSpec.IntValue WAIL_SLOWNESS_TICKS;
+    public static final ModConfigSpec.IntValue WAIL_SLOWNESS_TICKS;
     public static final Skill TEAR_STORM;
-    public static final ForgeConfigSpec.IntValue STORM_INTERVAL;
+    public static final ModConfigSpec.IntValue STORM_INTERVAL;
     public static final Skill TEAR_PRISM;
-    public static final ForgeConfigSpec.IntValue PRISM_CYCLES;
+    public static final ModConfigSpec.IntValue PRISM_CYCLES;
     public static final Skill CRIMSON_LIGHTNING;
-    public static final ForgeConfigSpec.IntValue LIGHTNING_STRIKES;
+    public static final ModConfigSpec.IntValue LIGHTNING_STRIKES;
 
     static {
-        ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder b = new ModConfigSpec.Builder();
         b.push("ur_ghast");
         ENABLED = b.comment("启用暮初恶魂增强，关闭后保持暮色原版；开启时原版火球与暴怒泪雨伤害被新技能取代，召唤小恶魂与暴怒减伤保留", "Enable the Ur-Ghast rework; disable to keep vanilla. When enabled the vanilla fireballs and tantrum tear damage are replaced, minion summoning and tantrum damage reduction are kept").define("enabled", true);
         HEALTH_MULTIPLIER = b.comment("最大生命倍率", "Max health multiplier").defineInRange("health_multiplier", 1.2, 0.1, 100.0);

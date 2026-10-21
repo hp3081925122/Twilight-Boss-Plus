@@ -1,14 +1,14 @@
 package com.twilightbossplus.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class NagaConfig {
     public static final class Skill {
-        public final ForgeConfigSpec.BooleanValue enabled;
-        public final ForgeConfigSpec.IntValue cooldown;
-        public final ForgeConfigSpec.DoubleValue multiplier;
+        public final ModConfigSpec.BooleanValue enabled;
+        public final ModConfigSpec.IntValue cooldown;
+        public final ModConfigSpec.DoubleValue multiplier;
 
-        Skill(ForgeConfigSpec.Builder b, String key, String cn, String en, int cooldown, double multiplier) {
+        Skill(ModConfigSpec.Builder b, String key, String cn, String en, int cooldown, double multiplier) {
             b.push(key);
             this.enabled = b.comment("启用" + cn, "Enable " + en).define("enabled", true);
             this.cooldown = b.comment(cn + "冷却（tick）", en + " cooldown in ticks").defineInRange("cooldown_ticks", cooldown, 1, 12000);
@@ -16,36 +16,36 @@ public final class NagaConfig {
         }
     }
 
-    public static final ForgeConfigSpec SPEC;
-    public static final ForgeConfigSpec.BooleanValue ENABLED;
-    public static final ForgeConfigSpec.DoubleValue HEALTH_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue ATTACK_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue MELEE_KNOCKBACK;
-    public static final ForgeConfigSpec.DoubleValue SKILL_KNOCKBACK;
-    public static final ForgeConfigSpec.IntValue SKILL_INTERVAL;
-    public static final ForgeConfigSpec.DoubleValue PHASE_TWO_HEALTH;
-    public static final ForgeConfigSpec.DoubleValue PHASE_THREE_HEALTH;
-    public static final ForgeConfigSpec.DoubleValue RAGE_COOLDOWN_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue RAGE_SPEED_BONUS;
+    public static final ModConfigSpec SPEC;
+    public static final ModConfigSpec.BooleanValue ENABLED;
+    public static final ModConfigSpec.DoubleValue HEALTH_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue ATTACK_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue MELEE_KNOCKBACK;
+    public static final ModConfigSpec.DoubleValue SKILL_KNOCKBACK;
+    public static final ModConfigSpec.IntValue SKILL_INTERVAL;
+    public static final ModConfigSpec.DoubleValue PHASE_TWO_HEALTH;
+    public static final ModConfigSpec.DoubleValue PHASE_THREE_HEALTH;
+    public static final ModConfigSpec.DoubleValue RAGE_COOLDOWN_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue RAGE_SPEED_BONUS;
 
     public static final Skill SERPENT_LUNGE;
-    public static final ForgeConfigSpec.IntValue LUNGE_WINDUP;
+    public static final ModConfigSpec.IntValue LUNGE_WINDUP;
     public static final Skill VENOM_SPIT;
-    public static final ForgeConfigSpec.DoubleValue SPIT_POOL_MULTIPLIER;
-    public static final ForgeConfigSpec.IntValue SPIT_POOL_TICKS;
+    public static final ModConfigSpec.DoubleValue SPIT_POOL_MULTIPLIER;
+    public static final ModConfigSpec.IntValue SPIT_POOL_TICKS;
     public static final Skill TAIL_LASH;
     public static final Skill FANG_SNAP;
-    public static final ForgeConfigSpec.IntValue FANG_SNAPS;
+    public static final ModConfigSpec.IntValue FANG_SNAPS;
     public static final Skill QUAKE_SLAM;
-    public static final ForgeConfigSpec.DoubleValue QUAKE_WAVE_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue QUAKE_WAVE_MULTIPLIER;
     public static final Skill BURROW_AMBUSH;
     public static final Skill FRENZIED_HISS;
     public static final Skill VENOM_BREATH;
     public static final Skill SERPENT_CHAIN;
-    public static final ForgeConfigSpec.IntValue CHAIN_COUNT;
+    public static final ModConfigSpec.IntValue CHAIN_COUNT;
 
     static {
-        ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder b = new ModConfigSpec.Builder();
         b.push("naga");
         ENABLED = b.comment("启用娜迦增强，关闭后保持暮色原版", "Enable the Naga rework; disable to keep vanilla Twilight Forest behavior").define("enabled", true);
         HEALTH_MULTIPLIER = b.comment("最大生命倍率", "Max health multiplier").defineInRange("health_multiplier", 1.0, 0.1, 100.0);

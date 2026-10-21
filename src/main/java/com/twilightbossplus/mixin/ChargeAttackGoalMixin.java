@@ -17,7 +17,7 @@ public abstract class ChargeAttackGoalMixin {
     @Final
     private PathfinderMob charger;
 
-    @Inject(method = "canUse", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "canUse", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$replacedCharge(CallbackInfoReturnable<Boolean> cir) {
         if (this.charger instanceof Minoshroom && MinoConfig.ENABLED.get()) {
             cir.setReturnValue(false);

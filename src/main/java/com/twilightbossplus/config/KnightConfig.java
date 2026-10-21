@@ -1,14 +1,14 @@
 package com.twilightbossplus.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class KnightConfig {
     public static final class Skill {
-        public final ForgeConfigSpec.BooleanValue enabled;
-        public final ForgeConfigSpec.IntValue cooldown;
-        public final ForgeConfigSpec.DoubleValue multiplier;
+        public final ModConfigSpec.BooleanValue enabled;
+        public final ModConfigSpec.IntValue cooldown;
+        public final ModConfigSpec.DoubleValue multiplier;
 
-        Skill(ForgeConfigSpec.Builder b, String key, String cn, String en, int cooldown, double multiplier) {
+        Skill(ModConfigSpec.Builder b, String key, String cn, String en, int cooldown, double multiplier) {
             b.push(key);
             this.enabled = b.comment("启用" + cn, "Enable " + en).define("enabled", true);
             this.cooldown = b.comment(cn + "冷却（tick）", en + " cooldown in ticks").defineInRange("cooldown_ticks", cooldown, 1, 12000);
@@ -16,32 +16,32 @@ public final class KnightConfig {
         }
     }
 
-    public static final ForgeConfigSpec SPEC;
-    public static final ForgeConfigSpec.BooleanValue ENABLED;
-    public static final ForgeConfigSpec.DoubleValue HEALTH_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue BASE_ATTACK;
-    public static final ForgeConfigSpec.DoubleValue ATTACK_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue SKILL_KNOCKBACK;
-    public static final ForgeConfigSpec.IntValue SKILL_INTERVAL;
-    public static final ForgeConfigSpec.DoubleValue PHASE_TWO_HEALTH;
-    public static final ForgeConfigSpec.DoubleValue PHASE_THREE_HEALTH;
-    public static final ForgeConfigSpec.DoubleValue RAGE_COOLDOWN_MULTIPLIER;
+    public static final ModConfigSpec SPEC;
+    public static final ModConfigSpec.BooleanValue ENABLED;
+    public static final ModConfigSpec.DoubleValue HEALTH_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue BASE_ATTACK;
+    public static final ModConfigSpec.DoubleValue ATTACK_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue SKILL_KNOCKBACK;
+    public static final ModConfigSpec.IntValue SKILL_INTERVAL;
+    public static final ModConfigSpec.DoubleValue PHASE_TWO_HEALTH;
+    public static final ModConfigSpec.DoubleValue PHASE_THREE_HEALTH;
+    public static final ModConfigSpec.DoubleValue RAGE_COOLDOWN_MULTIPLIER;
 
     public static final Skill ECHO_SLASH;
-    public static final ForgeConfigSpec.DoubleValue ECHO_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue ECHO_MULTIPLIER;
     public static final Skill REVENANT_AXE;
     public static final Skill CHAIN_HOOK;
-    public static final ForgeConfigSpec.DoubleValue HOOK_SLAM_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue HOOK_SLAM_MULTIPLIER;
     public static final Skill CHAIN_NOOSE;
-    public static final ForgeConfigSpec.DoubleValue NOOSE_SNAP_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue NOOSE_BREAK_RATIO;
+    public static final ModConfigSpec.DoubleValue NOOSE_SNAP_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue NOOSE_BREAK_RATIO;
     public static final Skill LANCE_PHALANX;
     public static final Skill OATHBLADE;
-    public static final ForgeConfigSpec.DoubleValue OATH_BLADE_MULTIPLIER;
-    public static final ForgeConfigSpec.IntValue OATH_BLADES;
+    public static final ModConfigSpec.DoubleValue OATH_BLADE_MULTIPLIER;
+    public static final ModConfigSpec.IntValue OATH_BLADES;
 
     static {
-        ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder b = new ModConfigSpec.Builder();
         b.push("knight_phantom");
         ENABLED = b.comment("启用幻影骑士增强，关闭后保持暮色原版；开启时原版的冲锋与投掷武器被骑士团技能取代", "Enable the Knight Phantom rework; disable to keep vanilla. When enabled the vanilla charge and weapon throws are replaced by squad skills").define("enabled", true);
         HEALTH_MULTIPLIER = b.comment("每名骑士的最大生命倍率", "Max health multiplier of each knight").defineInRange("health_multiplier", 1.5, 0.1, 100.0);

@@ -45,7 +45,7 @@ public final class MagmaShell implements BossHazard {
         }
         for (LivingEntity victim : brain.victimsAround(this.landing, this.radius, 2.5)) {
             if (brain.damage(victim, this.multiplier)) {
-                victim.setSecondsOnFire(3);
+                victim.setRemainingFireTicks(3 * 20);
                 brain.knockFrom(victim, this.landing, 0.35, 0.25);
             }
         }

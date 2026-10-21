@@ -1,14 +1,14 @@
 package com.twilightbossplus.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class LichConfig {
     public static final class Skill {
-        public final ForgeConfigSpec.BooleanValue enabled;
-        public final ForgeConfigSpec.IntValue cooldown;
-        public final ForgeConfigSpec.DoubleValue multiplier;
+        public final ModConfigSpec.BooleanValue enabled;
+        public final ModConfigSpec.IntValue cooldown;
+        public final ModConfigSpec.DoubleValue multiplier;
 
-        Skill(ForgeConfigSpec.Builder b, String key, String cn, String en, int cooldown, double multiplier) {
+        Skill(ModConfigSpec.Builder b, String key, String cn, String en, int cooldown, double multiplier) {
             b.push(key);
             this.enabled = b.comment("启用" + cn, "Enable " + en).define("enabled", true);
             this.cooldown = b.comment(cn + "冷却（tick）", en + " cooldown in ticks").defineInRange("cooldown_ticks", cooldown, 1, 12000);
@@ -16,33 +16,33 @@ public final class LichConfig {
         }
     }
 
-    public static final ForgeConfigSpec SPEC;
-    public static final ForgeConfigSpec.BooleanValue ENABLED;
-    public static final ForgeConfigSpec.DoubleValue HEALTH_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue ATTACK_MULTIPLIER;
-    public static final ForgeConfigSpec.DoubleValue SKILL_KNOCKBACK;
-    public static final ForgeConfigSpec.IntValue SKILL_INTERVAL;
-    public static final ForgeConfigSpec.DoubleValue RAGE_HEALTH;
-    public static final ForgeConfigSpec.DoubleValue RAGE_COOLDOWN_MULTIPLIER;
+    public static final ModConfigSpec SPEC;
+    public static final ModConfigSpec.BooleanValue ENABLED;
+    public static final ModConfigSpec.DoubleValue HEALTH_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue ATTACK_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue SKILL_KNOCKBACK;
+    public static final ModConfigSpec.IntValue SKILL_INTERVAL;
+    public static final ModConfigSpec.DoubleValue RAGE_HEALTH;
+    public static final ModConfigSpec.DoubleValue RAGE_COOLDOWN_MULTIPLIER;
 
     public static final Skill SHADOW_CROSSFIRE;
-    public static final ForgeConfigSpec.IntValue CROSSFIRE_WINDUP;
+    public static final ModConfigSpec.IntValue CROSSFIRE_WINDUP;
     public static final Skill CONSTELLATION;
-    public static final ForgeConfigSpec.IntValue CONSTELLATION_STARS;
+    public static final ModConfigSpec.IntValue CONSTELLATION_STARS;
     public static final Skill SHIELD_BACKLASH;
     public static final Skill CORPSE_DETONATION;
-    public static final ForgeConfigSpec.IntValue CORPSE_FUSE;
+    public static final ModConfigSpec.IntValue CORPSE_FUSE;
     public static final Skill LIFE_DRAIN;
-    public static final ForgeConfigSpec.DoubleValue DRAIN_HEAL_RATIO;
+    public static final ModConfigSpec.DoubleValue DRAIN_HEAL_RATIO;
     public static final Skill SOUL_PRISON;
-    public static final ForgeConfigSpec.IntValue PRISON_TICKS;
+    public static final ModConfigSpec.IntValue PRISON_TICKS;
     public static final Skill SHADOW_BLINK;
-    public static final ForgeConfigSpec.IntValue BLINK_COUNT;
+    public static final ModConfigSpec.IntValue BLINK_COUNT;
     public static final Skill TWILIGHT_COLLAPSE;
-    public static final ForgeConfigSpec.DoubleValue COLLAPSE_WAVE_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue COLLAPSE_WAVE_MULTIPLIER;
 
     static {
-        ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder b = new ModConfigSpec.Builder();
         b.push("lich");
         ENABLED = b.comment("启用巫妖增强，关闭后保持暮色原版", "Enable the Lich rework; disable to keep vanilla Twilight Forest behavior").define("enabled", true);
         HEALTH_MULTIPLIER = b.comment("最大生命倍率", "Max health multiplier").defineInRange("health_multiplier", 1.5, 0.1, 100.0);

@@ -16,14 +16,14 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import twilightforest.entity.boss.Minoshroom;
-import twilightforest.entity.monster.Minotaur;
+import twilightforest.entity.boss.BaseTFBoss;
 
 @Mixin(Minoshroom.class)
-public abstract class MinoshroomMixin extends Minotaur implements MinoBrainHolder {
+public abstract class MinoshroomMixin extends BaseTFBoss implements MinoBrainHolder {
     @Unique
     private MinoBrain tbp$brain;
 
-    protected MinoshroomMixin(EntityType<? extends Minotaur> type, Level level) {
+    protected MinoshroomMixin(EntityType<? extends BaseTFBoss> type, Level level) {
         super(type, level);
     }
 
@@ -35,12 +35,12 @@ public abstract class MinoshroomMixin extends Minotaur implements MinoBrainHolde
         return this.tbp$brain;
     }
 
-    @Inject(method = "customServerAiStep", at = @At("TAIL"))
+    @Inject(method = "aiStep", at = @At("TAIL"), remap = false)
     private void tbp$tickBrain(CallbackInfo ci) {
         this.tbp$getBrain().tick();
     }
 
-    @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "hurt", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
     private void tbp$skillInvulnerable(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         if (this.level().isClientSide() || this.tbp$brain == null || !this.tbp$brain.invulnerable()) {
             return;
@@ -50,7 +50,7 @@ public abstract class MinoshroomMixin extends Minotaur implements MinoBrainHolde
         }
     }
 
-    @ModifyVariable(method = "hurt", at = @At("HEAD"), argsOnly = true)
+    @ModifyVariable(method = "hurt", at = @At("HEAD"), argsOnly = true, remap = false, require = 0)
     private float tbp$stunBonus(float amount) {
         if (this.level().isClientSide() || this.tbp$brain == null || !this.tbp$brain.stunned()) {
             return amount;

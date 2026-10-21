@@ -1,11 +1,14 @@
 package com.twilightbossplus.client.vfx;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
+
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.SequencedMap;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
+
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -48,12 +51,12 @@ public final class VfxCanvas {
     private float innerEdge = 1.0F;
 
     public VfxCanvas() {
-        Map<RenderType, BufferBuilder> buffers = new HashMap<>();
+        SequencedMap<RenderType, ByteBufferBuilder> buffers = new LinkedHashMap<>();
         for (VfxAtlas atlas : VfxAtlas.values()) {
-            buffers.put(atlas.flat, new BufferBuilder(atlas.flat.bufferSize()));
-            buffers.put(atlas.glow, new BufferBuilder(atlas.glow.bufferSize()));
+            buffers.put(atlas.flat, new ByteBufferBuilder(atlas.flat.bufferSize()));
+            buffers.put(atlas.glow, new ByteBufferBuilder(atlas.glow.bufferSize()));
         }
-        this.source = MultiBufferSource.immediateWithBuffers(buffers, new BufferBuilder(256));
+        this.source = MultiBufferSource.immediateWithBuffers(buffers, new ByteBufferBuilder(256));
     }
 
     public void begin(ClientLevel level, Matrix4f matrix, Vec3 camera, Vector3f left, Vector3f up, float partial) {
@@ -131,8 +134,7 @@ public final class VfxCanvas {
     }
 
     private void vertex(double x, double y, double z, float u, float v, float a) {
-        this.vc.vertex(this.matrix, (float) x, (float) y, (float) z).color(this.red, this.green, this.blue, Mth.clamp(a, 0.0F, 1.0F))
-                .uv(u / VfxAtlas.SIZE, v / VfxAtlas.SIZE).endVertex();
+        this.vc.addVertex(this.matrix, (float) x, (float) y, (float) z).setColor(this.red, this.green, this.blue, Mth.clamp(a, 0.0F, 1.0F)).setUv(u / VfxAtlas.SIZE, v / VfxAtlas.SIZE).setLight(0xF000F0);
     }
 
     public VfxCanvas strip(VfxAtlas atlas, boolean glow, int index, int color, float alpha) {

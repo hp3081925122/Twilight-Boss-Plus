@@ -24,7 +24,7 @@ public abstract class KnightPhantomModelMixin extends HumanoidModel<KnightPhanto
         return x * x * (3.0F - 2.0F * x);
     }
 
-    @Inject(method = {"setupAnim(Ltwilightforest/entity/boss/KnightPhantom;FFFFF)V", "m_6973_(Ltwilightforest/entity/boss/KnightPhantom;FFFFF)V"}, at = @At("TAIL"), remap = false, require = 1)
+    @Inject(method = {"setupAnim(Ltwilightforest/entity/boss/KnightPhantom;FFFFF)V"}, at = @At("TAIL"), remap = false, require = 1)
     private void tbp$pose(KnightPhantom entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
         KnightPose.State state = KnightPose.get(entity, ageInTicks);
         if (state == null) {

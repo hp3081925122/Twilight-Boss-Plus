@@ -36,26 +36,26 @@ public abstract class NagaMixin extends Monster implements NagaBrainHolder {
         return this.tbp$brain;
     }
 
-    @Inject(method = "customServerAiStep", at = @At("TAIL"))
+    @Inject(method = "customServerAiStep", at = @At("TAIL"), remap = false)
     private void tbp$tickBrain(CallbackInfo ci) {
         this.tbp$getBrain().tick();
     }
 
-    @Inject(method = "isInvulnerableTo", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "isInvulnerableTo", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$skillInvulnerable(DamageSource source, CallbackInfoReturnable<Boolean> cir) {
         if (!this.level().isClientSide() && this.tbp$brain != null && this.tbp$brain.invulnerable()) {
             cir.setReturnValue(true);
         }
     }
 
-    @Inject(method = "doHurtTarget", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "doHurtTarget", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$blockMelee(Entity target, CallbackInfoReturnable<Boolean> cir) {
         if (this.tbp$brain != null && this.tbp$brain.blocksMelee()) {
             cir.setReturnValue(false);
         }
     }
 
-    @Redirect(method = "doHurtTarget", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;push(DDD)V"))
+    @Redirect(method = "doHurtTarget", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;push(DDD)V"), remap = false)
     private void tbp$scaleMeleePush(Entity target, double x, double y, double z) {
         if (!NagaConfig.ENABLED.get() || !(target instanceof LivingEntity living)) {
             target.push(x, y, z);

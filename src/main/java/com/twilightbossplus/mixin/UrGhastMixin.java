@@ -11,14 +11,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import twilightforest.entity.boss.UrGhast;
-import twilightforest.entity.monster.CarminiteGhastguard;
+import twilightforest.entity.boss.BaseTFBoss;
 
 @Mixin(UrGhast.class)
-public abstract class UrGhastMixin extends CarminiteGhastguard implements UrGhastBrainHolder {
+public abstract class UrGhastMixin extends BaseTFBoss implements UrGhastBrainHolder {
     @Unique
     private UrGhastBrain tbp$brain;
 
-    protected UrGhastMixin(EntityType<? extends CarminiteGhastguard> type, Level level) {
+    protected UrGhastMixin(EntityType<? extends BaseTFBoss> type, Level level) {
         super(type, level);
     }
 
@@ -30,7 +30,7 @@ public abstract class UrGhastMixin extends CarminiteGhastguard implements UrGhas
         return this.tbp$brain;
     }
 
-    @Inject(method = "customServerAiStep", at = @At("TAIL"))
+    @Inject(method = "customServerAiStep", at = @At("TAIL"), remap = false)
     private void tbp$tickBrain(CallbackInfo ci) {
         this.tbp$getBrain().tick();
     }
@@ -42,10 +42,4 @@ public abstract class UrGhastMixin extends CarminiteGhastguard implements UrGhas
         }
     }
 
-    @Inject(method = "spitFireball", at = @At("HEAD"), cancellable = true, remap = false)
-    private void tbp$replaceFireball(CallbackInfo ci) {
-        if (UrGhastConfig.ENABLED.get()) {
-            ci.cancel();
-        }
-    }
 }

@@ -31,7 +31,7 @@ public abstract class HydraMixin extends Mob implements HydraBrainHolder {
         return this.tbp$brain;
     }
 
-    @Inject(method = "customServerAiStep", at = @At("TAIL"))
+    @Inject(method = "customServerAiStep", at = @At("TAIL"), remap = false)
     private void tbp$tickBrain(CallbackInfo ci) {
         this.tbp$getBrain().tick();
     }

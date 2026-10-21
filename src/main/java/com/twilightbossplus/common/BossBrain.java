@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -15,6 +16,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attribute;
+
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -70,33 +72,35 @@ public abstract class BossBrain<E extends Mob> {
         this.pendingHazards.clear();
     }
 
-    protected void applyModifier(Attribute attribute, UUID id, String name, double amount, boolean keepRatio) {
+    protected void applyModifier(Holder<Attribute> attribute, UUID id, String name, double amount, boolean keepRatio) {
         AttributeInstance instance = this.mob.getAttribute(attribute);
         if (instance == null) {
             return;
         }
-        AttributeModifier existing = instance.getModifier(id);
-        if (existing != null && Math.abs(existing.getAmount() - amount) < 1.0E-6) {
+        var modifierId = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TwilightBossPlus.MODID, id.toString());
+        AttributeModifier existing = instance.getModifier(modifierId);
+        if (existing != null && Math.abs(existing.amount() - amount) < 1.0E-6) {
             return;
         }
         float ratio = this.healthRatio();
-        instance.removeModifier(id);
+        instance.removeModifier(modifierId);
         if (Math.abs(amount) > 1.0E-6) {
-            instance.addPermanentModifier(new AttributeModifier(id, name, amount, AttributeModifier.Operation.MULTIPLY_TOTAL));
+            instance.addPermanentModifier(new AttributeModifier(modifierId, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         }
         if (keepRatio) {
             this.mob.setHealth(this.mob.getMaxHealth() * ratio);
         }
     }
 
-    protected void applyTransient(Attribute attribute, UUID id, String name, double amount) {
+    protected void applyTransient(Holder<Attribute> attribute, UUID id, String name, double amount) {
         AttributeInstance instance = this.mob.getAttribute(attribute);
         if (instance == null) {
             return;
         }
-        instance.removeModifier(id);
+        var modifierId = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TwilightBossPlus.MODID, id.toString());
+        instance.removeModifier(modifierId);
         if (amount > 0.0) {
-            instance.addTransientModifier(new AttributeModifier(id, name, amount, AttributeModifier.Operation.MULTIPLY_TOTAL));
+            instance.addTransientModifier(new AttributeModifier(modifierId, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         }
     }
 

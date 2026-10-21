@@ -10,7 +10,9 @@ public enum VfxAtlas {
     MINO("minoshroom"),
     HYDRA("hydra"),
     KNIGHT("knight_phantom"),
-    URGHAST("ur_ghast");
+    URGHAST("ur_ghast"),
+    YETI("alpha_yeti"),
+    QUEEN("snow_queen");
 
     public static final float SIZE = 256.0F;
 
@@ -18,7 +20,7 @@ public enum VfxAtlas {
     public final RenderType flat;
 
     VfxAtlas(String name) {
-        ResourceLocation texture = new ResourceLocation(TwilightBossPlus.MODID, "textures/vfx/" + name + "_vfx.png");
+        ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(TwilightBossPlus.MODID, "textures/vfx/" + name + "_vfx.png");
         this.glow = VfxRenderTypes.glow(name, texture);
         this.flat = VfxRenderTypes.flat(name, texture);
     }
