@@ -49,7 +49,7 @@ public final class QuakeSlam extends NagaSkill {
             if (this.age == LEAP_TICK) {
                 Vec3 motion = this.naga.getDeltaMovement();
                 this.naga.setDeltaMovement(motion.x, 0.9, motion.z);
-                this.naga.hasImpulse = true;
+                this.naga.needsSync = true;
             }
             boolean landed = this.age > LEAP_TICK + 4 && this.naga.onGround();
             if (landed || this.age > LEAP_TICK + MAX_AIR) {

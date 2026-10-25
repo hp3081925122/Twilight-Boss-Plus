@@ -51,7 +51,7 @@ public final class CorpseDetonation extends LichSkill {
         if (this.marked == null) {
             return;
         }
-        this.marked.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, this.fuse, 3, false, false));
+        this.marked.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, this.fuse, 3, false, false));
         this.marked.addEffect(new MobEffectInstance(MobEffects.GLOWING, this.fuse, 0, false, false));
         LichFx.chain(this.brain, this.lich, this.marked, this.fuse, LichColors.DRAIN);
         LichFx.mark(this.brain, this.marked, RADIUS, this.fuse);

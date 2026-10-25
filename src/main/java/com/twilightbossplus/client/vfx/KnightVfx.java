@@ -49,40 +49,40 @@ public final class KnightVfx {
 
     static void handle(ClientLevel level, int type, CompoundTag d) {
         switch (type) {
-            case KnightFx.REVEAL -> ClientVfx.add(new Reveal(level, d.getInt("id")));
-            case KnightFx.SLASH -> ClientVfx.add(new Slash(level, ClientVfx.vec(d, "c"), d.getFloat("a"), d.getFloat("sweep"), d.getFloat("r"), d.getInt("windup"), d.getBoolean("echo"), d.getInt("dir")));
-            case KnightFx.GATHER -> ClientVfx.add(new Gather(d.getInt("id"), d.getInt("d"), d.getInt("color")));
-            case KnightFx.AXE -> ClientVfx.add(new Axe(ClientVfx.vec(d, "a"), ClientVfx.vec(d, "b"), ClientVfx.vec(d, "c"), ClientVfx.vec(d, "e"), d.getInt("windup"), d.getInt("out"), d.getInt("back"), d.getBoolean("twin")));
-            case KnightFx.HOOK -> ClientVfx.add(new Hook(d.getInt("id"), ClientVfx.vec(d, "o"), ClientVfx.vec(d, "v"), d.getFloat("speed"), d.getFloat("range")));
+            case KnightFx.REVEAL -> ClientVfx.add(new Reveal(level, d.getIntOr("id", 0)));
+            case KnightFx.SLASH -> ClientVfx.add(new Slash(level, ClientVfx.vec(d, "c"), d.getFloatOr("a", 0.0F), d.getFloatOr("sweep", 0.0F), d.getFloatOr("r", 0.0F), d.getIntOr("windup", 0), d.getBooleanOr("echo", false), d.getIntOr("dir", 0)));
+            case KnightFx.GATHER -> ClientVfx.add(new Gather(d.getIntOr("id", 0), d.getIntOr("d", 0), d.getIntOr("color", 0)));
+            case KnightFx.AXE -> ClientVfx.add(new Axe(ClientVfx.vec(d, "a"), ClientVfx.vec(d, "b"), ClientVfx.vec(d, "c"), ClientVfx.vec(d, "e"), d.getIntOr("windup", 0), d.getIntOr("out", 0), d.getIntOr("back", 0), d.getBooleanOr("twin", false)));
+            case KnightFx.HOOK -> ClientVfx.add(new Hook(d.getIntOr("id", 0), ClientVfx.vec(d, "o"), ClientVfx.vec(d, "v"), d.getFloatOr("speed", 0.0F), d.getFloatOr("range", 0.0F)));
             case KnightFx.TETHER -> {
-                int id = d.getInt("id");
+                int id = d.getIntOr("id", 0);
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Hook hook && hook.id == id) {
                         hook.latched = true;
                     }
                 }
-                ClientVfx.add(new Tether(level, id, d.getInt("victim"), ClientVfx.vec(d, "p"), d.getInt("d")));
+                ClientVfx.add(new Tether(level, id, d.getIntOr("victim", 0), ClientVfx.vec(d, "p"), d.getIntOr("d", 0)));
             }
-            case KnightFx.IMPACT -> ClientVfx.add(new Impact(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getBoolean("heavy")));
-            case KnightFx.NOOSE -> ClientVfx.add(new Noose(level, ClientVfx.vec(d, "c"), d.getIntArray("ids"), d.getInt("gather"), d.getInt("d"), d.getFloat("from"), d.getFloat("to")));
+            case KnightFx.IMPACT -> ClientVfx.add(new Impact(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getBooleanOr("heavy", false)));
+            case KnightFx.NOOSE -> ClientVfx.add(new Noose(level, ClientVfx.vec(d, "c"), d.getIntArray("ids").orElseGet(() -> new int[0]), d.getIntOr("gather", 0), d.getIntOr("d", 0), d.getFloatOr("from", 0.0F), d.getFloatOr("to", 0.0F)));
             case KnightFx.NOOSE_BREAK -> {
-                int id = d.getInt("id");
+                int id = d.getIntOr("id", 0);
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Noose noose) {
                         noose.snap(level, id);
                     }
                 }
             }
-            case KnightFx.NOOSE_SNAP -> ClientVfx.add(new NooseSnap(level, ClientVfx.vec(d, "c"), d.getFloat("r")));
+            case KnightFx.NOOSE_SNAP -> ClientVfx.add(new NooseSnap(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F)));
             case KnightFx.PHALANX -> {
-                int n = d.getInt("n");
+                int n = d.getIntOr("n", 0);
                 float[] offsets = new float[n];
                 for (int i = 0; i < n; i++) {
-                    offsets[i] = d.getFloat("o" + i);
+                    offsets[i] = d.getFloatOr("o" + i, 0.0F);
                 }
-                ClientVfx.add(new Phalanx(ClientVfx.vec(d, "c"), d.getFloat("a"), d.getIntArray("ids"), offsets, d.getFloat("gap"), d.getFloat("back"), d.getFloat("len"), d.getInt("gather"), d.getInt("charge")));
+                ClientVfx.add(new Phalanx(ClientVfx.vec(d, "c"), d.getFloatOr("a", 0.0F), d.getIntArray("ids").orElseGet(() -> new int[0]), offsets, d.getFloatOr("gap", 0.0F), d.getFloatOr("back", 0.0F), d.getFloatOr("len", 0.0F), d.getIntOr("gather", 0), d.getIntOr("charge", 0)));
             }
-            case KnightFx.OATH -> ClientVfx.add(new Oath(d.getIntArray("ids"), ClientVfx.vec(d, "s"), d.getInt("gather"), d.getInt("form")));
+            case KnightFx.OATH -> ClientVfx.add(new Oath(d.getIntArray("ids").orElseGet(() -> new int[0]), ClientVfx.vec(d, "s"), d.getIntOr("gather", 0), d.getIntOr("form", 0)));
             case KnightFx.OATH_POS -> {
                 Vec3 s = ClientVfx.vec(d, "s");
                 for (VfxEffect effect : ClientVfx.effects()) {
@@ -94,14 +94,14 @@ public final class KnightVfx {
             case KnightFx.OATH_LOCK -> {
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Oath oath && oath.lockAge < 0) {
-                        oath.lock(level, ClientVfx.vec(d, "l"), d.getFloat("r"), d.getInt("lock"), d.getInt("blades"), d.getFloat("a"), d.getFloat("range"));
+                        oath.lock(level, ClientVfx.vec(d, "l"), d.getFloatOr("r", 0.0F), d.getIntOr("lock", 0), d.getIntOr("blades", 0), d.getFloatOr("a", 0.0F), d.getFloatOr("range", 0.0F));
                     }
                 }
             }
             case KnightFx.OATH_FALL -> {
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Oath oath && oath.lockAge >= 0 && oath.fallAge < 0) {
-                        oath.fall(d.getInt("fall"), d.getFloat("speed"));
+                        oath.fall(d.getIntOr("fall", 0), d.getFloatOr("speed", 0.0F));
                     }
                 }
             }
@@ -923,9 +923,12 @@ public final class KnightVfx {
                     Vec3 dir = new Vec3(Math.cos(a), 0.0, Math.sin(a));
                     Vec3 origin = this.landing.add(0.0, 0.8, 0.0).add(dir.scale(1.2));
                     double reach = this.range;
-                    HitResult hit = level.clip(new ClipContext(origin, origin.add(dir.scale(this.range)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
-                    if (hit.getType() != HitResult.Type.MISS) {
-                        reach = hit.getLocation().distanceTo(origin);
+                    Entity collisionEntity = Minecraft.getInstance().player;
+                    if (collisionEntity != null) {
+                        HitResult hit = level.clip(new ClipContext(origin, origin.add(dir.scale(this.range)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, collisionEntity));
+                        if (hit.getType() != HitResult.Type.MISS) {
+                            reach = hit.getLocation().distanceTo(origin);
+                        }
                     }
                     ClientVfx.add(new FlyingBlade(origin, dir, this.speed, reach));
                 }

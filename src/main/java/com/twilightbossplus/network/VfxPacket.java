@@ -7,12 +7,12 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public final class VfxPacket implements CustomPacketPayload {
     public static final int SHAKE = 8;
-    public static final Type<VfxPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TwilightBossPlus.MODID, "vfx"));
+    public static final Type<VfxPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath(TwilightBossPlus.MODID, "vfx"));
     public static final StreamCodec<RegistryFriendlyByteBuf, VfxPacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT, packet -> packet.type,
             ByteBufCodecs.COMPOUND_TAG, packet -> packet.data,

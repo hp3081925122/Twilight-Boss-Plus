@@ -1,56 +1,71 @@
 plugins {
     id 'java-library'
-    id 'eclipse'
-    id 'idea'
     id 'maven-publish'
-    id 'net.neoforged.gradle.userdev' version '7.1.37'
+    id 'net.neoforged.moddev' version '2.0.147'
+}
+
+repositories {
+    maven {
+        url = 'https://www.cursemaven.com'
+        content {
+            includeGroup 'curse.maven'
+        }
+    }
 }
 
 version = project.mod_version
 group = project.mod_group_id
 
-repositories {
-    mavenLocal()
-    maven { url = 'https://maven.neoforged.net/releases' }
-    maven { url = 'https://maven.blamejared.com' }
-    maven {
-        url = 'https://cursemaven.com'
-        content { includeGroup 'curse.maven' }
-    }
+base {
+    archivesName = "${project.mod_id}-${project.minecraft_version}-neoforge"
 }
 
-base { archivesName = "${project.mod_id}-${project.minecraft_version}-neoforge" }
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+neoForge {
+    version = project.neo_version
 
-runs {
-    configureEach {
-        systemProperty 'forge.logging.markers', 'REGISTRIES'
-        systemProperty 'forge.logging.console.level', 'debug'
-        modSource project.sourceSets.main
+    runs {
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+
+        client {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        server {
+            server()
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        gameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        data {
+            data()
+            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        }
     }
-    client { systemProperty 'forge.enabledGameTestNamespaces', project.mod_id }
-    server {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-        programArgument '--nogui'
-    }
-    data {
-        programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+
+    mods {
+        "${project.mod_id}" {
+            sourceSet(sourceSets.main)
+        }
     }
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
-    implementation "net.neoforged:neoforge:${project.neo_version}"
-    implementation "curse.maven:the-twilight-forest-227639:6472889"
-    implementation "curse.maven:geckolib-388172:8893490"
-    compileOnly "curse.maven:jei-238222:9267535"
-    implementation "curse.maven:just-enough-characters-250702:9163765"
-    implementation "curse.maven:jade-324717:8591319"
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    implementation "curse.maven:the-twilight-forest-227639:9217704"
+    implementation "curse.maven:geckolib-388172:8327201"
 }
-
 tasks.withType(ProcessResources).configureEach {
     def replaceProperties = [
             minecraft_version: project.minecraft_version,
@@ -66,12 +81,26 @@ tasks.withType(ProcessResources).configureEach {
             mod_description: project.mod_description
     ]
     inputs.properties replaceProperties
-    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) { expand replaceProperties }
+
+    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties
+    }
 }
 
 publishing {
-    publications { register('mavenJava', MavenPublication) { from components.java } }
-    repositories { maven { url "file://${project.projectDir}/repo" } }
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/repo"
+        }
+    }
 }
 
-tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}

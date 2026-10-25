@@ -77,7 +77,7 @@ public abstract class BossBrain<E extends Mob> {
         if (instance == null) {
             return;
         }
-        var modifierId = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TwilightBossPlus.MODID, id.toString());
+        var modifierId = net.minecraft.resources.Identifier.fromNamespaceAndPath(TwilightBossPlus.MODID, id.toString());
         AttributeModifier existing = instance.getModifier(modifierId);
         if (existing != null && Math.abs(existing.amount() - amount) < 1.0E-6) {
             return;
@@ -97,7 +97,7 @@ public abstract class BossBrain<E extends Mob> {
         if (instance == null) {
             return;
         }
-        var modifierId = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TwilightBossPlus.MODID, id.toString());
+        var modifierId = net.minecraft.resources.Identifier.fromNamespaceAndPath(TwilightBossPlus.MODID, id.toString());
         instance.removeModifier(modifierId);
         if (amount > 0.0) {
             instance.addTransientModifier(new AttributeModifier(modifierId, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
@@ -128,7 +128,7 @@ public abstract class BossBrain<E extends Mob> {
         if (multiplier <= 0.0) {
             return false;
         }
-        return victim.hurt(this.mob.damageSources().mobAttack(this.mob), (float) (this.attack() * multiplier));
+        return victim.hurtServer(this.level(), this.mob.damageSources().mobAttack(this.mob), (float) (this.attack() * multiplier));
     }
 
     public double knockScale(LivingEntity victim) {

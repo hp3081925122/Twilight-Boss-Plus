@@ -108,7 +108,7 @@ public final class BurrowAmbush extends NagaSkill {
         this.naga.getNavigation().stop();
         this.naga.teleportTo(this.eruption.x, this.eruption.y, this.eruption.z);
         this.naga.setDeltaMovement(0.0, 0.85, 0.0);
-        this.naga.hasImpulse = true;
+        this.naga.needsSync = true;
         this.hide(false);
         for (LivingEntity victim : this.brain.victimsAround(this.eruption, RADIUS, 3.0)) {
             this.brain.damage(victim, NagaConfig.BURROW_AMBUSH.multiplier.get());

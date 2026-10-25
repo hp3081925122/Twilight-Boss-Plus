@@ -52,7 +52,7 @@ public final class MyceliumSnare extends MinoSkill {
         int caught = 0;
         for (LivingEntity victim : this.brain.victimsAround(this.center, RADIUS + 0.4, 2.5)) {
             caught++;
-            victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, root, 6, false, true), this.mino);
+            victim.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, root, 6, false, true), this.mino);
             victim.setDeltaMovement(0.0, Math.min(0.0, victim.getDeltaMovement().y), 0.0);
             victim.hurtMarked = true;
             this.brain.damage(victim, MinoConfig.MYCELIUM_SNARE.multiplier.get());

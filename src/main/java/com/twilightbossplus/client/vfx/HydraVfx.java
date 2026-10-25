@@ -44,16 +44,16 @@ public final class HydraVfx {
 
     static void handle(ClientLevel level, int type, CompoundTag d) {
         switch (type) {
-            case HydraFx.WARN -> ClientVfx.add(new Warn(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("d"), d.getInt("color")));
-            case HydraFx.SHELL -> ClientVfx.add(new Shell(level, ClientVfx.vec(d, "o"), ClientVfx.vec(d, "v"), d.getDouble("g"), d.getInt("t"), ClientVfx.vec(d, "l"), d.getFloat("r")));
-            case HydraFx.BURST -> burst(level, ClientVfx.vec(d, "c"), d.getFloat("r"));
-            case HydraFx.POOL -> ClientVfx.add(new Pool(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("d")));
-            case HydraFx.BREATH -> ClientVfx.add(new Breath(d.getInt("id"), d.getInt("head"), d.getInt("windup"), d.getInt("d"), d.getFloat("len")));
-            case HydraFx.FAN -> ClientVfx.add(new Fan(ClientVfx.vec(d, "c"), d.getFloat("in"), d.getFloat("out"), d.getFloat("yaw"), d.getFloat("sweep"), d.getInt("d")));
-            case HydraFx.BITE -> ClientVfx.add(new Bite(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("d")));
+            case HydraFx.WARN -> ClientVfx.add(new Warn(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("d", 0), d.getIntOr("color", 0)));
+            case HydraFx.SHELL -> ClientVfx.add(new Shell(level, ClientVfx.vec(d, "o"), ClientVfx.vec(d, "v"), d.getDoubleOr("g", 0.0), d.getIntOr("t", 0), ClientVfx.vec(d, "l"), d.getFloatOr("r", 0.0F)));
+            case HydraFx.BURST -> burst(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F));
+            case HydraFx.POOL -> ClientVfx.add(new Pool(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("d", 0)));
+            case HydraFx.BREATH -> ClientVfx.add(new Breath(d.getIntOr("id", 0), d.getIntOr("head", 0), d.getIntOr("windup", 0), d.getIntOr("d", 0), d.getFloatOr("len", 0.0F)));
+            case HydraFx.FAN -> ClientVfx.add(new Fan(ClientVfx.vec(d, "c"), d.getFloatOr("in", 0.0F), d.getFloatOr("out", 0.0F), d.getFloatOr("yaw", 0.0F), d.getFloatOr("sweep", 0.0F), d.getIntOr("d", 0)));
+            case HydraFx.BITE -> ClientVfx.add(new Bite(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("d", 0)));
             case HydraFx.STOMP -> {
                 Vec3 c = ClientVfx.vec(d, "c");
-                float radius = d.getFloat("r");
+                float radius = d.getFloatOr("r", 0.0F);
                 ClientVfx.add(new Scorch(level, c, radius * 1.2F, 90));
                 ClientVfx.add(new Flash(level, c, radius));
                 ClientVfx.add(new Pillar(c, radius * 0.55F, 8.0F, 18, FIRE));
@@ -70,23 +70,23 @@ public final class HydraVfx {
                 }
                 embers(level, c, radius, ClientVfx.count(12), 0.35);
             }
-            case HydraFx.WAVE -> ClientVfx.add(new Wave(level, ClientVfx.vec(d, "c"), d.getFloat("speed"), d.getFloat("max"), d.getFloat("th"), d.getInt("delay")));
-            case HydraFx.ROAR -> ClientVfx.add(new Roar(d.getInt("id"), d.getInt("d")));
+            case HydraFx.WAVE -> ClientVfx.add(new Wave(level, ClientVfx.vec(d, "c"), d.getFloatOr("speed", 0.0F), d.getFloatOr("max", 0.0F), d.getFloatOr("th", 0.0F), d.getIntOr("delay", 0)));
+            case HydraFx.ROAR -> ClientVfx.add(new Roar(d.getIntOr("id", 0), d.getIntOr("d", 0)));
             case HydraFx.AURA -> {
-                int id = d.getInt("id");
+                int id = d.getIntOr("id", 0);
                 boolean found = false;
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Aura aura && aura.id == id) {
-                        aura.left = Math.max(aura.left, d.getInt("d"));
+                        aura.left = Math.max(aura.left, d.getIntOr("d", 0));
                         found = true;
                     }
                 }
                 if (!found) {
-                    ClientVfx.add(new Aura(id, d.getInt("d")));
+                    ClientVfx.add(new Aura(id, d.getIntOr("d", 0)));
                 }
             }
-            case HydraFx.REGROW -> ClientVfx.add(new Regrow(d.getInt("id"), d.getInt("head")));
-            case HydraFx.CROWN -> ClientVfx.add(new Crown(d.getInt("id"), d.getInt("windup"), d.getInt("d")));
+            case HydraFx.REGROW -> ClientVfx.add(new Regrow(d.getIntOr("id", 0), d.getIntOr("head", 0)));
+            case HydraFx.CROWN -> ClientVfx.add(new Crown(d.getIntOr("id", 0), d.getIntOr("windup", 0), d.getIntOr("d", 0)));
             default -> {
             }
         }

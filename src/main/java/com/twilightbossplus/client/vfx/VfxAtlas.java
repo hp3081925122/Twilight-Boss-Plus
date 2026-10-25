@@ -1,8 +1,8 @@
 package com.twilightbossplus.client.vfx;
 
 import com.twilightbossplus.TwilightBossPlus;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.resources.Identifier;
 
 public enum VfxAtlas {
     NAGA("naga"),
@@ -20,7 +20,7 @@ public enum VfxAtlas {
     public final RenderType flat;
 
     VfxAtlas(String name) {
-        ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(TwilightBossPlus.MODID, "textures/vfx/" + name + "_vfx.png");
+        Identifier texture = Identifier.fromNamespaceAndPath(TwilightBossPlus.MODID, "textures/vfx/" + name + "_vfx.png");
         this.glow = VfxRenderTypes.glow(name, texture);
         this.flat = VfxRenderTypes.flat(name, texture);
     }

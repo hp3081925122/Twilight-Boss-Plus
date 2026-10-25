@@ -42,14 +42,14 @@ public abstract class NagaMixin extends Monster implements NagaBrainHolder {
     }
 
     @Inject(method = "isInvulnerableTo", at = @At("HEAD"), cancellable = true, remap = false)
-    private void tbp$skillInvulnerable(DamageSource source, CallbackInfoReturnable<Boolean> cir) {
+    private void tbp$skillInvulnerable(net.minecraft.server.level.ServerLevel level, DamageSource source, CallbackInfoReturnable<Boolean> cir) {
         if (!this.level().isClientSide() && this.tbp$brain != null && this.tbp$brain.invulnerable()) {
             cir.setReturnValue(true);
         }
     }
 
     @Inject(method = "doHurtTarget", at = @At("HEAD"), cancellable = true, remap = false)
-    private void tbp$blockMelee(Entity target, CallbackInfoReturnable<Boolean> cir) {
+    private void tbp$blockMelee(net.minecraft.server.level.ServerLevel level, Entity target, CallbackInfoReturnable<Boolean> cir) {
         if (this.tbp$brain != null && this.tbp$brain.blocksMelee()) {
             cir.setReturnValue(false);
         }

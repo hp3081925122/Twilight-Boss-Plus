@@ -36,32 +36,32 @@ public final class LichVfx {
 
     static void handle(ClientLevel level, int type, CompoundTag d) {
         switch (type) {
-            case LichFx.SIGIL -> ClientVfx.add(new Sigil(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("d"), d.getInt("color"), d.getInt("kind")));
+            case LichFx.SIGIL -> ClientVfx.add(new Sigil(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("d", 0), d.getIntOr("color", 0), d.getIntOr("kind", 0)));
             case LichFx.STAR -> {
                 Vec3 c = ClientVfx.vec(d, "c");
-                ClientVfx.add(new Sigil(level, c, d.getFloat("r"), d.getInt("d"), TWILIGHT, LichFx.SIGIL_PENTAGRAM));
-                ClientVfx.add(new FallingStar(c, d.getFloat("r"), d.getFloat("h"), d.getInt("d")));
+                ClientVfx.add(new Sigil(level, c, d.getFloatOr("r", 0.0F), d.getIntOr("d", 0), TWILIGHT, LichFx.SIGIL_PENTAGRAM));
+                ClientVfx.add(new FallingStar(c, d.getFloatOr("r", 0.0F), d.getFloatOr("h", 0.0F), d.getIntOr("d", 0)));
             }
-            case LichFx.BEAM -> ClientVfx.add(new Beam(ClientVfx.vec(d, "a"), ClientVfx.vec(d, "b"), d.getFloat("w"), d.getInt("windup"), d.getInt("d"), d.getInt("color")));
+            case LichFx.BEAM -> ClientVfx.add(new Beam(ClientVfx.vec(d, "a"), ClientVfx.vec(d, "b"), d.getFloatOr("w", 0.0F), d.getIntOr("windup", 0), d.getIntOr("d", 0), d.getIntOr("color", 0)));
             case LichFx.CHAIN -> {
-                int from = d.getInt("from");
-                int to = d.getInt("to");
+                int from = d.getIntOr("from", 0);
+                int to = d.getIntOr("to", 0);
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Chain chain && chain.from == from && chain.to == to) {
                         chain.cut = true;
                     }
                 }
-                if (d.getInt("d") > 0) {
-                    ClientVfx.add(new Chain(from, to, d.getInt("d"), d.getInt("color")));
+                if (d.getIntOr("d", 0) > 0) {
+                    ClientVfx.add(new Chain(from, to, d.getIntOr("d", 0), d.getIntOr("color", 0)));
                 }
             }
-            case LichFx.ORB -> ClientVfx.add(new Orb(d.getInt("id"), d.getFloat("h"), d.getFloat("s"), d.getInt("d"), d.getInt("color"), d.getInt("style")));
-            case LichFx.MARK -> ClientVfx.add(new Mark(d.getInt("id"), d.getFloat("r"), d.getInt("d")));
-            case LichFx.BLAST -> blast(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("color"));
-            case LichFx.FLAME -> ClientVfx.add(new Flame(ClientVfx.vec(d, "c"), d.getFloat("r"), d.getFloat("h"), d.getInt("d"), d.getInt("color")));
-            case LichFx.PRISON -> ClientVfx.add(new Prison(ClientVfx.vec(d, "c"), d.getFloat("r"), d.getFloat("h"), d.getInt("d")));
-            case LichFx.VORTEX -> ClientVfx.add(new Vortex(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("d")));
-            case LichFx.SLASH -> ClientVfx.add(new Slash(d.getInt("id"), d.getFloat("reach"), d.getFloat("half"), d.getInt("windup")));
+            case LichFx.ORB -> ClientVfx.add(new Orb(d.getIntOr("id", 0), d.getFloatOr("h", 0.0F), d.getFloatOr("s", 0.0F), d.getIntOr("d", 0), d.getIntOr("color", 0), d.getIntOr("style", 0)));
+            case LichFx.MARK -> ClientVfx.add(new Mark(d.getIntOr("id", 0), d.getFloatOr("r", 0.0F), d.getIntOr("d", 0)));
+            case LichFx.BLAST -> blast(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("color", 0));
+            case LichFx.FLAME -> ClientVfx.add(new Flame(ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getFloatOr("h", 0.0F), d.getIntOr("d", 0), d.getIntOr("color", 0)));
+            case LichFx.PRISON -> ClientVfx.add(new Prison(ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getFloatOr("h", 0.0F), d.getIntOr("d", 0)));
+            case LichFx.VORTEX -> ClientVfx.add(new Vortex(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("d", 0)));
+            case LichFx.SLASH -> ClientVfx.add(new Slash(d.getIntOr("id", 0), d.getFloatOr("reach", 0.0F), d.getFloatOr("half", 0.0F), d.getIntOr("windup", 0)));
             case LichFx.BLINK -> {
                 Vec3 a = ClientVfx.vec(d, "a");
                 Vec3 b = ClientVfx.vec(d, "b");
@@ -69,7 +69,7 @@ public final class LichVfx {
                 wisps(level, a, 1.0, ClientVfx.count(8), VOID);
                 stars(level, b, 0.6, ClientVfx.count(5), STARLIGHT);
             }
-            case LichFx.RUNE_WAVE -> ClientVfx.add(new RuneWave(ClientVfx.vec(d, "c"), d.getFloat("speed"), d.getFloat("max"), d.getFloat("th"), d.getInt("delay"), d.getInt("color")));
+            case LichFx.RUNE_WAVE -> ClientVfx.add(new RuneWave(ClientVfx.vec(d, "c"), d.getFloatOr("speed", 0.0F), d.getFloatOr("max", 0.0F), d.getFloatOr("th", 0.0F), d.getIntOr("delay", 0), d.getIntOr("color", 0)));
             default -> {
             }
         }

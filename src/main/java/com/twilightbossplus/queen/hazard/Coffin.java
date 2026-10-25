@@ -61,7 +61,7 @@ public final class Coffin implements BossHazard {
                 queen.freeze(victim, 2.0);
             }
             if (this.slow > 0) {
-                victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, this.slow, 2));
+                victim.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, this.slow, 2));
             }
         }
         QueenFx.coffinShatter(brain, this.center, this.radius, this.angle);

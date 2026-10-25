@@ -39,14 +39,14 @@ public abstract class SnowQueenMixin extends Monster implements QueenBrainHolder
         this.tbp$getBrain().tick();
     }
 
-    @Inject(method = "hurt", at = @At("HEAD"), remap = false)
-    private void tbp$recordHurt(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+    @Inject(method = "hurtServer", at = @At("HEAD"), remap = false)
+    private void tbp$recordHurt(net.minecraft.server.level.ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         if (!this.level().isClientSide() && this.tbp$brain != null && SnowQueenConfig.ENABLED.get()) {
             this.tbp$brain.onHurt(source);
         }
     }
 
-    @ModifyVariable(method = "hurt", at = @At("HEAD"), argsOnly = true, remap = false)
+    @ModifyVariable(method = "hurtServer", at = @At("HEAD"), argsOnly = true, remap = false)
     private float tbp$shellReduction(float amount) {
         if (this.level().isClientSide() || this.tbp$brain == null) {
             return amount;
@@ -55,7 +55,7 @@ public abstract class SnowQueenMixin extends Monster implements QueenBrainHolder
     }
 
     @Inject(method = "doHurtTarget", at = @At("HEAD"), cancellable = true, remap = false)
-    private void tbp$blockMelee(Entity target, CallbackInfoReturnable<Boolean> cir) {
+    private void tbp$blockMelee(net.minecraft.server.level.ServerLevel level, Entity target, CallbackInfoReturnable<Boolean> cir) {
         if (this.tbp$brain != null && this.tbp$brain.blocksMelee()) {
             cir.setReturnValue(false);
         }

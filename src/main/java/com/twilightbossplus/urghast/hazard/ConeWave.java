@@ -59,7 +59,7 @@ public final class ConeWave implements BossHazard {
             if (brain.damage(victim, this.multiplier)) {
                 brain.knock(victim, this.dir.x, this.dir.z, 0.3, 0.1);
                 if (this.slowness > 0) {
-                    victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, this.slowness, 1));
+                    victim.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, this.slowness, 1));
                 }
             }
         }

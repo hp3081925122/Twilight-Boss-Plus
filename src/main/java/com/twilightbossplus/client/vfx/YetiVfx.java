@@ -45,31 +45,31 @@ public final class YetiVfx {
 
     static void handle(ClientLevel level, int type, CompoundTag d) {
         switch (type) {
-            case YetiFx.CLAP -> ClientVfx.add(new Clap(d.getInt("id"), d.getFloat("reach"), d.getFloat("half"), d.getInt("windup")));
-            case YetiFx.MARK -> ClientVfx.add(new Mark(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("delay")));
-            case YetiFx.LEAP -> ClientVfx.add(new Trail(d.getInt("id"), d.getInt("d")));
-            case YetiFx.LANDING -> ClientVfx.add(new Landing(level, ClientVfx.vec(d, "c"), d.getFloat("r")));
-            case YetiFx.SNOWBALL -> ClientVfx.add(new Ball(level, d.getInt("bid"), ClientVfx.vec(d, "p"), ClientVfx.vec(d, "v"), d.getFloat("speed"), d.getFloat("from"), d.getFloat("to"), d.getInt("life")));
+            case YetiFx.CLAP -> ClientVfx.add(new Clap(d.getIntOr("id", 0), d.getFloatOr("reach", 0.0F), d.getFloatOr("half", 0.0F), d.getIntOr("windup", 0)));
+            case YetiFx.MARK -> ClientVfx.add(new Mark(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("delay", 0)));
+            case YetiFx.LEAP -> ClientVfx.add(new Trail(d.getIntOr("id", 0), d.getIntOr("d", 0)));
+            case YetiFx.LANDING -> ClientVfx.add(new Landing(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F)));
+            case YetiFx.SNOWBALL -> ClientVfx.add(new Ball(level, d.getIntOr("bid", 0), ClientVfx.vec(d, "p"), ClientVfx.vec(d, "v"), d.getFloatOr("speed", 0.0F), d.getFloatOr("from", 0.0F), d.getFloatOr("to", 0.0F), d.getIntOr("life", 0)));
             case YetiFx.SNOWBALL_BREAK -> {
-                int bid = d.getInt("bid");
+                int bid = d.getIntOr("bid", 0);
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Ball ball && ball.id == bid) {
                         ball.dead = true;
                     }
                 }
-                ClientVfx.add(new Burst(level, ClientVfx.vec(d, "p"), d.getFloat("r")));
+                ClientVfx.add(new Burst(level, ClientVfx.vec(d, "p"), d.getFloatOr("r", 0.0F)));
             }
-            case YetiFx.TILES -> ClientVfx.add(new Tiles(level, ClientVfx.vec(d, "c"), d.getFloat("size"), d.getInt("half"), d.getInt("parity"), d.getInt("warn")));
-            case YetiFx.SPIKES -> ClientVfx.add(new Spikes(level, ClientVfx.vec(d, "c"), d.getFloat("size"), d.getInt("half"), d.getInt("parity")));
-            case YetiFx.ROAR -> ClientVfx.add(new Blizzard(level, d.getInt("id"), d.getInt("d")));
+            case YetiFx.TILES -> ClientVfx.add(new Tiles(level, ClientVfx.vec(d, "c"), d.getFloatOr("size", 0.0F), d.getIntOr("half", 0), d.getIntOr("parity", 0), d.getIntOr("warn", 0)));
+            case YetiFx.SPIKES -> ClientVfx.add(new Spikes(level, ClientVfx.vec(d, "c"), d.getFloatOr("size", 0.0F), d.getIntOr("half", 0), d.getIntOr("parity", 0)));
+            case YetiFx.ROAR -> ClientVfx.add(new Blizzard(level, d.getIntOr("id", 0), d.getIntOr("d", 0)));
             case YetiFx.SHARDS -> {
                 Vec3 c = ClientVfx.vec(d, "c");
-                int n = d.getInt("n");
-                double offset = d.getFloat("a");
+                int n = d.getIntOr("n", 0);
+                double offset = d.getFloatOr("a", 0.0F);
                 for (int i = 0; i < n; i++) {
                     double a = offset + Mth.TWO_PI * i / n;
                     Vec3 dir = new Vec3(Math.cos(a), 0.0, Math.sin(a));
-                    ClientVfx.add(new Shard(level, c.add(dir.scale(1.5)), dir, d.getFloat("speed"), d.getFloat("range")));
+                    ClientVfx.add(new Shard(level, c.add(dir.scale(1.5)), dir, d.getFloatOr("speed", 0.0F), d.getFloatOr("range", 0.0F)));
                 }
             }
             default -> {

@@ -39,7 +39,9 @@ public final class TwilightBossPlus {
         modContainer.registerConfig(ModConfig.Type.COMMON, SnowQueenConfig.SPEC, MODID + "/snow_queen.toml");
         modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC, MODID + "/client.toml");
         modEventBus.addListener(BossNetwork::register);
-        if (FMLEnvironment.dist == Dist.CLIENT) {
+        if (FMLEnvironment.getDist() == Dist.CLIENT) {
+            modEventBus.addListener(com.twilightbossplus.client.vfx.PoseRenderData::register);
+            modEventBus.addListener(com.twilightbossplus.client.vfx.VfxRenderTypes::register);
             NeoForge.EVENT_BUS.addListener(ClientVfx::onClientTick);
             NeoForge.EVENT_BUS.addListener(ClientVfx::onRenderLevel);
             NeoForge.EVENT_BUS.addListener(ClientVfx::onCameraAngles);

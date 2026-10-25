@@ -14,7 +14,7 @@ import twilightforest.client.model.entity.AlphaYetiModel;
 import twilightforest.entity.boss.AlphaYeti;
 
 @Mixin(AlphaYetiModel.class)
-public abstract class AlphaYetiModelMixin extends HumanoidModel<AlphaYeti> {
+public abstract class AlphaYetiModelMixin extends HumanoidModel<twilightforest.client.state.entity.AlphaYetiRenderState> {
     protected AlphaYetiModelMixin(ModelPart root) {
         super(root);
     }
@@ -25,12 +25,13 @@ public abstract class AlphaYetiModelMixin extends HumanoidModel<AlphaYeti> {
         return x * x * (3.0F - 2.0F * x);
     }
 
-    @Inject(method = {"setupAnim(Ltwilightforest/entity/boss/AlphaYeti;FFFFF)V"}, at = @At("TAIL"), remap = false, require = 1)
-    private void tbp$pose(AlphaYeti entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
-        YetiPose.State state = YetiPose.get(entity, ageInTicks);
+    @Inject(method = {"setupAnim(Ltwilightforest/client/state/entity/AlphaYetiRenderState;)V"}, at = @At("TAIL"), remap = false, require = 1)
+    private void tbp$pose(twilightforest.client.state.entity.AlphaYetiRenderState entity, CallbackInfo ci) {
+        YetiPose.State state = entity.getRenderData(com.twilightbossplus.client.vfx.PoseRenderData.YETI);
         if (state == null) {
             return;
         }
+        float ageInTicks = entity.ageInTicks;
         float t = ageInTicks - state.start;
         float w = state.windup;
         float d = state.duration;

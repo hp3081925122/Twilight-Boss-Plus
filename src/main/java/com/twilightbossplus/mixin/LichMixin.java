@@ -38,8 +38,8 @@ public abstract class LichMixin extends Monster implements LichBrainHolder {
         this.tbp$getBrain().tick();
     }
 
-    @Inject(method = "hurt", at = @At("HEAD"), cancellable = true, remap = false)
-    private void tbp$skillInvulnerable(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+    @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true, remap = false)
+    private void tbp$skillInvulnerable(net.minecraft.server.level.ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         if (this.level().isClientSide() || this.tbp$brain == null || !this.tbp$brain.invulnerable()) {
             return;
         }
@@ -49,10 +49,10 @@ public abstract class LichMixin extends Monster implements LichBrainHolder {
     }
 
     @Override
-    public boolean doHurtTarget(Entity target) {
+    public boolean doHurtTarget(net.minecraft.server.level.ServerLevel level, Entity target) {
         if (this.tbp$brain != null && this.tbp$brain.blocksMelee()) {
             return false;
         }
-        return super.doHurtTarget(target);
+        return super.doHurtTarget(level, target);
     }
 }

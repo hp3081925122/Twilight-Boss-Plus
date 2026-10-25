@@ -47,20 +47,20 @@ public final class QueenVfx {
 
     static void handle(ClientLevel level, int type, CompoundTag d) {
         switch (type) {
-            case QueenFx.WALTZ -> ClientVfx.add(new Waltz(level, d.getInt("id"), ClientVfx.vec(d, "c"), d.getInt("spin"), d.getFloat("from"), d.getFloat("to"), d.getInt("n"), d.getFloat("a"), d.getFloat("speed"), d.getFloat("len")));
-            case QueenFx.SHELL -> ClientVfx.add(new Shell(d.getInt("id"), d.getInt("d")));
+            case QueenFx.WALTZ -> ClientVfx.add(new Waltz(level, d.getIntOr("id", 0), ClientVfx.vec(d, "c"), d.getIntOr("spin", 0), d.getFloatOr("from", 0.0F), d.getFloatOr("to", 0.0F), d.getIntOr("n", 0), d.getFloatOr("a", 0.0F), d.getFloatOr("speed", 0.0F), d.getFloatOr("len", 0.0F)));
+            case QueenFx.SHELL -> ClientVfx.add(new Shell(d.getIntOr("id", 0), d.getIntOr("d", 0)));
             case QueenFx.SHELL_BURST -> {
-                int id = d.getInt("id");
+                int id = d.getIntOr("id", 0);
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Shell shell && shell.id == id) {
                         shell.dead = true;
                     }
                 }
-                ClientVfx.add(new ShellBurst(level, ClientVfx.vec(d, "c"), d.getFloat("r")));
+                ClientVfx.add(new ShellBurst(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F)));
             }
-            case QueenFx.TRACE -> ClientVfx.add(new Trace(d.getInt("id"), d.getInt("d")));
+            case QueenFx.TRACE -> ClientVfx.add(new Trace(d.getIntOr("id", 0), d.getIntOr("d", 0)));
             case QueenFx.TRACE_NODE -> {
-                int id = d.getInt("id");
+                int id = d.getIntOr("id", 0);
                 Trace found = null;
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Trace trace && trace.id == id && !trace.closed()) {
@@ -71,15 +71,15 @@ public final class QueenVfx {
                     found = new Trace(id, 2);
                     ClientVfx.add(found);
                 }
-                found.node(level, ClientVfx.vec(d, "p"), d.getInt("delay"), d.getFloat("r"));
+                found.node(level, ClientVfx.vec(d, "p"), d.getIntOr("delay", 0), d.getFloatOr("r", 0.0F));
             }
-            case QueenFx.COFFIN -> ClientVfx.add(new Coffin(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("close"), d.getFloat("a")));
-            case QueenFx.COFFIN_SHATTER -> ClientVfx.add(new CoffinShatter(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getFloat("a")));
-            case QueenFx.COURT -> ClientVfx.add(new Court(d.getInt("id"), d.getInt("d")));
+            case QueenFx.COFFIN -> ClientVfx.add(new Coffin(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("close", 0), d.getFloatOr("a", 0.0F)));
+            case QueenFx.COFFIN_SHATTER -> ClientVfx.add(new CoffinShatter(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getFloatOr("a", 0.0F)));
+            case QueenFx.COURT -> ClientVfx.add(new Court(d.getIntOr("id", 0), d.getIntOr("d", 0)));
             case QueenFx.COURT_RIFT -> ClientVfx.add(new Rift(ClientVfx.vec(d, "p")));
-            case QueenFx.PULSE -> ClientVfx.add(new Pulse(level, ClientVfx.vec(d, "c"), d.getFloat("r")));
-            case QueenFx.MIRRORS -> ClientVfx.add(new Mirrors(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getFloat("a"), d.getFloat("h"), d.getInt("life")));
-            case QueenFx.MIRROR_BEAM -> ClientVfx.add(new MirrorBeam(ClientVfx.vec(d, "a"), ClientVfx.vec(d, "b"), d.getInt("warn"), d.getInt("fire"), d.getInt("tint")));
+            case QueenFx.PULSE -> ClientVfx.add(new Pulse(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F)));
+            case QueenFx.MIRRORS -> ClientVfx.add(new Mirrors(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getFloatOr("a", 0.0F), d.getFloatOr("h", 0.0F), d.getIntOr("life", 0)));
+            case QueenFx.MIRROR_BEAM -> ClientVfx.add(new MirrorBeam(ClientVfx.vec(d, "a"), ClientVfx.vec(d, "b"), d.getIntOr("warn", 0), d.getIntOr("fire", 0), d.getIntOr("tint", 0)));
             default -> {
             }
         }

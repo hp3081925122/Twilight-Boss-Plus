@@ -15,7 +15,7 @@ import twilightforest.client.model.entity.MinoshroomModel;
 import twilightforest.entity.boss.Minoshroom;
 
 @Mixin(MinoshroomModel.class)
-public abstract class MinoshroomModelMixin extends HumanoidModel<Minoshroom> {
+public abstract class MinoshroomModelMixin extends HumanoidModel<twilightforest.client.state.entity.MinoshroomRenderState> {
     @Shadow(remap = false)
     @Final
     ModelPart rightFrontLeg;
@@ -33,8 +33,9 @@ public abstract class MinoshroomModelMixin extends HumanoidModel<Minoshroom> {
         return x * x * (3.0F - 2.0F * x);
     }
 
-    @Inject(method = {"setupAnim(Ltwilightforest/entity/boss/Minoshroom;FFFFF)V"}, at = @At("TAIL"), remap = false, require = 1)
-    private void tbp$pose(Minoshroom entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
+    @Inject(method = {"setupAnim(Ltwilightforest/client/state/entity/MinoshroomRenderState;)V"}, at = @At("TAIL"), remap = false, require = 1)
+    private void tbp$pose(twilightforest.client.state.entity.MinoshroomRenderState entity, CallbackInfo ci) {
+        float ageInTicks = entity.ageInTicks;
         float lean = 0.0F;
         float twist = 0.0F;
         float headDown = 0.0F;
@@ -45,7 +46,7 @@ public abstract class MinoshroomModelMixin extends HumanoidModel<Minoshroom> {
         float leftX = this.leftArm.xRot;
         float leftY = 0.0F;
         float leftZ = this.leftArm.zRot;
-        MinoPose.State state = MinoPose.get(entity, ageInTicks);
+        MinoPose.State state = entity.getRenderData(com.twilightbossplus.client.vfx.PoseRenderData.MINO);
         if (state != null) {
             float t = ageInTicks - state.start;
             float w = state.windup;
@@ -91,7 +92,7 @@ public abstract class MinoshroomModelMixin extends HumanoidModel<Minoshroom> {
                 this.leftFrontLeg.xRot = Mth.lerp(weight, this.leftFrontLeg.xRot, 0.15F);
             }
         }
-        if (entity.isCharging() && (state == null || state.kind == MinoPose.PAW)) {
+        if (Boolean.TRUE.equals(entity.getRenderData(com.twilightbossplus.client.vfx.PoseRenderData.CHARGING)) && (state == null || state.kind == MinoPose.PAW)) {
             weight = 1.0F;
             rightX = 0.9F;
             leftX = 0.6F;
@@ -100,8 +101,8 @@ public abstract class MinoshroomModelMixin extends HumanoidModel<Minoshroom> {
             headDown = 0.8F;
             lean = 0.45F;
         }
-        if (state == null && !entity.isCharging() && this.attackTime > 0.0F) {
-            float swing = Mth.sin(this.attackTime * Mth.PI);
+        if (state == null && !Boolean.TRUE.equals(entity.getRenderData(com.twilightbossplus.client.vfx.PoseRenderData.CHARGING)) && entity.attackTime > 0.0F) {
+            float swing = Mth.sin(entity.attackTime * Mth.PI);
             weight = 1.0F;
             rightX = this.rightArm.xRot - 2.2F * swing;
             lean = 0.2F * swing;
@@ -123,7 +124,7 @@ public abstract class MinoshroomModelMixin extends HumanoidModel<Minoshroom> {
         this.head.z = this.body.z;
         this.head.xRot = this.head.xRot + 0.5F * lean + headDown;
         this.head.yRot = this.head.yRot + 0.6F * twist;
-        this.hat.copyFrom(this.head);
+        this.hat.resetPose();
         float shoulderY = 2.0F * cosLean;
         float shoulderZ = 2.0F * sinLean;
         this.rightArm.x = -5.0F * cosTwist + shoulderZ * sinTwist;

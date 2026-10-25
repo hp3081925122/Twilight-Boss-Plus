@@ -29,7 +29,7 @@ public final class ClientVfx {
     }
 
     public static Vec3 vec(CompoundTag tag, String key) {
-        return new Vec3(tag.getDouble(key + "x"), tag.getDouble(key + "y"), tag.getDouble(key + "z"));
+        return new Vec3(tag.getDoubleOr(key + "x", 0.0), tag.getDoubleOr(key + "y", 0.0), tag.getDoubleOr(key + "z", 0.0));
     }
 
     public static void handle(int type, CompoundTag d) {
@@ -39,7 +39,7 @@ public final class ClientVfx {
         }
         if (type == VfxPacket.SHAKE) {
             Vec3 c = vec(d, "c");
-            SHAKES.add(new float[]{(float) c.x, (float) c.y, (float) c.z, d.getFloat("s"), d.getFloat("r"), d.getInt("d"), 0.0F});
+            SHAKES.add(new float[]{(float) c.x, (float) c.y, (float) c.z, d.getFloatOr("s", 0.0F), d.getFloatOr("r", 0.0F), d.getIntOr("d", 0), 0.0F});
             return;
         }
         if (type >= 300 && type < 400) {
@@ -129,8 +129,8 @@ public final class ClientVfx {
     }
 
     @SubscribeEvent
-    public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS || !ClientConfig.ENABLED.get()) {
+    public static void onRenderLevel(RenderLevelStageEvent.AfterTranslucentBlocks event) {
+        if (!ClientConfig.ENABLED.get()) {
             return;
         }
         if (EFFECTS.isEmpty() && MOTES.isEmpty()) {
@@ -143,12 +143,12 @@ public final class ClientVfx {
         if (canvas == null) {
             canvas = new VfxCanvas();
         }
-        Camera camera = event.getCamera();
-        Vec3 cameraPos = camera.getPosition();
+        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Vec3 cameraPos = camera.position();
         PoseStack pose = event.getPoseStack();
         pose.pushPose();
         pose.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-        canvas.begin(level, pose.last().pose(), cameraPos, camera.getLeftVector(), camera.getUpVector(), event.getPartialTick().getGameTimeDeltaPartialTick(false));
+        canvas.begin(level, pose.last().pose(), cameraPos, new org.joml.Vector3f(camera.leftVector()), new org.joml.Vector3f(camera.upVector()), Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false));
         for (VfxEffect effect : EFFECTS) {
             effect.render(canvas);
         }
@@ -164,7 +164,7 @@ public final class ClientVfx {
         if (SHAKES.isEmpty() || !ClientConfig.SCREEN_SHAKE.get()) {
             return;
         }
-        Vec3 cam = event.getCamera().getPosition();
+        Vec3 cam = event.getCamera().position();
         double strength = 0.0;
         for (float[] shake : SHAKES) {
             double dx = cam.x - shake[0];

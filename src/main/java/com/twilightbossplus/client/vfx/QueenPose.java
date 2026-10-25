@@ -19,14 +19,14 @@ public final class QueenPose {
         if (type != QueenFx.POSE) {
             return;
         }
-        int id = d.getInt("id");
+        int id = d.getIntOr("id", 0);
         Entity entity = level.getEntity(id);
         if (entity == null) {
             return;
         }
         STATES.entrySet().removeIf(entry -> level.getEntity(entry.getKey()) == null);
-        int windup = Math.max(1, d.getInt("windup"));
-        STATES.put(id, new State(d.getInt("kind"), entity.tickCount, windup, Math.max(windup, d.getInt("d"))));
+        int windup = Math.max(1, d.getIntOr("windup", 0));
+        STATES.put(id, new State(d.getIntOr("kind", 0), entity.tickCount, windup, Math.max(windup, d.getIntOr("d", 0))));
     }
 
     @Nullable

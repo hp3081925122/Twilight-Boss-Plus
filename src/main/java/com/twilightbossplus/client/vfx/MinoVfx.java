@@ -42,18 +42,18 @@ public final class MinoVfx {
     static void handle(ClientLevel level, int type, CompoundTag d) {
         RandomSource random = level.getRandom();
         switch (type) {
-            case MinoFx.WARN -> ClientVfx.add(new Warn(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("d"), d.getInt("color")));
-            case MinoFx.TRACK -> ClientVfx.add(new Track(ClientVfx.vec(d, "a"), ClientVfx.vec(d, "b"), d.getFloat("w"), d.getInt("d"), d.getInt("style")));
+            case MinoFx.WARN -> ClientVfx.add(new Warn(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("d", 0), d.getIntOr("color", 0)));
+            case MinoFx.TRACK -> ClientVfx.add(new Track(ClientVfx.vec(d, "a"), ClientVfx.vec(d, "b"), d.getFloatOr("w", 0.0F), d.getIntOr("d", 0), d.getIntOr("style", 0)));
             case MinoFx.POP -> {
                 Vec3 c = ClientVfx.vec(d, "c");
-                float radius = d.getFloat("r");
+                float radius = d.getFloatOr("r", 0.0F);
                 ClientVfx.add(new Crack(level, c, radius * 1.3F, 30));
                 rocks(level, c, radius, ClientVfx.count(4), 0.45);
                 dusts(level, c, radius, ClientVfx.count(3));
             }
             case MinoFx.SLAM -> {
                 Vec3 c = ClientVfx.vec(d, "c");
-                float radius = d.getFloat("r");
+                float radius = d.getFloatOr("r", 0.0F);
                 ClientVfx.add(new Crack(level, c, radius * 1.6F, 50));
                 ClientVfx.add(new Slam(level, c, radius));
                 rocks(level, c, radius, ClientVfx.count(6 + (int) (radius * 2.0F)), 0.7);
@@ -66,15 +66,15 @@ public final class MinoVfx {
             }
             case MinoFx.DUST -> {
                 Vec3 c = ClientVfx.vec(d, "c");
-                float radius = d.getFloat("r");
+                float radius = d.getFloatOr("r", 0.0F);
                 dusts(level, c, radius, ClientVfx.count(3));
                 rocks(level, c, radius, 1, 0.3);
             }
-            case MinoFx.RUBBLE -> ClientVfx.add(new Rubble(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("d")));
+            case MinoFx.RUBBLE -> ClientVfx.add(new Rubble(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("d", 0)));
             case MinoFx.SPORE_CLOUD -> {
                 Vec3 c = ClientVfx.vec(d, "c");
-                float radius = d.getFloat("r");
-                ClientVfx.add(new SporeCloud(level, c, radius, d.getInt("d")));
+                float radius = d.getFloatOr("r", 0.0F);
+                ClientVfx.add(new SporeCloud(level, c, radius, d.getIntOr("d", 0)));
                 int amount = ClientVfx.count(10);
                 for (int i = 0; i < amount; i++) {
                     double angle = random.nextDouble() * Mth.TWO_PI;
@@ -82,28 +82,28 @@ public final class MinoVfx {
                     spore(c.x, c.y + 0.8, c.z, Math.cos(angle) * speed, 0.05 + random.nextDouble() * 0.08, Math.sin(angle) * speed, 0.45, random);
                 }
             }
-            case MinoFx.SPORE_CAP -> ClientVfx.add(new SporeCap(d.getInt("id"), d.getFloat("h"), d.getFloat("s"), d.getInt("d")));
-            case MinoFx.WHIRL -> ClientVfx.add(new Whirl(d.getInt("id"), d.getFloat("r"), d.getInt("windup"), d.getInt("d"), d.getInt("pulse")));
-            case MinoFx.SNARE -> ClientVfx.add(new Snare(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("d")));
-            case MinoFx.ROOT -> ClientVfx.add(new Root(d.getInt("id"), d.getInt("d")));
-            case MinoFx.SPROUT -> ClientVfx.add(new Sprout(level, ClientVfx.vec(d, "c"), d.getFloat("r")));
-            case MinoFx.STUN -> ClientVfx.add(new Stun(d.getInt("id"), d.getFloat("h"), d.getInt("d")));
-            case MinoFx.AXE_CHARGE -> ClientVfx.add(new AxeCharge(d.getInt("id"), d.getFloat("h"), d.getInt("d")));
-            case MinoFx.STOMP_WAVE -> ClientVfx.add(new StompWave(level, ClientVfx.vec(d, "c"), d.getFloat("speed"), d.getFloat("max"), d.getFloat("th"), d.getInt("delay"), d.getInt("color")));
+            case MinoFx.SPORE_CAP -> ClientVfx.add(new SporeCap(d.getIntOr("id", 0), d.getFloatOr("h", 0.0F), d.getFloatOr("s", 0.0F), d.getIntOr("d", 0)));
+            case MinoFx.WHIRL -> ClientVfx.add(new Whirl(d.getIntOr("id", 0), d.getFloatOr("r", 0.0F), d.getIntOr("windup", 0), d.getIntOr("d", 0), d.getIntOr("pulse", 0)));
+            case MinoFx.SNARE -> ClientVfx.add(new Snare(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("d", 0)));
+            case MinoFx.ROOT -> ClientVfx.add(new Root(d.getIntOr("id", 0), d.getIntOr("d", 0)));
+            case MinoFx.SPROUT -> ClientVfx.add(new Sprout(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F)));
+            case MinoFx.STUN -> ClientVfx.add(new Stun(d.getIntOr("id", 0), d.getFloatOr("h", 0.0F), d.getIntOr("d", 0)));
+            case MinoFx.AXE_CHARGE -> ClientVfx.add(new AxeCharge(d.getIntOr("id", 0), d.getFloatOr("h", 0.0F), d.getIntOr("d", 0)));
+            case MinoFx.STOMP_WAVE -> ClientVfx.add(new StompWave(level, ClientVfx.vec(d, "c"), d.getFloatOr("speed", 0.0F), d.getFloatOr("max", 0.0F), d.getFloatOr("th", 0.0F), d.getIntOr("delay", 0), d.getIntOr("color", 0)));
             case MinoFx.AURA -> {
-                int id = d.getInt("id");
+                int id = d.getIntOr("id", 0);
                 boolean found = false;
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Aura aura && aura.id == id) {
-                        aura.left = Math.max(aura.left, d.getInt("d"));
+                        aura.left = Math.max(aura.left, d.getIntOr("d", 0));
                         found = true;
                     }
                 }
                 if (!found) {
-                    ClientVfx.add(new Aura(id, d.getInt("d")));
+                    ClientVfx.add(new Aura(id, d.getIntOr("d", 0)));
                 }
             }
-            case MinoFx.CLEAVE -> ClientVfx.add(new Cleave(d.getInt("id"), d.getFloat("reach"), d.getFloat("half"), d.getInt("windup"), d.getInt("style")));
+            case MinoFx.CLEAVE -> ClientVfx.add(new Cleave(d.getIntOr("id", 0), d.getFloatOr("reach", 0.0F), d.getFloatOr("half", 0.0F), d.getIntOr("windup", 0), d.getIntOr("style", 0)));
             default -> {
             }
         }

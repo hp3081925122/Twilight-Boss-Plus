@@ -37,32 +37,28 @@ public abstract class MinoshroomMixin extends BaseTFBoss implements MinoBrainHol
 
     @Inject(method = "aiStep", at = @At("TAIL"), remap = false)
     private void tbp$tickBrain(CallbackInfo ci) {
-        this.tbp$getBrain().tick();
-    }
-
-    @Inject(method = "hurt", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
-    private void tbp$skillInvulnerable(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
-        if (this.level().isClientSide() || this.tbp$brain == null || !this.tbp$brain.invulnerable()) {
-            return;
+        if (!this.level().isClientSide()) {
+            this.tbp$getBrain().tick();
         }
-        if (!source.is(DamageTypes.FELL_OUT_OF_WORLD) && !source.is(DamageTypes.GENERIC_KILL)) {
-            cir.setReturnValue(false);
-        }
-    }
-
-    @ModifyVariable(method = "hurt", at = @At("HEAD"), argsOnly = true, remap = false, require = 0)
-    private float tbp$stunBonus(float amount) {
-        if (this.level().isClientSide() || this.tbp$brain == null || !this.tbp$brain.stunned()) {
-            return amount;
-        }
-        return (float) (amount * (1.0 + MinoConfig.STUN_DAMAGE_BONUS.get()));
     }
 
     @Override
-    public boolean doHurtTarget(Entity target) {
-        if (this.tbp$brain != null && this.tbp$brain.blocksMelee()) {
-            return false;
+    public boolean hurtServer(net.minecraft.server.level.ServerLevel level, DamageSource source, float amount) {
+        if (this.tbp$brain != null) {
+            if (this.tbp$brain.invulnerable() && !source.is(DamageTypes.FELL_OUT_OF_WORLD) && !source.is(DamageTypes.GENERIC_KILL)) {
+                return false;
+            }
+            if (this.tbp$brain.stunned()) {
+                amount *= (float) (1.0 + MinoConfig.STUN_DAMAGE_BONUS.get());
+            }
         }
-        return super.doHurtTarget(target);
+        return super.hurtServer(level, source, amount);
+    }
+
+    @Inject(method = "doHurtTarget", at = @At("HEAD"), cancellable = true, remap = false)
+    private void tbp$blockMelee(net.minecraft.server.level.ServerLevel level, Entity target, CallbackInfoReturnable<Boolean> cir) {
+        if (this.tbp$brain != null && this.tbp$brain.blocksMelee()) {
+            cir.setReturnValue(false);
+        }
     }
 }

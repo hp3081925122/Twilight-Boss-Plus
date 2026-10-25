@@ -51,39 +51,39 @@ public final class UrGhastVfx {
 
     static void handle(ClientLevel level, int type, CompoundTag d) {
         switch (type) {
-            case UrGhastFx.ORBIT -> ClientVfx.add(new Orbit(d.getInt("id"), d.getInt("n"), d.getInt("d"), d.getInt("gap")));
-            case UrGhastFx.TEAR -> ClientVfx.add(new Tear(d.getInt("tid"), ClientVfx.vec(d, "p"), ClientVfx.vec(d, "v"), d.getInt("target"), d.getFloat("speed"), d.getFloat("turn"), d.getInt("life")));
+            case UrGhastFx.ORBIT -> ClientVfx.add(new Orbit(d.getIntOr("id", 0), d.getIntOr("n", 0), d.getIntOr("d", 0), d.getIntOr("gap", 0)));
+            case UrGhastFx.TEAR -> ClientVfx.add(new Tear(d.getIntOr("tid", 0), ClientVfx.vec(d, "p"), ClientVfx.vec(d, "v"), d.getIntOr("target", 0), d.getFloatOr("speed", 0.0F), d.getFloatOr("turn", 0.0F), d.getIntOr("life", 0)));
             case UrGhastFx.TEAR_BURST -> {
-                int tid = d.getInt("tid");
+                int tid = d.getIntOr("tid", 0);
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Tear tear && tear.id == tid) {
                         tear.dead = true;
                     }
                 }
-                ClientVfx.add(new Splash(level, ClientVfx.vec(d, "p"), d.getFloat("r")));
+                ClientVfx.add(new Splash(level, ClientVfx.vec(d, "p"), d.getFloatOr("r", 0.0F)));
             }
-            case UrGhastFx.WAIL -> ClientVfx.add(new Wail(level, ClientVfx.vec(d, "o"), ClientVfx.vec(d, "v"), d.getFloat("half"), d.getFloat("speed"), d.getFloat("max"), d.getInt("delay")));
-            case UrGhastFx.INHALE -> ClientVfx.add(new Inhale(d.getInt("id"), ClientVfx.vec(d, "m"), d.getInt("d")));
+            case UrGhastFx.WAIL -> ClientVfx.add(new Wail(level, ClientVfx.vec(d, "o"), ClientVfx.vec(d, "v"), d.getFloatOr("half", 0.0F), d.getFloatOr("speed", 0.0F), d.getFloatOr("max", 0.0F), d.getIntOr("delay", 0)));
+            case UrGhastFx.INHALE -> ClientVfx.add(new Inhale(d.getIntOr("id", 0), ClientVfx.vec(d, "m"), d.getIntOr("d", 0)));
             case UrGhastFx.STORM -> {
-                int id = d.getInt("id");
+                int id = d.getIntOr("id", 0);
                 boolean extended = false;
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Storm storm && storm.id == id) {
-                        storm.extend(d.getInt("d"));
+                        storm.extend(d.getIntOr("d", 0));
                         extended = true;
                     }
                 }
                 if (!extended) {
-                    ClientVfx.add(new Storm(id, d.getInt("d")));
+                    ClientVfx.add(new Storm(id, d.getIntOr("d", 0)));
                 }
             }
-            case UrGhastFx.CURTAIN -> ClientVfx.add(new Curtain(level, ClientVfx.vec(d, "p"), ClientVfx.vec(d, "v"), d.getFloat("len"), d.getFloat("gap"), d.getFloat("gw"), d.getFloat("speed"), d.getInt("life")));
-            case UrGhastFx.PRISM -> ClientVfx.add(new Prism(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getFloat("a"), d.getInt("d")));
+            case UrGhastFx.CURTAIN -> ClientVfx.add(new Curtain(level, ClientVfx.vec(d, "p"), ClientVfx.vec(d, "v"), d.getFloatOr("len", 0.0F), d.getFloatOr("gap", 0.0F), d.getFloatOr("gw", 0.0F), d.getFloatOr("speed", 0.0F), d.getIntOr("life", 0)));
+            case UrGhastFx.PRISM -> ClientVfx.add(new Prism(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getFloatOr("a", 0.0F), d.getIntOr("d", 0)));
             case UrGhastFx.PRISM_CYCLE -> {
                 Vec3 c = ClientVfx.vec(d, "c");
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Prism prism && prism.center.distanceToSqr(c) < 1.0) {
-                        prism.cycle(d.getFloat("a"), d.getInt("warn"), d.getInt("fire"));
+                        prism.cycle(d.getFloatOr("a", 0.0F), d.getIntOr("warn", 0), d.getIntOr("fire", 0));
                     }
                 }
             }
@@ -95,8 +95,8 @@ public final class UrGhastVfx {
                     }
                 }
             }
-            case UrGhastFx.BOLT_WARN -> ClientVfx.add(new BoltWarn(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("delay")));
-            case UrGhastFx.BOLT -> ClientVfx.add(new Bolt(level, ClientVfx.vec(d, "c"), ClientVfx.vec(d, "s"), d.getFloat("r")));
+            case UrGhastFx.BOLT_WARN -> ClientVfx.add(new BoltWarn(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("delay", 0)));
+            case UrGhastFx.BOLT -> ClientVfx.add(new Bolt(level, ClientVfx.vec(d, "c"), ClientVfx.vec(d, "s"), d.getFloatOr("r", 0.0F)));
             default -> {
             }
         }
@@ -266,10 +266,13 @@ public final class UrGhastVfx {
                 }
             }
             Vec3 next = this.pos.add(this.dir.scale(this.speed));
-            HitResult hit = level.clip(new ClipContext(this.pos, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
-            if (hit.getType() != HitResult.Type.MISS) {
-                next = hit.getLocation();
-                this.dead = true;
+            Entity collisionEntity = Minecraft.getInstance().player;
+            if (collisionEntity != null) {
+                HitResult hit = level.clip(new ClipContext(this.pos, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, collisionEntity));
+                if (hit.getType() != HitResult.Type.MISS) {
+                    next = hit.getLocation();
+                    this.dead = true;
+                }
             }
             this.pos = next;
             this.trail.add(next);

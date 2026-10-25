@@ -190,10 +190,10 @@ public final class KnightBrain extends BossBrain<KnightPhantom> {
             safe = Vec3.atBottomCenterOf(home.pos());
         }
         if (!Double.isFinite(safe.x) || !Double.isFinite(safe.y) || !Double.isFinite(safe.z)) {
-            safe = this.level().getSharedSpawnPos().getCenter();
+            safe = this.level().getRespawnData().pos().getCenter();
         }
         this.mob.setDeltaMovement(Vec3.ZERO);
-        this.mob.moveTo(safe.x, safe.y, safe.z, this.mob.getYRot(), 0.0F);
+        this.mob.snapTo(safe.x, safe.y, safe.z, this.mob.getYRot(), 0.0F);
         this.mob.getMoveControl().setWantedPosition(safe.x, safe.y + 1.0, safe.z, 0.5);
     }
 

@@ -1,36 +1,48 @@
 package com.twilightbossplus.client.vfx;
 
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.CompareOp;
+import java.util.Optional;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.resources.Identifier;
 
-public final class VfxRenderTypes extends RenderType {
-    private VfxRenderTypes(String name, VertexFormat format, VertexFormat.Mode mode, int size, boolean crumbling, boolean sort, Runnable setup, Runnable clear) {
-        super(name, format, mode, size, crumbling, sort, setup, clear);
+public final class VfxRenderTypes {
+    private static final RenderPipeline GLOW = pipeline("glow", BlendFunction.LIGHTNING);
+    private static final RenderPipeline FLAT = pipeline("flat", BlendFunction.TRANSLUCENT);
+
+    private VfxRenderTypes() {
     }
 
-    public static RenderType glow(String name, ResourceLocation texture) {
-        return create("twilightbossplus_glow_" + name, DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 262144, false, false,
-                CompositeState.builder()
-                        .setShaderState(POSITION_COLOR_TEX_LIGHTMAP_SHADER)
-                        .setTextureState(new TextureStateShard(texture, false, false))
-                        .setTransparencyState(LIGHTNING_TRANSPARENCY)
-                        .setCullState(NO_CULL)
-                        .setWriteMaskState(COLOR_WRITE)
-                        .setDepthTestState(LEQUAL_DEPTH_TEST)
-                        .createCompositeState(false));
+    private static RenderPipeline pipeline(String name, BlendFunction blend) {
+        return RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
+                .withVertexShader(Identifier.fromNamespaceAndPath("twilightbossplus", "core/vfx"))
+                .withFragmentShader(Identifier.fromNamespaceAndPath("twilightbossplus", "core/vfx"))
+                .withSampler("Sampler0")
+                .withVertexFormat(com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS)
+                .withCull(false)
+                .withLocation(Identifier.fromNamespaceAndPath("twilightbossplus", "pipeline/" + name))
+                .withColorTargetState(new ColorTargetState(Optional.of(blend), ColorTargetState.WRITE_COLOR))
+                .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
+                .build();
     }
 
-    public static RenderType flat(String name, ResourceLocation texture) {
-        return create("twilightbossplus_flat_" + name, DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 262144, false, false,
-                CompositeState.builder()
-                        .setShaderState(POSITION_COLOR_TEX_LIGHTMAP_SHADER)
-                        .setTextureState(new TextureStateShard(texture, false, false))
-                        .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
-                        .setCullState(NO_CULL)
-                        .setWriteMaskState(COLOR_WRITE)
-                        .setDepthTestState(LEQUAL_DEPTH_TEST)
-                        .createCompositeState(false));
+    public static void register(net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent event) {
+        event.registerPipeline(GLOW);
+        event.registerPipeline(FLAT);
+    }
+
+    public static RenderType glow(String name, Identifier texture) {
+        return RenderType.create("twilightbossplus_glow_" + name,
+                RenderSetup.builder(GLOW).withTexture("Sampler0", texture).bufferSize(262144).createRenderSetup());
+    }
+
+    public static RenderType flat(String name, Identifier texture) {
+        return RenderType.create("twilightbossplus_flat_" + name,
+                RenderSetup.builder(FLAT).withTexture("Sampler0", texture).bufferSize(262144).createRenderSetup());
     }
 }

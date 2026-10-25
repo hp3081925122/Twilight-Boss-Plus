@@ -41,7 +41,7 @@ public final class Leap {
             return true;
         }
         this.mob.setDeltaMovement(motion);
-        this.mob.hasImpulse = true;
+        this.mob.needsSync = true;
         return false;
     }
 }

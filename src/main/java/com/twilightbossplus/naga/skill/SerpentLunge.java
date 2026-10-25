@@ -135,7 +135,7 @@ public final class SerpentLunge extends NagaSkill {
         if (victim instanceof Player) {
             this.brain.knock(victim, this.direction.x, this.direction.z, 0.6, 0.25);
         }
-        this.naga.level().playSound(null, victim.blockPosition(), SoundEvents.SHIELD_BLOCK, SoundSource.PLAYERS, 1.0F, 0.8F + this.naga.getRandom().nextFloat() * 0.4F);
+        this.naga.level().playSound(null, victim.blockPosition(), SoundEvents.SHIELD_BLOCK.value(), SoundSource.PLAYERS, 1.0F, 0.8F + this.naga.getRandom().nextFloat() * 0.4F);
         Vec3 motion = this.naga.getDeltaMovement();
         this.naga.setDeltaMovement(-this.direction.x * 0.6, motion.y + 0.3, -this.direction.z * 0.6);
         this.naga.setCharging(false);

@@ -35,7 +35,7 @@ public final class FallingRubble implements BossHazard {
         }
         for (LivingEntity victim : brain.victimsAround(this.center, RADIUS, 3.0)) {
             if (brain.damage(victim, this.multiplier)) {
-                victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 30, 1), brain.mob());
+                victim.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 30, 1), brain.mob());
             }
         }
         brain.level().playSound(null, this.center.x, this.center.y, this.center.z, SoundEvents.STONE_BREAK, SoundSource.HOSTILE, 2.0F, 0.6F);

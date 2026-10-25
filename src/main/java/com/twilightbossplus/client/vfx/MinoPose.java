@@ -27,36 +27,36 @@ public final class MinoPose {
         switch (type) {
             case MinoFx.AXE_CHARGE -> {
                 kind = CHOP;
-                windup = d.getInt("d");
+                windup = d.getIntOr("d", 0);
                 duration = windup;
             }
             case MinoFx.CLEAVE -> {
-                if (d.getInt("style") == MinoFx.CLEAVE_CHOP) {
+                if (d.getIntOr("style", 0) == MinoFx.CLEAVE_CHOP) {
                     kind = CHOP;
                 } else {
                     kind = SWEEP;
                 }
-                windup = d.getInt("windup");
+                windup = d.getIntOr("windup", 0);
                 duration = windup;
             }
             case MinoFx.WHIRL -> {
                 kind = WHIRL;
-                windup = d.getInt("windup");
-                duration = d.getInt("d");
+                windup = d.getIntOr("windup", 0);
+                duration = d.getIntOr("d", 0);
             }
             case MinoFx.TRACK -> {
-                if (d.getInt("style") != MinoFx.TRACK_HOOF) {
+                if (d.getIntOr("style", 0) != MinoFx.TRACK_HOOF) {
                     return;
                 }
                 kind = PAW;
-                windup = d.getInt("d");
+                windup = d.getIntOr("d", 0);
                 duration = windup;
             }
             default -> {
                 return;
             }
         }
-        int id = d.getInt("id");
+        int id = d.getIntOr("id", 0);
         Entity entity = level.getEntity(id);
         if (entity == null) {
             return;

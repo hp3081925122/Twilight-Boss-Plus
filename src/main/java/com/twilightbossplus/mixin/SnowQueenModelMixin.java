@@ -14,7 +14,7 @@ import twilightforest.client.model.entity.SnowQueenModel;
 import twilightforest.entity.boss.SnowQueen;
 
 @Mixin(SnowQueenModel.class)
-public abstract class SnowQueenModelMixin extends HumanoidModel<SnowQueen> {
+public abstract class SnowQueenModelMixin extends HumanoidModel<twilightforest.client.state.entity.SnowQueenRenderState> {
     protected SnowQueenModelMixin(ModelPart root) {
         super(root);
     }
@@ -25,12 +25,13 @@ public abstract class SnowQueenModelMixin extends HumanoidModel<SnowQueen> {
         return x * x * (3.0F - 2.0F * x);
     }
 
-    @Inject(method = {"setupAnim(Ltwilightforest/entity/boss/SnowQueen;FFFFF)V"}, at = @At("TAIL"), remap = false, require = 1)
-    private void tbp$pose(SnowQueen entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
-        QueenPose.State state = QueenPose.get(entity, ageInTicks);
+    @Inject(method = {"setupAnim(Ltwilightforest/client/state/entity/SnowQueenRenderState;)V"}, at = @At("TAIL"), remap = false, require = 1)
+    private void tbp$pose(twilightforest.client.state.entity.SnowQueenRenderState entity, CallbackInfo ci) {
+        QueenPose.State state = entity.getRenderData(com.twilightbossplus.client.vfx.PoseRenderData.QUEEN);
         if (state == null) {
             return;
         }
+        float ageInTicks = entity.ageInTicks;
         float t = ageInTicks - state.start;
         float w = state.windup;
         float d = state.duration;

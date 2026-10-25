@@ -40,7 +40,7 @@ public abstract class AlphaYetiMixin extends Monster implements YetiBrainHolder 
         }
     }
 
-    @ModifyVariable(method = "hurt", at = @At("HEAD"), argsOnly = true, remap = false)
+    @ModifyVariable(method = "hurtServer", at = @At("HEAD"), argsOnly = true, remap = false)
     private float tbp$tiredBonus(float amount) {
         if (this.level().isClientSide() || !YetiConfig.ENABLED.get() || !((AlphaYeti) (Object) this).isTired()) {
             return amount;
@@ -56,10 +56,10 @@ public abstract class AlphaYetiMixin extends Monster implements YetiBrainHolder 
     }
 
     @Override
-    public boolean doHurtTarget(Entity target) {
+    public boolean doHurtTarget(net.minecraft.server.level.ServerLevel level, Entity target) {
         if (this.tbp$brain != null && this.tbp$brain.blocksMelee()) {
             return false;
         }
-        return super.doHurtTarget(target);
+        return super.doHurtTarget(level, target);
     }
 }

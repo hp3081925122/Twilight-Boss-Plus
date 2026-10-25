@@ -13,7 +13,7 @@ import twilightforest.client.model.entity.KnightPhantomModel;
 import twilightforest.entity.boss.KnightPhantom;
 
 @Mixin(KnightPhantomModel.class)
-public abstract class KnightPhantomModelMixin extends HumanoidModel<KnightPhantom> {
+public abstract class KnightPhantomModelMixin extends HumanoidModel<twilightforest.client.state.entity.KnightPhantomRenderState> {
     protected KnightPhantomModelMixin(ModelPart root) {
         super(root);
     }
@@ -24,12 +24,13 @@ public abstract class KnightPhantomModelMixin extends HumanoidModel<KnightPhanto
         return x * x * (3.0F - 2.0F * x);
     }
 
-    @Inject(method = {"setupAnim(Ltwilightforest/entity/boss/KnightPhantom;FFFFF)V"}, at = @At("TAIL"), remap = false, require = 1)
-    private void tbp$pose(KnightPhantom entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
-        KnightPose.State state = KnightPose.get(entity, ageInTicks);
+    @Inject(method = {"setupAnim(Ltwilightforest/client/state/entity/KnightPhantomRenderState;)V"}, at = @At("TAIL"), remap = false, require = 1)
+    private void tbp$pose(twilightforest.client.state.entity.KnightPhantomRenderState entity, CallbackInfo ci) {
+        KnightPose.State state = entity.getRenderData(com.twilightbossplus.client.vfx.PoseRenderData.KNIGHT);
         if (state == null) {
             return;
         }
+        float ageInTicks = entity.ageInTicks;
         float t = ageInTicks - state.start;
         float w = state.windup;
         float d = state.duration;

@@ -33,30 +33,30 @@ public final class KnightPose {
     static void record(ClientLevel level, int type, CompoundTag d) {
         switch (type) {
             case KnightFx.SLASH -> {
-                if (!d.getBoolean("echo")) {
-                    put(level, d.getInt("id"), SLASH, d.getInt("windup"), d.getInt("windup") + 6, d.getInt("dir"));
+                if (!d.getBooleanOr("echo", false)) {
+                    put(level, d.getIntOr("id", 0), SLASH, d.getIntOr("windup", 0), d.getIntOr("windup", 0) + 6, d.getIntOr("dir", 0));
                 }
             }
-            case KnightFx.GATHER -> put(level, d.getInt("id"), RAISE, d.getInt("d"), d.getInt("d"), 1);
-            case KnightFx.AXE -> put(level, d.getInt("id"), THROW, d.getInt("windup"), d.getInt("windup") + d.getInt("out") + d.getInt("back"), 1);
-            case KnightFx.HOOK -> put(level, d.getInt("id"), THROW, 1, 14, 1);
-            case KnightFx.TETHER -> put(level, d.getInt("id"), LANCE, 1, d.getInt("d"), 1);
+            case KnightFx.GATHER -> put(level, d.getIntOr("id", 0), RAISE, d.getIntOr("d", 0), d.getIntOr("d", 0), 1);
+            case KnightFx.AXE -> put(level, d.getIntOr("id", 0), THROW, d.getIntOr("windup", 0), d.getIntOr("windup", 0) + d.getIntOr("out", 0) + d.getIntOr("back", 0), 1);
+            case KnightFx.HOOK -> put(level, d.getIntOr("id", 0), THROW, 1, 14, 1);
+            case KnightFx.TETHER -> put(level, d.getIntOr("id", 0), LANCE, 1, d.getIntOr("d", 0), 1);
             case KnightFx.PHALANX -> {
-                for (int id : d.getIntArray("ids")) {
-                    put(level, id, LANCE, d.getInt("gather"), d.getInt("gather") + d.getInt("charge"), 1);
+                for (int id : d.getIntArray("ids").orElseGet(() -> new int[0])) {
+                    put(level, id, LANCE, d.getIntOr("gather", 0), d.getIntOr("gather", 0) + d.getIntOr("charge", 0), 1);
                 }
             }
             case KnightFx.OATH -> {
-                for (int id : d.getIntArray("ids")) {
-                    put(level, id, OATH, d.getInt("gather"), d.getInt("gather") + d.getInt("form") + 30, 1);
+                for (int id : d.getIntArray("ids").orElseGet(() -> new int[0])) {
+                    put(level, id, OATH, d.getIntOr("gather", 0), d.getIntOr("gather", 0) + d.getIntOr("form", 0) + 30, 1);
                 }
             }
             case KnightFx.NOOSE -> {
-                for (int id : d.getIntArray("ids")) {
-                    put(level, id, CHAINS, d.getInt("gather"), d.getInt("gather") + d.getInt("d"), 1);
+                for (int id : d.getIntArray("ids").orElseGet(() -> new int[0])) {
+                    put(level, id, CHAINS, d.getIntOr("gather", 0), d.getIntOr("gather", 0) + d.getIntOr("d", 0), 1);
                 }
             }
-            case KnightFx.NOOSE_BREAK -> STATES.remove(d.getInt("id"));
+            case KnightFx.NOOSE_BREAK -> STATES.remove(d.getIntOr("id", 0));
             default -> {
             }
         }

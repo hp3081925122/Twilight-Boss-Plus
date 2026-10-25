@@ -2,8 +2,8 @@
   "required": true,
   "minVersion": "0.8",
   "package": "com.twilightbossplus.mixin",
-  "compatibilityLevel": "JAVA_21",
-  "refmap": "twilightbossplus.refmap.json",
+  "compatibilityLevel": "JAVA_25",
+
   "mixins": [
     "ChargeAttackGoalMixin", "GroundAttackGoalMixin", "HydraHeadContainerMixin", "HydraMixin", "KnightPhantomAccessor", "KnightPhantomMixin", "LichMixin", "MinoshroomMixin", "NagaMixin",
     "NagaMovementPatternMixin", "PhantomFormationGoalMixin", "PhantomThrowWeaponGoalMixin", "UrGhastMixin", "AlphaYetiMixin", "AlphaYetiRangedGoalMixin",

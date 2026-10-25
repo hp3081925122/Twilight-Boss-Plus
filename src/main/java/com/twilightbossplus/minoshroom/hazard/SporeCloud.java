@@ -33,7 +33,7 @@ public final class SporeCloud implements BossHazard {
         if (this.age % PULSE == 0) {
             for (LivingEntity victim : brain.victimsAround(this.center, RADIUS, 2.5)) {
                 brain.damage(victim, this.multiplier);
-                victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 0), brain.mob());
+                victim.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 40, 0), brain.mob());
                 victim.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 40, 0), brain.mob());
             }
         }

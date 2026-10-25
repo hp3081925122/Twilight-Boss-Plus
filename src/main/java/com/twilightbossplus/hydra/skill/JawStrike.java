@@ -85,7 +85,11 @@ public final class JawStrike extends HydraSkill {
             double dx = victim.getX() - origin.x;
             double dz = victim.getZ() - origin.z;
             if (victim.isBlocking() && victim instanceof Player player) {
-                player.disableShield();
+                var blockingStack = player.getUseItem();
+                var blocking = blockingStack.get(net.minecraft.core.component.DataComponents.BLOCKS_ATTACKS);
+                if (blocking != null) {
+                    blocking.disable(this.brain.level(), player, 5.0F, blockingStack);
+                    }
                 this.brain.knock(victim, dx, dz, 0.8, 0.3);
                 this.sound(SoundEvents.SHIELD_BREAK, victim.position(), 1.2F, 0.8F);
                 continue;

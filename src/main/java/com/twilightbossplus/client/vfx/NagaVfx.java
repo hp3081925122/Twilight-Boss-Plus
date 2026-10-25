@@ -39,27 +39,27 @@ public final class NagaVfx {
     static void handle(ClientLevel level, int type, CompoundTag d) {
         RandomSource random = level.getRandom();
         switch (type) {
-            case NagaFx.WARN -> ClientVfx.add(new Warn(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("d"), d.getInt("color")));
-            case NagaFx.LUNGE -> ClientVfx.add(new Lunge(ClientVfx.vec(d, "a"), ClientVfx.vec(d, "b"), d.getFloat("w"), d.getInt("d")));
+            case NagaFx.WARN -> ClientVfx.add(new Warn(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("d", 0), d.getIntOr("color", 0)));
+            case NagaFx.LUNGE -> ClientVfx.add(new Lunge(ClientVfx.vec(d, "a"), ClientVfx.vec(d, "b"), d.getFloatOr("w", 0.0F), d.getIntOr("d", 0)));
             case NagaFx.GLOB -> {
-                ClientVfx.add(new Glob(ClientVfx.vec(d, "o"), ClientVfx.vec(d, "v"), d.getDouble("g"), d.getInt("t")));
-                ClientVfx.add(new Warn(level, ClientVfx.vec(d, "l"), d.getFloat("r"), d.getInt("t"), VENOM));
+                ClientVfx.add(new Glob(ClientVfx.vec(d, "o"), ClientVfx.vec(d, "v"), d.getDoubleOr("g", 0.0), d.getIntOr("t", 0)));
+                ClientVfx.add(new Warn(level, ClientVfx.vec(d, "l"), d.getFloatOr("r", 0.0F), d.getIntOr("t", 0), VENOM));
             }
-            case NagaFx.POOL -> ClientVfx.add(new Pool(level, ClientVfx.vec(d, "c"), d.getFloat("r"), d.getInt("d")));
-            case NagaFx.BREATH -> ClientVfx.add(new Breath(d.getInt("id"), d.getFloat("len"), d.getFloat("half"), d.getInt("windup"), d.getInt("d")));
+            case NagaFx.POOL -> ClientVfx.add(new Pool(level, ClientVfx.vec(d, "c"), d.getFloatOr("r", 0.0F), d.getIntOr("d", 0)));
+            case NagaFx.BREATH -> ClientVfx.add(new Breath(d.getIntOr("id", 0), d.getFloatOr("len", 0.0F), d.getFloatOr("half", 0.0F), d.getIntOr("windup", 0), d.getIntOr("d", 0)));
             case NagaFx.QUAKE -> {
                 Vec3 c = ClientVfx.vec(d, "c");
-                float radius = d.getFloat("r");
+                float radius = d.getFloatOr("r", 0.0F);
                 ClientVfx.add(new Crater(level, c, radius));
-                for (int delay : d.getIntArray("delays")) {
-                    ClientVfx.add(new Mound(level, c, d.getFloat("speed"), d.getFloat("max"), delay));
+                for (int delay : d.getIntArray("delays").orElseGet(() -> new int[0])) {
+                    ClientVfx.add(new Mound(level, c, d.getFloatOr("speed", 0.0F), d.getFloatOr("max", 0.0F), delay));
                 }
                 clods(level, c, radius, ClientVfx.count(14), 0.55);
             }
             case NagaFx.LASH -> {
                 Vec3 c = ClientVfx.vec(d, "c");
-                float radius = d.getFloat("r");
-                ClientVfx.add(new Lash(c, radius, d.getFloat("yaw")));
+                float radius = d.getFloatOr("r", 0.0F);
+                ClientVfx.add(new Lash(c, radius, d.getFloatOr("yaw", 0.0F)));
                 int amount = ClientVfx.count(10);
                 for (int i = 0; i < amount; i++) {
                     double angle = random.nextDouble() * Mth.TWO_PI;
@@ -70,23 +70,23 @@ public final class NagaVfx {
                 }
             }
             case NagaFx.BURROW -> {
-                int id = d.getInt("id");
+                int id = d.getIntOr("id", 0);
                 boolean found = false;
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Burrow burrow && burrow.id == id) {
-                        burrow.active = d.getBoolean("on");
+                        burrow.active = d.getBooleanOr("on", false);
                         burrow.age = 0;
                         found = true;
                     }
                 }
-                if (!found && d.getBoolean("on")) {
+                if (!found && d.getBooleanOr("on", false)) {
                     ClientVfx.add(new Burrow(id));
                 }
             }
             case NagaFx.ERUPT -> {
                 Vec3 c = ClientVfx.vec(d, "c");
-                float radius = d.getFloat("r");
-                boolean big = d.getBoolean("big");
+                float radius = d.getFloatOr("r", 0.0F);
+                boolean big = d.getBooleanOr("big", false);
                 ClientVfx.add(new Eruption(level, c, radius, big));
                 if (big) {
                     clods(level, c, radius, ClientVfx.count(18), 0.8);
@@ -103,7 +103,7 @@ public final class NagaVfx {
             }
             case NagaFx.HISS -> {
                 Vec3 c = ClientVfx.vec(d, "c");
-                ClientVfx.add(new Hiss(level, c, d.getFloat("r")));
+                ClientVfx.add(new Hiss(level, c, d.getFloatOr("r", 0.0F)));
                 int amount = ClientVfx.count(10);
                 for (int i = 0; i < amount; i++) {
                     double angle = i * Mth.TWO_PI / amount;
@@ -113,19 +113,19 @@ public final class NagaVfx {
                 }
             }
             case NagaFx.AURA -> {
-                int id = d.getInt("id");
+                int id = d.getIntOr("id", 0);
                 boolean found = false;
                 for (VfxEffect effect : ClientVfx.effects()) {
                     if (effect instanceof Aura aura && aura.id == id) {
-                        aura.left = Math.max(aura.left, d.getInt("d"));
+                        aura.left = Math.max(aura.left, d.getIntOr("d", 0));
                         found = true;
                     }
                 }
                 if (!found) {
-                    ClientVfx.add(new Aura(id, d.getInt("d")));
+                    ClientVfx.add(new Aura(id, d.getIntOr("d", 0)));
                 }
             }
-            case NagaFx.BITE -> ClientVfx.add(new Bite(d.getInt("id"), d.getFloat("reach"), d.getFloat("half"), d.getInt("windup"), d.getInt("interval"), d.getInt("snaps")));
+            case NagaFx.BITE -> ClientVfx.add(new Bite(d.getIntOr("id", 0), d.getFloatOr("reach", 0.0F), d.getFloatOr("half", 0.0F), d.getIntOr("windup", 0), d.getIntOr("interval", 0), d.getIntOr("snaps", 0)));
             default -> {
             }
         }

@@ -73,9 +73,9 @@ public final class CrystalCourt extends QueenSkill {
             LivingEntity target = this.target();
             for (Vec3 rift : this.rifts) {
                 IceCrystal crystal = new IceCrystal(this.brain.level());
-                crystal.moveTo(rift.x, rift.y - 0.5, rift.z, this.mob.getRandom().nextFloat() * 360.0F, 0.0F);
+                crystal.snapTo(rift.x, rift.y - 0.5, rift.z, this.mob.getRandom().nextFloat() * 360.0F, 0.0F);
                 if (!this.brain.level().noCollision(crystal)) {
-                    crystal.moveTo(this.mob.getX(), this.mob.getY(), this.mob.getZ(), 0.0F, 0.0F);
+                    crystal.snapTo(this.mob.getX(), this.mob.getY(), this.mob.getZ(), 0.0F, 0.0F);
                 }
                 if (target != null) {
                     crystal.setTarget(target);
