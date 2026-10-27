@@ -8,7 +8,9 @@ import com.twilightbossplus.config.KnightConfig;
 import com.twilightbossplus.config.LichConfig;
 import com.twilightbossplus.config.MinoConfig;
 import com.twilightbossplus.config.NagaConfig;
+import com.twilightbossplus.config.SnowQueenConfig;
 import com.twilightbossplus.config.UrGhastConfig;
+import com.twilightbossplus.config.YetiConfig;
 import com.twilightbossplus.network.BossNetwork;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -29,6 +31,8 @@ public final class TwilightBossPlus {
         context.registerConfig(ModConfig.Type.COMMON, HydraConfig.SPEC, MODID + "/hydra.toml");
         context.registerConfig(ModConfig.Type.COMMON, KnightConfig.SPEC, MODID + "/knight_phantom.toml");
         context.registerConfig(ModConfig.Type.COMMON, UrGhastConfig.SPEC, MODID + "/ur_ghast.toml");
+        context.registerConfig(ModConfig.Type.COMMON, YetiConfig.SPEC, MODID + "/alpha_yeti.toml");
+        context.registerConfig(ModConfig.Type.COMMON, SnowQueenConfig.SPEC, MODID + "/snow_queen.toml");
         context.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC, MODID + "/client.toml");
         BossNetwork.register();
     }

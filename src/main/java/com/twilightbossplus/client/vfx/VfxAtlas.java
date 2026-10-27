@@ -10,7 +10,9 @@ public enum VfxAtlas {
     MINO("minoshroom"),
     HYDRA("hydra"),
     KNIGHT("knight_phantom"),
-    URGHAST("ur_ghast");
+    URGHAST("ur_ghast"),
+    YETI("alpha_yeti"),
+    QUEEN("snow_queen");
 
     public static final float SIZE = 256.0F;
 

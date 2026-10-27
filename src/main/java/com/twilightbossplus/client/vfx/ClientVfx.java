@@ -50,10 +50,20 @@ public final class ClientVfx {
         if (type >= 500 && type < 600) {
             KnightPose.record(level, type, d);
         }
+        if (type >= 700 && type < 800) {
+            YetiPose.record(level, type, d);
+        }
+        if (type >= 800 && type < 900) {
+            QueenPose.record(level, type, d);
+        }
         if (!ClientConfig.ENABLED.get()) {
             return;
         }
-        if (type >= 600) {
+        if (type >= 800) {
+            QueenVfx.handle(level, type, d);
+        } else if (type >= 700) {
+            YetiVfx.handle(level, type, d);
+        } else if (type >= 600) {
             UrGhastVfx.handle(level, type, d);
         } else if (type >= 500) {
             KnightVfx.handle(level, type, d);

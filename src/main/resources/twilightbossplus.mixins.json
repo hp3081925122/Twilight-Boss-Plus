@@ -6,10 +6,11 @@
   "refmap": "twilightbossplus.refmap.json",
   "mixins": [
     "ChargeAttackGoalMixin", "GroundAttackGoalMixin", "HydraHeadContainerMixin", "HydraMixin", "KnightPhantomAccessor", "KnightPhantomMixin", "LichMixin", "MinoshroomMixin", "NagaMixin",
-    "NagaMovementPatternMixin", "PhantomFormationGoalMixin", "PhantomThrowWeaponGoalMixin", "GhastguardAttackGoalMixin", "UrGhastMixin"
+    "NagaMovementPatternMixin", "PhantomFormationGoalMixin", "PhantomThrowWeaponGoalMixin", "GhastguardAttackGoalMixin", "UrGhastMixin", "AlphaYetiMixin", "AlphaYetiRangedGoalMixin",
+    "ThrowRiderGoalMixin", "YetiRampageGoalMixin", "SnowQueenMixin", "QueenHoverGoalMixin", "QueenMeleeGoalMixin"
   ],
   "client": [
-    "KnightPhantomModelMixin", "MinoshroomModelMixin"
+    "AlphaYetiModelMixin", "KnightPhantomModelMixin", "MinoshroomModelMixin", "SnowQueenModelMixin"
   ],
   "injectors": {
     "defaultRequire": 1
