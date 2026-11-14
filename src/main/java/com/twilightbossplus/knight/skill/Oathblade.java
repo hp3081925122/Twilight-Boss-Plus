@@ -80,7 +80,7 @@ public final class Oathblade extends KnightSkill {
             }
         }
         if (this.age == forged) {
-            this.landing = this.floor(this.sword);
+            this.landing = this.floor(this.sword.subtract(0.0, HEIGHT, 0.0));
             this.bladeAngle = this.mob.getRandom().nextFloat() * Mth.TWO_PI;
             KnightFx.oathLock(this.brain, this.landing, IMPACT, LOCK, KnightConfig.OATH_BLADES.get(), this.bladeAngle, BLADE_RANGE);
             this.sound(SoundEvents.ANVIL_PLACE, this.sword, 2.0F, 0.5F);

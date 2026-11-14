@@ -266,10 +266,13 @@ public final class UrGhastVfx {
                 }
             }
             Vec3 next = this.pos.add(this.dir.scale(this.speed));
-            HitResult hit = level.clip(new ClipContext(this.pos, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
-            if (hit.getType() != HitResult.Type.MISS) {
-                next = hit.getLocation();
-                this.dead = true;
+            Entity collisionEntity = Minecraft.getInstance().player;
+            if (collisionEntity != null) {
+                HitResult hit = level.clip(new ClipContext(this.pos, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, collisionEntity));
+                if (hit.getType() != HitResult.Type.MISS) {
+                    next = hit.getLocation();
+                    this.dead = true;
+                }
             }
             this.pos = next;
             this.trail.add(next);

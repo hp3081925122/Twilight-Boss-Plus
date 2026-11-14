@@ -37,7 +37,9 @@ public abstract class MinoshroomMixin extends BaseTFBoss implements MinoBrainHol
 
     @Inject(method = "aiStep", at = @At("TAIL"), remap = false)
     private void tbp$tickBrain(CallbackInfo ci) {
-        this.tbp$getBrain().tick();
+        if (!this.level().isClientSide()) {
+            this.tbp$getBrain().tick();
+        }
     }
 
     @Inject(method = "hurt", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
