@@ -31,14 +31,20 @@ public final class ShowcaseCommand {
         event.getDispatcher().register(Commands.literal("tbpshowcase")
                 .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("start")
-                        .executes(ctx -> start(ctx.getSource(), "all", true))
+                        .executes(ctx -> start(ctx.getSource(), "all", true, true))
                         .then(Commands.argument("boss", StringArgumentType.word())
                                 .suggests(BOSS_SUGGESTIONS)
-                                .executes(ctx -> start(ctx.getSource(), StringArgumentType.getString(ctx, "boss"), true))
+                                .executes(ctx -> start(ctx.getSource(), StringArgumentType.getString(ctx, "boss"), true, true))
                                 .then(Commands.argument("hideGui", BoolArgumentType.bool())
                                         .executes(ctx -> start(ctx.getSource(),
                                                 StringArgumentType.getString(ctx, "boss"),
-                                                BoolArgumentType.getBool(ctx, "hideGui"))))))
+                                                BoolArgumentType.getBool(ctx, "hideGui"),
+                                                true))
+                                        .then(Commands.argument("lockCamera", BoolArgumentType.bool())
+                                                .executes(ctx -> start(ctx.getSource(),
+                                                        StringArgumentType.getString(ctx, "boss"),
+                                                        BoolArgumentType.getBool(ctx, "hideGui"),
+                                                        BoolArgumentType.getBool(ctx, "lockCamera")))))))
                 .then(Commands.literal("stop")
                         .executes(ctx -> {
                             BossShowcaseManager.stop(true);
@@ -52,7 +58,7 @@ public final class ShowcaseCommand {
                                 .executes(ctx -> setHud(ctx.getSource(), false)))));
     }
 
-    private static int start(CommandSourceStack source, String bossArg, boolean hideGui) {
+    private static int start(CommandSourceStack source, String bossArg, boolean hideGui, boolean lockCamera) {
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("Player required."));
             return 0;
@@ -65,7 +71,7 @@ public final class ShowcaseCommand {
                 return 0;
             }
         }
-        BossShowcaseManager.start(source.getLevel(), player, single, hideGui);
+        BossShowcaseManager.start(source.getLevel(), player, single, hideGui, lockCamera);
         return 1;
     }
 

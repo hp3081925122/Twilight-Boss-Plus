@@ -41,9 +41,11 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import twilightforest.entity.monster.IceCrystal;
+import twilightforest.entity.boss.Hydra;
 import twilightforest.entity.boss.KnightPhantom;
 import twilightforest.entity.boss.Lich;
+import twilightforest.entity.boss.UrGhast;
+import twilightforest.entity.monster.IceCrystal;
 import twilightforest.entity.monster.LichMinion;
 import twilightforest.init.TFEntities;
 
@@ -80,10 +82,10 @@ public final class BossShowcaseManager {
         }
     }
 
-    private static final int CROWD_TARGET = 24;
-    private static final int CROWD_REPLENISH_THRESHOLD = 18;
-    private static final int SKILL_GAP_TICKS = 25;
-    private static final int BOSS_GAP_TICKS = 35;
+    private static final int CROWD_TARGET = 22;
+    private static final int CROWD_REPLENISH_THRESHOLD = 15;
+    private static final int SKILL_GAP_TICKS = 22;
+    private static final int BOSS_GAP_TICKS = 30;
     private static final int SKILL_TIMEOUT_TICKS = 260;
 
     private static final EntityType<?>[] VANILLA_MOBS = {
@@ -101,7 +103,10 @@ public final class BossShowcaseManager {
     @Nullable
     private static UUID playerUuid;
     private static boolean restoreHudOnStop;
+    private static boolean cameraLocked;
     private static Vec3 center = Vec3.ZERO;
+    private static Vec3 arenaFront = new Vec3(0.0, 0.0, -1.0);
+    private static float arenaFrontYaw = 180.0F;
     private static final Deque<BossKind> queue = new ArrayDeque<>();
     private static final List<UUID> bossUuids = new ArrayList<>();
     private static final List<UUID> mobUuids = new ArrayList<>();
@@ -122,12 +127,25 @@ public final class BossShowcaseManager {
     }
 
     public static void start(ServerLevel targetLevel, ServerPlayer player, @Nullable BossKind single, boolean hideGui) {
+        start(targetLevel, player, single, hideGui, true);
+    }
+
+    public static void start(ServerLevel targetLevel, ServerPlayer player, @Nullable BossKind single, boolean hideGui, boolean lockCamera) {
         stop(false);
         active = true;
         level = targetLevel;
         playerUuid = player.getUUID();
         restoreHudOnStop = hideGui;
+        cameraLocked = lockCamera;
         center = findArenaCenter(targetLevel, player);
+        Vec3 toPlayer = new Vec3(player.getX() - center.x, 0.0, player.getZ() - center.z);
+        if (toPlayer.lengthSqr() < 1.0E-4) {
+            arenaFront = new Vec3(0.0, 0.0, -1.0);
+        } else {
+            arenaFront = toPlayer.normalize();
+        }
+        arenaFrontYaw = (float) (Math.toDegrees(Math.atan2(arenaFront.z, arenaFront.x)) - 90.0);
+
         queue.clear();
         if (single != null) {
             queue.add(single);
@@ -142,10 +160,15 @@ public final class BossShowcaseManager {
     }
 
     public static void stop(boolean restoreHud) {
-        if (restoreHud && restoreHudOnStop && level != null && playerUuid != null) {
-            Entity entity = level.getServer().getPlayerList().getPlayer(playerUuid);
-            if (entity instanceof ServerPlayer player) {
-                sendHudState(player, false);
+        if (level != null && playerUuid != null) {
+            ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerUuid);
+            if (player != null) {
+                if (cameraLocked) {
+                    sendCameraState(player, false, null, null);
+                }
+                if (restoreHud && restoreHudOnStop) {
+                    sendHudState(player, false);
+                }
             }
         }
         clearCurrentBosses();
@@ -164,6 +187,7 @@ public final class BossShowcaseManager {
         level = null;
         playerUuid = null;
         restoreHudOnStop = false;
+        cameraLocked = false;
         active = false;
         skillIndex = 0;
         waitTicks = 0;
@@ -179,6 +203,18 @@ public final class BossShowcaseManager {
         CompoundTag data = new CompoundTag();
         data.putBoolean("hide", hide);
         BossNetwork.sendToPlayer(player, new VfxPacket(VfxPacket.SHOWCASE_HUD, data));
+    }
+
+    private static void sendCameraState(ServerPlayer player, boolean camActive, @Nullable Mob boss, @Nullable BossKind kind) {
+        CompoundTag data = new CompoundTag();
+        data.putBoolean("active", camActive);
+        if (camActive && boss != null && kind != null) {
+            data.putInt("id", boss.getId());
+            data.putInt("kind", kind.ordinal());
+            BossBrain.putVec(data, "c", center);
+            BossBrain.putVec(data, "f", arenaFront);
+        }
+        BossNetwork.sendToPlayer(player, new VfxPacket(VfxPacket.SHOWCASE_CAMERA, data));
     }
 
     @SubscribeEvent
@@ -198,6 +234,7 @@ public final class BossShowcaseManager {
         }
         maintainBosses(leadBoss);
         maintainMobAggro(leadBoss);
+        syncServerPlayerAnchor();
 
         if (leadBrain.isSkillRunning()) {
             skillTicks++;
@@ -220,10 +257,10 @@ public final class BossShowcaseManager {
                 ensureLichMinions(lich);
             }
             recenterIfNeeded(leadBoss);
-            Mob target = nearestMob(leadBoss.position());
+            Mob target = bestFrontMob(leadBoss.position());
             if (target == null) {
                 replenishCrowd();
-                target = nearestMob(leadBoss.position());
+                target = bestFrontMob(leadBoss.position());
             }
             if (target != null) {
                 for (UUID uuid : bossUuids) {
@@ -260,30 +297,48 @@ public final class BossShowcaseManager {
         stop(false);
     }
 
+    private static void syncServerPlayerAnchor() {
+        if (!cameraLocked || level == null || playerUuid == null || level.getGameTime() % 20 != 0) {
+            return;
+        }
+        ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerUuid);
+        if (player == null || player.level() != level) {
+            return;
+        }
+        Vec3 watchPos = center.add(arenaFront.scale(16.0)).add(0.0, 5.5, 0.0);
+        if (player.position().distanceToSqr(watchPos) > 36.0 * 36.0) {
+            player.teleportTo(watchPos.x, watchPos.y, watchPos.z);
+        }
+    }
+
     private static boolean spawnNextBoss() {
         if (level == null || queue.isEmpty()) {
             return false;
         }
         currentKind = queue.poll();
         skillIndex = 0;
-        waitTicks = 20;
+        waitTicks = 16;
         skillTicks = 0;
         betweenBossTicks = 0;
         bossUuids.clear();
         leadBossUuid = null;
 
+        Mob leadSpawned = null;
         if (currentKind == BossKind.KNIGHT_PHANTOM) {
+            Vec3 right = new Vec3(-arenaFront.z, 0.0, arenaFront.x);
             for (int i = 0; i < 6; i++) {
-                double angle = (Math.PI * 2.0 * i) / 6.0;
-                double x = center.x + Math.cos(angle) * 4.0;
-                double z = center.z + Math.sin(angle) * 4.0;
+                double lateral = (i - 2.5) * 1.8;
+                double depth = -Math.abs(i - 2.5) * 0.6;
+                Vec3 pos = center.add(right.scale(lateral)).add(arenaFront.scale(depth));
                 KnightPhantom knight = TFEntities.KNIGHT_PHANTOM.get().create(level);
                 if (knight == null) {
                     continue;
                 }
-                knight.moveTo(x, center.y + 1.5, z, (float) Math.toDegrees(angle) + 90.0F, 0.0F);
+                knight.moveTo(pos.x, center.y + 1.5, pos.z, arenaFrontYaw, 0.0F);
+                applyFrontRotation(knight, arenaFrontYaw);
                 knight.setNumber(i);
                 knight.finalizeSpawn(level, level.getCurrentDifficultyAt(knight.blockPosition()), MobSpawnType.COMMAND, null, null);
+                applyFrontRotation(knight, arenaFrontYaw);
                 knight.setPersistenceRequired();
                 level.addFreshEntity(knight);
                 bossUuids.add(knight.getUUID());
@@ -293,34 +348,56 @@ public final class BossShowcaseManager {
                 }
                 if (leadBossUuid == null) {
                     leadBossUuid = knight.getUUID();
+                    leadSpawned = knight;
                 }
             }
-            return leadBossUuid != null;
+        } else {
+            Mob boss = createBoss(currentKind);
+            if (boss == null) {
+                return spawnNextBoss();
+            }
+            double yOffset = switch (currentKind) {
+                case UR_GHAST -> 7.5;
+                case SNOW_QUEEN -> 3.5;
+                default -> 0.0;
+            };
+            boss.moveTo(center.x, center.y + yOffset, center.z, arenaFrontYaw, 0.0F);
+            applyFrontRotation(boss, arenaFrontYaw);
+            boss.finalizeSpawn(level, level.getCurrentDifficultyAt(boss.blockPosition()), MobSpawnType.COMMAND, null, null);
+            applyFrontRotation(boss, arenaFrontYaw);
+            boss.setPersistenceRequired();
+            level.addFreshEntity(boss);
+            bossUuids.add(boss.getUUID());
+            leadBossUuid = boss.getUUID();
+            leadSpawned = boss;
+            BossBrain<?> brain = getBrain(boss);
+            if (brain != null) {
+                brain.setShowcaseMode(true);
+            }
+            if (currentKind == BossKind.LICH && boss instanceof Lich lich) {
+                ensureLichMinions(lich);
+            }
         }
 
-        Mob boss = createBoss(currentKind);
-        if (boss == null) {
-            return spawnNextBoss();
+        if (leadSpawned == null) {
+            return false;
         }
-        double yOffset = switch (currentKind) {
-            case UR_GHAST -> 8.0;
-            case SNOW_QUEEN -> 3.5;
-            default -> 0.0;
-        };
-        boss.moveTo(center.x, center.y + yOffset, center.z, 0.0F, 0.0F);
-        boss.finalizeSpawn(level, level.getCurrentDifficultyAt(boss.blockPosition()), MobSpawnType.COMMAND, null, null);
-        boss.setPersistenceRequired();
-        level.addFreshEntity(boss);
-        bossUuids.add(boss.getUUID());
-        leadBossUuid = boss.getUUID();
-        BossBrain<?> brain = getBrain(boss);
-        if (brain != null) {
-            brain.setShowcaseMode(true);
-        }
-        if (currentKind == BossKind.LICH && boss instanceof Lich lich) {
-            ensureLichMinions(lich);
+        if (cameraLocked && playerUuid != null) {
+            ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerUuid);
+            if (player != null) {
+                sendCameraState(player, true, leadSpawned, currentKind);
+            }
         }
         return true;
+    }
+
+    private static void applyFrontRotation(Mob mob, float yaw) {
+        mob.setYRot(yaw);
+        mob.yRotO = yaw;
+        mob.yBodyRot = yaw;
+        mob.yBodyRotO = yaw;
+        mob.yHeadRot = yaw;
+        mob.yHeadRotO = yaw;
     }
 
     @Nullable
@@ -353,12 +430,8 @@ public final class BossShowcaseManager {
             if (minion == null) {
                 continue;
             }
-            double angle = random.nextDouble() * Math.PI * 2.0;
-            double dist = 3.5 + random.nextDouble() * 3.0;
-            double x = center.x + Math.cos(angle) * dist;
-            double z = center.z + Math.sin(angle) * dist;
-            double y = groundY(level, x, z, center.y + 4.0);
-            minion.moveTo(x, y, z, random.nextFloat() * 360.0F, 0.0F);
+            Vec3 pos = sampleFrontFanPos(random, 3.8, 6.2);
+            minion.moveTo(pos.x, pos.y, pos.z, arenaFrontYaw + 180.0F, 0.0F);
             minion.master = lich;
             minion.setPersistenceRequired();
             level.addFreshEntity(minion);
@@ -370,7 +443,7 @@ public final class BossShowcaseManager {
         if (level == null) {
             return;
         }
-        Mob target = nearestMob(leadBoss.position());
+        Mob target = bestFrontMob(leadBoss.position());
         for (UUID uuid : bossUuids) {
             Entity entity = level.getEntity(uuid);
             if (!(entity instanceof Mob mob) || !mob.isAlive()) {
@@ -381,6 +454,27 @@ public final class BossShowcaseManager {
             if (target != null && (mob.getTarget() == null || !mob.getTarget().isAlive())) {
                 mob.setTarget(target);
             }
+            if (mob instanceof Hydra) {
+                float targetYaw = arenaFrontYaw;
+                if (target != null) {
+                    targetYaw = (float) (Math.toDegrees(Math.atan2(target.getZ() - mob.getZ(), target.getX() - mob.getX())) - 90.0);
+                }
+                float nextYaw = Mth.rotLerp(0.25F, mob.yBodyRot, targetYaw);
+                mob.setYRot(nextYaw);
+                mob.yBodyRot = nextYaw;
+            } else if (mob instanceof UrGhast) {
+                Vec3 anchor = new Vec3(center.x, center.y + 7.5, center.z);
+                Vec3 diff = anchor.subtract(mob.position());
+                if (diff.lengthSqr() > 2.2 * 2.2) {
+                    mob.setDeltaMovement(mob.getDeltaMovement().scale(0.5).add(diff.scale(0.08)));
+                }
+                if (target != null) {
+                    float yaw = (float) (Math.toDegrees(Math.atan2(target.getZ() - mob.getZ(), target.getX() - mob.getX())) - 90.0);
+                    mob.setYRot(yaw);
+                    mob.yBodyRot = yaw;
+                    mob.yHeadRot = yaw;
+                }
+            }
         }
     }
 
@@ -388,12 +482,21 @@ public final class BossShowcaseManager {
         if (level == null) {
             return;
         }
+        RandomSource random = level.getRandom();
         for (UUID uuid : mobUuids) {
             Entity entity = level.getEntity(uuid);
-            if (entity instanceof Mob mob && mob.isAlive()) {
-                if (mob.getTarget() == null || !mob.getTarget().isAlive()) {
-                    mob.setTarget(leadBoss);
-                }
+            if (!(entity instanceof Mob mob) || !mob.isAlive()) {
+                continue;
+            }
+            if (mob.getTarget() == null || !mob.getTarget().isAlive()) {
+                mob.setTarget(leadBoss);
+            }
+            Vec3 rel = mob.position().subtract(center);
+            double forwardDot = rel.x * arenaFront.x + rel.z * arenaFront.z;
+            if (forwardDot < 1.2 || rel.horizontalDistanceSqr() > 13.5 * 13.5) {
+                Vec3 relocated = sampleFrontFanPos(random, 5.2, 9.8);
+                mob.moveTo(relocated.x, relocated.y, relocated.z, arenaFrontYaw + 180.0F, 0.0F);
+                mob.setDeltaMovement(Vec3.ZERO);
             }
         }
     }
@@ -401,15 +504,16 @@ public final class BossShowcaseManager {
     private static void recenterIfNeeded(Mob leadBoss) {
         double dx = leadBoss.getX() - center.x;
         double dz = leadBoss.getZ() - center.z;
-        if (dx * dx + dz * dz <= 16.0 * 16.0) {
+        if (dx * dx + dz * dz <= 9.5 * 9.5) {
             return;
         }
         double yOffset = switch (currentKind != null ? currentKind : BossKind.NAGA) {
-            case UR_GHAST -> 8.0;
+            case UR_GHAST -> 7.5;
             case SNOW_QUEEN -> 3.5;
             default -> 0.0;
         };
-        leadBoss.setPos(center.x, center.y + yOffset, center.z);
+        leadBoss.moveTo(center.x, center.y + yOffset, center.z, arenaFrontYaw, 0.0F);
+        applyFrontRotation(leadBoss, arenaFrontYaw);
         leadBoss.setDeltaMovement(Vec3.ZERO);
     }
 
@@ -430,12 +534,15 @@ public final class BossShowcaseManager {
             }
         }
         bossUuids.clear();
-        AABB box = new AABB(center.x - 40.0, center.y - 20.0, center.z - 40.0, center.x + 40.0, center.y + 30.0, center.z + 40.0);
+        AABB box = new AABB(center.x - 45.0, center.y - 20.0, center.z - 45.0, center.x + 45.0, center.y + 35.0, center.z + 45.0);
         for (IceCrystal crystal : level.getEntitiesOfClass(IceCrystal.class, box)) {
             crystal.discard();
         }
         for (LichMinion minion : level.getEntitiesOfClass(LichMinion.class, box)) {
             minion.discard();
+        }
+        for (Lich clone : level.getEntitiesOfClass(Lich.class, box)) {
+            clone.discard();
         }
     }
 
@@ -473,6 +580,19 @@ public final class BossShowcaseManager {
         }
     }
 
+    private static Vec3 sampleFrontFanPos(RandomSource random, double minR, double maxR) {
+        double spread = (random.nextDouble() * 2.0 - 1.0) * Math.toRadians(48.0);
+        double cosS = Math.cos(spread);
+        double sinS = Math.sin(spread);
+        double dirX = arenaFront.x * cosS - arenaFront.z * sinS;
+        double dirZ = arenaFront.x * sinS + arenaFront.z * cosS;
+        double radius = minR + random.nextDouble() * (maxR - minR);
+        double x = center.x + dirX * radius;
+        double z = center.z + dirZ * radius;
+        double y = level != null ? groundY(level, x, z, center.y + 6.0) : center.y;
+        return new Vec3(x, y, z);
+    }
+
     private static void replenishCrowd() {
         if (level == null || mobUuids.size() >= CROWD_REPLENISH_THRESHOLD) {
             return;
@@ -486,13 +606,9 @@ public final class BossShowcaseManager {
             if (!(created instanceof Mob mob)) {
                 continue;
             }
-            double angle = random.nextDouble() * Math.PI * 2.0;
-            double radius = 5.0 + random.nextDouble() * 6.0;
-            double x = center.x + Math.cos(angle) * radius;
-            double z = center.z + Math.sin(angle) * radius;
-            double y = groundY(level, x, z, center.y + 6.0);
-            float yaw = (float) (Math.toDegrees(Math.atan2(center.z - z, center.x - x)) - 90.0);
-            mob.moveTo(x, y, z, yaw, 0.0F);
+            Vec3 pos = sampleFrontFanPos(random, 5.2, 10.2);
+            float yaw = (float) (Math.toDegrees(Math.atan2(center.z - pos.z, center.x - pos.x)) - 90.0);
+            mob.moveTo(pos.x, pos.y, pos.z, yaw, 0.0F);
             mob.finalizeSpawn(level, level.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.COMMAND, null, null);
             mob.setPersistenceRequired();
             mob.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 20 * 600, 0, false, false));
@@ -514,18 +630,22 @@ public final class BossShowcaseManager {
     }
 
     @Nullable
-    private static Mob nearestMob(Vec3 from) {
+    private static Mob bestFrontMob(Vec3 from) {
         if (level == null) {
             return null;
         }
         Mob best = null;
-        double bestDist = Double.MAX_VALUE;
+        double bestScore = Double.MAX_VALUE;
         for (UUID uuid : mobUuids) {
             Entity entity = level.getEntity(uuid);
             if (entity instanceof Mob mob && mob.isAlive()) {
-                double dist = mob.position().distanceToSqr(from);
-                if (dist < bestDist) {
-                    bestDist = dist;
+                Vec3 rel = mob.position().subtract(from);
+                double forward = rel.x * arenaFront.x + rel.z * arenaFront.z;
+                double distSqr = rel.lengthSqr();
+                double penalty = forward >= 2.0 ? 0.0 : 400.0;
+                double score = distSqr + penalty;
+                if (score < bestScore) {
+                    bestScore = score;
                     best = mob;
                 }
             }
@@ -570,8 +690,8 @@ public final class BossShowcaseManager {
         } else {
             flat = flat.normalize();
         }
-        double x = player.getX() + flat.x * 14.0;
-        double z = player.getZ() + flat.z * 14.0;
+        double x = player.getX() + flat.x * 15.0;
+        double z = player.getZ() + flat.z * 15.0;
         double y = groundY(targetLevel, x, z, player.getY() + 4.0);
         return new Vec3(x, y, z);
     }
