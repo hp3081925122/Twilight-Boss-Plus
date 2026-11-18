@@ -32,7 +32,7 @@ public abstract class ThrowRiderGoalMixin extends MeleeAttackGoal {
     }
 
     @Inject(method = "checkAndPerformAttack", at = @At("HEAD"), cancellable = true)
-    private void tbp$noGrabDuringSkill(LivingEntity victim, double distance, CallbackInfo ci) {
+    private void tbp$noGrabDuringSkill(LivingEntity victim, CallbackInfo ci) {
         if (this.tbp$busy()) {
             ci.cancel();
         }
