@@ -12,6 +12,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public final class VfxPacket implements CustomPacketPayload {
     public static final int SHAKE = 8;
+    public static final int AWAKEN = 9;
     public static final Type<VfxPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TwilightBossPlus.MODID, "vfx"));
     public static final StreamCodec<RegistryFriendlyByteBuf, VfxPacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT, packet -> packet.type,

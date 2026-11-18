@@ -20,14 +20,14 @@ public abstract class PhantomFormationGoalMixin {
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$pauseWhileBusy(CallbackInfo ci) {
-        if (KnightConfig.ENABLED.get() && KnightBrain.of(this.boss).busy()) {
+        if (KnightBrain.of(this.boss).enabled() && KnightBrain.of(this.boss).busy()) {
             ci.cancel();
         }
     }
 
     @Inject(method = "makeARandomKnightCharge", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$replaceCharge(List<KnightPhantom> knights, CallbackInfo ci) {
-        if (KnightConfig.ENABLED.get()) {
+        if (KnightBrain.of(this.boss).enabled()) {
             ci.cancel();
         }
     }

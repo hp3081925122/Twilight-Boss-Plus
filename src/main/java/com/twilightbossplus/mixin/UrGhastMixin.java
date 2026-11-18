@@ -37,7 +37,7 @@ public abstract class UrGhastMixin extends BaseTFBoss implements UrGhastBrainHol
 
     @Inject(method = "doTantrumDamageEffects", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$replaceTantrumDamage(CallbackInfo ci) {
-        if (UrGhastConfig.ENABLED.get()) {
+        if (this.tbp$getBrain().enabled()) {
             ci.cancel();
         }
     }

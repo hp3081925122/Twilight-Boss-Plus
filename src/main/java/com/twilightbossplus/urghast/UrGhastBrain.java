@@ -2,6 +2,7 @@ package com.twilightbossplus.urghast;
 
 import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.common.BossBrain;
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.config.UrGhastConfig;
 import com.twilightbossplus.urghast.skill.CrimsonLightning;
 import com.twilightbossplus.urghast.skill.TearPrism;
@@ -114,8 +115,12 @@ public final class UrGhastBrain extends BossBrain<UrGhast> {
         return result;
     }
 
+    public boolean enabled() {
+        return BossActivation.isEnhanced(this.mob, UrGhastConfig.ENABLED.get());
+    }
+
     public void tick() {
-        if (!UrGhastConfig.ENABLED.get()) {
+        if (!this.enabled()) {
             if (this.current != null) {
                 this.endCurrent();
             }
@@ -124,6 +129,7 @@ public final class UrGhastBrain extends BossBrain<UrGhast> {
         if (!this.initialized) {
             this.initialize();
         }
+        this.syncAwakened();
         this.tickHazards();
         if (this.mob.isDeadOrDying()) {
             this.stopAll();

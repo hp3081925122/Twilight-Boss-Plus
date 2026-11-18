@@ -42,7 +42,7 @@ public abstract class AlphaYetiMixin extends Monster implements YetiBrainHolder 
 
     @ModifyVariable(method = "hurt", at = @At("HEAD"), argsOnly = true, remap = false)
     private float tbp$tiredBonus(float amount) {
-        if (this.level().isClientSide() || !YetiConfig.ENABLED.get() || !((AlphaYeti) (Object) this).isTired()) {
+        if (this.level().isClientSide() || !this.tbp$getBrain().enabled() || !((AlphaYeti) (Object) this).isTired()) {
             return amount;
         }
         return (float) (amount * (1.0 + YetiConfig.TIRED_DAMAGE_BONUS.get()));
@@ -50,7 +50,7 @@ public abstract class AlphaYetiMixin extends Monster implements YetiBrainHolder 
 
     @Inject(method = "performRangedAttack", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$replaceIceBomb(LivingEntity target, float distanceFactor, CallbackInfo ci) {
-        if (YetiConfig.ENABLED.get()) {
+        if (this.tbp$getBrain().enabled()) {
             ci.cancel();
         }
     }

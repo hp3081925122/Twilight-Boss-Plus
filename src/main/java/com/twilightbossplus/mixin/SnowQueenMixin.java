@@ -41,7 +41,7 @@ public abstract class SnowQueenMixin extends Monster implements QueenBrainHolder
 
     @Inject(method = "hurt", at = @At("HEAD"), remap = false)
     private void tbp$recordHurt(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
-        if (!this.level().isClientSide() && this.tbp$brain != null && SnowQueenConfig.ENABLED.get()) {
+        if (!this.level().isClientSide() && this.tbp$brain != null && this.tbp$brain.enabled()) {
             this.tbp$brain.onHurt(source);
         }
     }

@@ -2,6 +2,7 @@ package com.twilightbossplus.minoshroom;
 
 import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.common.BossBrain;
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.config.MinoConfig;
 import com.twilightbossplus.minoshroom.skill.AxeCleave;
 import com.twilightbossplus.minoshroom.skill.AxeFissure;
@@ -89,8 +90,12 @@ public final class MinoBrain extends BossBrain<Minoshroom> {
         this.pendingRush = true;
     }
 
+    public boolean enabled() {
+        return BossActivation.isEnhanced(this.mob, MinoConfig.ENABLED.get());
+    }
+
     public void tick() {
-        if (!MinoConfig.ENABLED.get()) {
+        if (!this.enabled()) {
             if (this.current != null) {
                 this.endCurrent();
             }
@@ -99,6 +104,7 @@ public final class MinoBrain extends BossBrain<Minoshroom> {
         if (!this.initialized) {
             this.initialize();
         }
+        this.syncAwakened();
         this.tickHazards();
         if (this.mob.isDeadOrDying()) {
             this.stopAll();
