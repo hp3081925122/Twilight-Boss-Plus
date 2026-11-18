@@ -10,8 +10,6 @@ import net.minecraftforge.network.NetworkEvent;
 
 public final class VfxPacket {
     public static final int SHAKE = 8;
-    public static final int SHOWCASE_HUD = 9;
-    public static final int SHOWCASE_CAMERA = 10;
 
     public final int type;
     public final CompoundTag data;

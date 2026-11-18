@@ -1,5 +1,6 @@
 package com.twilightbossplus.knight.skill;
 
+import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.config.KnightConfig;
 import com.twilightbossplus.knight.KnightBrain;
 import com.twilightbossplus.knight.KnightFx;
@@ -80,8 +81,9 @@ public final class Oathblade extends KnightSkill {
             }
         }
         if (this.age == forged) {
-            this.landing = this.floor(this.sword);
+            this.landing = this.floor(new Vec3(this.sword.x, this.sword.y - HEIGHT, this.sword.z));
             this.bladeAngle = this.mob.getRandom().nextFloat() * Mth.TWO_PI;
+            TwilightBossPlus.debug("Oathblade {} locked landing={} from sword={}", this.mob.getId(), this.landing, this.sword);
             KnightFx.oathLock(this.brain, this.landing, IMPACT, LOCK, KnightConfig.OATH_BLADES.get(), this.bladeAngle, BLADE_RANGE);
             this.sound(SoundEvents.ANVIL_PLACE, this.sword, 2.0F, 0.5F);
         }
@@ -112,15 +114,17 @@ public final class Oathblade extends KnightSkill {
     }
 
     private void impact() {
-        for (LivingEntity victim : this.brain.victimsAround(this.landing, IMPACT, 3.5)) {
+        List<LivingEntity> victims = this.brain.victimsAround(this.landing, IMPACT, 3.5);
+        for (LivingEntity victim : victims) {
             if (this.brain.damage(victim, KnightConfig.OATHBLADE.multiplier.get())) {
                 this.brain.knockFrom(victim, this.landing, 0.6, 0.4);
             }
         }
+        int blades = KnightConfig.OATH_BLADES.get();
+        TwilightBossPlus.debug("Oathblade {} impact at {} victims={} blades={}", this.mob.getId(), this.landing, victims.size(), blades);
         this.brain.shake(this.landing, 0.8F, 24.0F, 20);
         this.sound(SoundEvents.GENERIC_EXPLODE, this.landing, 2.0F, 0.6F);
         this.sound(SoundEvents.ANVIL_LAND, this.landing, 2.0F, 0.4F);
-        int blades = KnightConfig.OATH_BLADES.get();
         for (int i = 0; i < blades; i++) {
             double a = this.bladeAngle + i * Mth.TWO_PI / blades;
             Vec3 dir = new Vec3(Math.cos(a), 0.0, Math.sin(a));

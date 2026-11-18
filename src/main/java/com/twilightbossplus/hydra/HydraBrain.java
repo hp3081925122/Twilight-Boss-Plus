@@ -146,16 +146,13 @@ public final class HydraBrain extends BossBrain<Hydra> {
         if (this.stageThree && this.mob.tickCount % 100 == 0) {
             HydraFx.aura(this, this.mob, 120);
         }
-        if (!this.showcaseMode && this.checkStages()) {
+        if (this.checkStages()) {
             return;
         }
         if (this.current != null) {
             if (!this.current.update()) {
                 this.endCurrent();
             }
-            return;
-        }
-        if (this.showcaseMode) {
             return;
         }
         for (int i = 0; i < this.cooldowns.length; i++) {
@@ -299,41 +296,6 @@ public final class HydraBrain extends BossBrain<Hydra> {
         }
         this.globalCooldown = (int) (HydraConfig.SKILL_INTERVAL.get() * multiplier);
         TwilightBossPlus.debug("Hydra {} ends skill {}", this.mob.getId(), skill.name());
-    }
-
-    @Override
-    public boolean isSkillRunning() {
-        return this.current != null;
-    }
-
-    @Override
-    public int showcaseSkillCount() {
-        return SkillId.values().length + 1;
-    }
-
-    @Override
-    public String showcaseSkillName(int index) {
-        if (index >= 0 && index < SkillId.values().length) {
-            return SkillId.values()[index].name();
-        }
-        if (index == SkillId.values().length) {
-            return "REGROWTH_ROAR";
-        }
-        return "";
-    }
-
-    @Override
-    public boolean startShowcaseSkill(int index) {
-        if (index >= 0 && index < SkillId.values().length) {
-            SkillId id = SkillId.values()[index];
-            this.forceSkill(id, this.create(id));
-            return true;
-        }
-        if (index == SkillId.values().length) {
-            this.forceSkill(null, new RegrowthRoar(this));
-            return true;
-        }
-        return false;
     }
 
     public void stopAll() {

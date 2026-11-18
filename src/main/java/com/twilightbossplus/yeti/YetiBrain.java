@@ -134,16 +134,13 @@ public final class YetiBrain extends BossBrain<AlphaYeti> {
             this.damageTaken += this.lastHealth - health;
         }
         this.lastHealth = health;
-        if (!this.showcaseMode && this.checkStages()) {
+        if (this.checkStages()) {
             return;
         }
         if (this.current != null) {
             if (!this.current.update()) {
                 this.endCurrent();
             }
-            return;
-        }
-        if (this.showcaseMode) {
             return;
         }
         if (this.mob.isTired() || this.mob.isVehicle()) {
@@ -283,47 +280,6 @@ public final class YetiBrain extends BossBrain<AlphaYeti> {
         }
         this.globalCooldown = (int) (YetiConfig.SKILL_INTERVAL.get() * multiplier);
         TwilightBossPlus.debug("Alpha Yeti {} ends skill {}", this.mob.getId(), skill.name());
-    }
-
-    @Override
-    public boolean isSkillRunning() {
-        return this.current != null;
-    }
-
-    @Override
-    public int showcaseSkillCount() {
-        return SkillId.values().length + 1;
-    }
-
-    @Override
-    public String showcaseSkillName(int index) {
-        if (index >= 0 && index < SkillId.values().length) {
-            return SkillId.values()[index].name();
-        }
-        if (index == SkillId.values().length) {
-            return "WHITEOUT_RAMPAGE";
-        }
-        return "";
-    }
-
-    @Override
-    public boolean startShowcaseSkill(int index) {
-        if (index >= 0 && index < SkillId.values().length) {
-            SkillId chosen = SkillId.values()[index];
-            YetiSkill skill = switch (chosen) {
-                case FROST_CLAP -> new FrostClap(this);
-                case AVALANCHE_POUNCE -> new AvalanchePounce(this);
-                case ROLLING_SNOWBALL -> new RollingSnowball(this);
-                case PERMAFROST_FIELD -> new PermafrostField(this);
-            };
-            this.forceSkill(chosen, skill);
-            return true;
-        }
-        if (index == SkillId.values().length) {
-            this.forceSkill(null, new WhiteoutRampage(this));
-            return true;
-        }
-        return false;
     }
 
     public void stopAll() {

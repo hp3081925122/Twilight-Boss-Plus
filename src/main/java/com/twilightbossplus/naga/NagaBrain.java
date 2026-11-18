@@ -100,7 +100,7 @@ public final class NagaBrain extends BossBrain<Naga> {
         if (this.stageThree && this.naga.tickCount % 100 == 0) {
             NagaFx.aura(this, this.naga, 120);
         }
-        if (!this.showcaseMode && this.checkStages()) {
+        if (this.checkStages()) {
             return;
         }
         if (this.current != null) {
@@ -112,9 +112,6 @@ public final class NagaBrain extends BossBrain<Naga> {
         if (this.pendingDaze) {
             this.pendingDaze = false;
             this.naga.getMovementAI().doDaze();
-        }
-        if (this.showcaseMode) {
-            return;
         }
         for (int i = 0; i < this.cooldowns.length; i++) {
             if (this.cooldowns[i] > 0) {
@@ -281,41 +278,6 @@ public final class NagaBrain extends BossBrain<Naga> {
             case SERPENT_CHAIN -> NagaConfig.SERPENT_CHAIN;
             case FANG_SNAP -> NagaConfig.FANG_SNAP;
         };
-    }
-
-    @Override
-    public boolean isSkillRunning() {
-        return this.current != null;
-    }
-
-    @Override
-    public int showcaseSkillCount() {
-        return SkillId.values().length + 1;
-    }
-
-    @Override
-    public String showcaseSkillName(int index) {
-        if (index >= 0 && index < SkillId.values().length) {
-            return SkillId.values()[index].name();
-        }
-        if (index == SkillId.values().length) {
-            return "FRENZIED_HISS";
-        }
-        return "";
-    }
-
-    @Override
-    public boolean startShowcaseSkill(int index) {
-        if (index >= 0 && index < SkillId.values().length) {
-            SkillId id = SkillId.values()[index];
-            this.forceSkill(id, this.create(id));
-            return true;
-        }
-        if (index == SkillId.values().length) {
-            this.forceSkill(null, new FrenziedHiss(this));
-            return true;
-        }
-        return false;
     }
 
     public void requestDaze() {

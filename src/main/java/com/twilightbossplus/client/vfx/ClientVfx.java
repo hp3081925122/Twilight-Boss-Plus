@@ -9,11 +9,7 @@ import java.util.List;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
@@ -30,16 +26,6 @@ public final class ClientVfx {
     private static final List<float[]> SHAKES = new ArrayList<>();
     private static VfxCanvas canvas;
     private static boolean ticking;
-    private static boolean showcaseCamActive;
-    private static int showcaseBossId = -1;
-    private static int showcaseBossKind;
-    private static Vec3 showcaseCenter = Vec3.ZERO;
-    private static Vec3 showcaseFront = new Vec3(0.0, 0.0, -1.0);
-    private static Vec3 smoothCamPos = Vec3.ZERO;
-    private static Vec3 smoothLookPos = Vec3.ZERO;
-    private static boolean camInitialized;
-    private static float lockedYaw;
-    private static float lockedPitch;
 
     private ClientVfx() {
     }
@@ -49,27 +35,6 @@ public final class ClientVfx {
     }
 
     public static void handle(int type, CompoundTag d) {
-        if (type == VfxPacket.SHOWCASE_HUD) {
-            Minecraft.getInstance().options.hideGui = d.getBoolean("hide");
-            return;
-        }
-        if (type == VfxPacket.SHOWCASE_CAMERA) {
-            showcaseCamActive = d.getBoolean("active");
-            if (showcaseCamActive) {
-                int newId = d.getInt("id");
-                if (newId != showcaseBossId) {
-                    camInitialized = false;
-                }
-                showcaseBossId = newId;
-                showcaseBossKind = d.getInt("kind");
-                showcaseCenter = vec(d, "c");
-                showcaseFront = vec(d, "f");
-            } else {
-                showcaseBossId = -1;
-                camInitialized = false;
-            }
-            return;
-        }
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) {
             return;
@@ -200,127 +165,7 @@ public final class ClientVfx {
     }
 
     @SubscribeEvent
-    public static void onRenderTick(TickEvent.RenderTickEvent event) {
-        if (event.phase != TickEvent.Phase.START || !showcaseCamActive || showcaseBossId < 0) {
-            return;
-        }
-        Minecraft mc = Minecraft.getInstance();
-        ClientLevel level = mc.level;
-        LocalPlayer player = mc.player;
-        if (level == null || player == null) {
-            return;
-        }
-        Entity entity = level.getEntity(showcaseBossId);
-        if (entity == null || !entity.isAlive()) {
-            return;
-        }
-        float pt = event.renderTickTime;
-        Vec3 bossPos = entity.getPosition(pt);
-        float bodyYaw = entity instanceof LivingEntity living
-                ? Mth.rotLerp(pt, living.yBodyRotO, living.yBodyRot)
-                : entity.getViewYRot(pt);
-        double rad = Math.toRadians(bodyYaw);
-        Vec3 bossDir = new Vec3(-Math.sin(rad), 0.0, Math.cos(rad));
-        if (bossDir.dot(showcaseFront) < -0.2) {
-            bossDir = showcaseFront;
-        }
-        Vec3 blendedFront = showcaseFront.scale(0.62).add(bossDir.scale(0.38));
-        if (blendedFront.lengthSqr() < 1.0E-4) {
-            blendedFront = showcaseFront;
-        } else {
-            blendedFront = blendedFront.normalize();
-        }
-        double sideAngle = Math.toRadians(15.0);
-        double cosA = Math.cos(sideAngle);
-        double sinA = Math.sin(sideAngle);
-        Vec3 camDir = new Vec3(
-                blendedFront.x * cosA - blendedFront.z * sinA,
-                0.0,
-                blendedFront.x * sinA + blendedFront.z * cosA
-        );
-
-        double dist = switch (showcaseBossKind) {
-            case 1 -> 12.8;
-            case 2 -> 13.5;
-            case 3 -> 18.5;
-            case 4 -> 15.0;
-            case 5 -> 23.5;
-            case 6 -> 14.2;
-            case 7 -> 14.0;
-            default -> 14.5;
-        };
-        double camHeight = switch (showcaseBossKind) {
-            case 1 -> 4.0;
-            case 2 -> 4.3;
-            case 3 -> 6.0;
-            case 4 -> 4.8;
-            case 5 -> 7.2;
-            case 6 -> 4.6;
-            case 7 -> 4.8;
-            default -> 4.6;
-        };
-        double groundY = showcaseCenter.y;
-        Vec3 anchorHoriz = new Vec3(
-                Mth.clamp(bossPos.x, showcaseCenter.x - 10.0, showcaseCenter.x + 10.0),
-                groundY,
-                Mth.clamp(bossPos.z, showcaseCenter.z - 10.0, showcaseCenter.z + 10.0)
-        );
-        Vec3 desiredCam = new Vec3(
-                anchorHoriz.x + camDir.x * dist,
-                groundY + camHeight,
-                anchorHoriz.z + camDir.z * dist
-        );
-        double lookY = switch (showcaseBossKind) {
-            case 3 -> bossPos.y + 3.0;
-            case 5 -> groundY + 4.0;
-            case 7 -> groundY + 2.3;
-            default -> bossPos.y + entity.getBbHeight() * 0.55;
-        };
-        Vec3 desiredLook = new Vec3(
-                bossPos.x + blendedFront.x * 1.6,
-                lookY,
-                bossPos.z + blendedFront.z * 1.6
-        );
-
-        if (!camInitialized) {
-            smoothCamPos = desiredCam;
-            smoothLookPos = desiredLook;
-            camInitialized = true;
-        } else {
-            smoothCamPos = smoothCamPos.lerp(desiredCam, 0.12);
-            smoothLookPos = smoothLookPos.lerp(desiredLook, 0.16);
-        }
-
-        double dx = smoothLookPos.x - smoothCamPos.x;
-        double dy = smoothLookPos.y - smoothCamPos.y;
-        double dz = smoothLookPos.z - smoothCamPos.z;
-        double horiz = Math.sqrt(dx * dx + dz * dz);
-        lockedYaw = (float) (Math.toDegrees(Math.atan2(dz, dx)) - 90.0);
-        lockedPitch = (float) (-Math.toDegrees(Math.atan2(dy, Math.max(1.0E-4, horiz))));
-
-        double feetY = smoothCamPos.y - player.getEyeHeight();
-        player.xo = smoothCamPos.x;
-        player.xOld = smoothCamPos.x;
-        player.yo = feetY;
-        player.yOld = feetY;
-        player.zo = smoothCamPos.z;
-        player.zOld = smoothCamPos.z;
-        player.setPosRaw(smoothCamPos.x, feetY, smoothCamPos.z);
-        player.setDeltaMovement(Vec3.ZERO);
-        player.yRotO = lockedYaw;
-        player.setYRot(lockedYaw);
-        player.yHeadRotO = lockedYaw;
-        player.yHeadRot = lockedYaw;
-        player.xRotO = lockedPitch;
-        player.setXRot(lockedPitch);
-    }
-
-    @SubscribeEvent
     public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
-        if (showcaseCamActive && camInitialized) {
-            event.setYaw(lockedYaw);
-            event.setPitch(lockedPitch);
-        }
         if (SHAKES.isEmpty() || !ClientConfig.SCREEN_SHAKE.get()) {
             return;
         }

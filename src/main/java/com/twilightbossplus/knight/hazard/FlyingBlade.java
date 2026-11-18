@@ -1,5 +1,6 @@
 package com.twilightbossplus.knight.hazard;
 
+import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.common.BossBrain;
 import com.twilightbossplus.common.BossHazard;
 import java.util.HashSet;
@@ -34,6 +35,7 @@ public final class FlyingBlade implements BossHazard {
                 continue;
             }
             if (brain.damage(victim, this.multiplier)) {
+                TwilightBossPlus.debug("FlyingBlade hit entity {} at {} with multiplier {}", victim.getId(), victim.position(), this.multiplier);
                 brain.knock(victim, this.dir.x, this.dir.z, 0.35, 0.15);
             }
         }
