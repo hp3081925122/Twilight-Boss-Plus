@@ -129,13 +129,16 @@ public final class UrGhastBrain extends BossBrain<UrGhast> {
             this.stopAll();
             return;
         }
-        if (this.checkStages()) {
+        if (!this.showcaseMode && this.checkStages()) {
             return;
         }
         if (this.current != null) {
             if (!this.current.update()) {
                 this.endCurrent();
             }
+            return;
+        }
+        if (this.showcaseMode) {
             return;
         }
         for (int i = 0; i < this.cooldowns.length; i++) {
@@ -270,6 +273,44 @@ public final class UrGhastBrain extends BossBrain<UrGhast> {
         }
         this.globalCooldown = (int) (UrGhastConfig.SKILL_INTERVAL.get() * multiplier);
         TwilightBossPlus.debug("Ur-Ghast {} ends skill {}", this.mob.getId(), skill.name());
+    }
+
+    @Override
+    public boolean isSkillRunning() {
+        return this.current != null;
+    }
+
+    @Override
+    public int showcaseSkillCount() {
+        return SkillId.values().length;
+    }
+
+    @Override
+    public String showcaseSkillName(int index) {
+        if (index >= 0 && index < SkillId.values().length) {
+            return SkillId.values()[index].name();
+        }
+        return "";
+    }
+
+    @Override
+    public boolean startShowcaseSkill(int index) {
+        if (index < 0 || index >= SkillId.values().length) {
+            return false;
+        }
+        LivingEntity target = this.focus();
+        if (target == null) {
+            return false;
+        }
+        SkillId chosen = SkillId.values()[index];
+        UrGhastSkill skill = switch (chosen) {
+            case TEAR_VOLLEY -> new TearVolley(this, target);
+            case WAILING_CONE -> new WailingCone(this, target);
+            case TEAR_PRISM -> new TearPrism(this, target);
+            case CRIMSON_LIGHTNING -> new CrimsonLightning(this, target);
+        };
+        this.forceSkill(chosen, skill);
+        return true;
     }
 
     public void stopAll() {

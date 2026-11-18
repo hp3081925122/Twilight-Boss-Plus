@@ -94,7 +94,7 @@ public final class LichBrain extends BossBrain<Lich> {
             this.stopAll();
             return;
         }
-        if (this.checkTriggers()) {
+        if (!this.showcaseMode && this.checkTriggers()) {
             return;
         }
         if (this.current != null) {
@@ -102,6 +102,10 @@ public final class LichBrain extends BossBrain<Lich> {
             if (!this.current.update()) {
                 this.endCurrent();
             }
+            return;
+        }
+        if (this.showcaseMode) {
+            this.holdVanillaAttacks();
             return;
         }
         for (int i = 0; i < this.cooldowns.length; i++) {
@@ -275,6 +279,41 @@ public final class LichBrain extends BossBrain<Lich> {
             clone.setAttackCooldown(RESUME_COOLDOWN + this.mob.getRandom().nextInt(20));
         }
         TwilightBossPlus.debug("Lich {} ends skill {}", this.mob.getId(), skill.name());
+    }
+
+    @Override
+    public boolean isSkillRunning() {
+        return this.current != null;
+    }
+
+    @Override
+    public int showcaseSkillCount() {
+        return SkillId.values().length + 1;
+    }
+
+    @Override
+    public String showcaseSkillName(int index) {
+        if (index >= 0 && index < SkillId.values().length) {
+            return SkillId.values()[index].name();
+        }
+        if (index == SkillId.values().length) {
+            return "TWILIGHT_COLLAPSE";
+        }
+        return "";
+    }
+
+    @Override
+    public boolean startShowcaseSkill(int index) {
+        if (index >= 0 && index < SkillId.values().length) {
+            SkillId id = SkillId.values()[index];
+            this.forceSkill(id, this.create(id));
+            return true;
+        }
+        if (index == SkillId.values().length) {
+            this.forceSkill(null, new TwilightCollapse(this));
+            return true;
+        }
+        return false;
     }
 
     public void stopAll() {

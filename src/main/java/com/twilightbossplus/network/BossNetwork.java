@@ -2,6 +2,7 @@ package com.twilightbossplus.network;
 
 import com.twilightbossplus.TwilightBossPlus;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
@@ -26,5 +27,9 @@ public final class BossNetwork {
 
     public static void sendAround(Entity entity, VfxPacket packet) {
         CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> entity), packet);
+    }
+
+    public static void sendToPlayer(ServerPlayer player, VfxPacket packet) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
     }
 }

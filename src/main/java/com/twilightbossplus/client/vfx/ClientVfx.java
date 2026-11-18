@@ -35,6 +35,10 @@ public final class ClientVfx {
     }
 
     public static void handle(int type, CompoundTag d) {
+        if (type == VfxPacket.SHOWCASE_HUD) {
+            Minecraft.getInstance().options.hideGui = d.getBoolean("hide");
+            return;
+        }
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) {
             return;

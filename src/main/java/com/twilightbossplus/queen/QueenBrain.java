@@ -192,7 +192,7 @@ public final class QueenBrain extends BossBrain<SnowQueen> {
             return;
         }
         this.mob.getNavigation().stop();
-        if (this.checkStages()) {
+        if (!this.showcaseMode && this.checkStages()) {
             return;
         }
         if (this.current != null) {
@@ -202,6 +202,9 @@ public final class QueenBrain extends BossBrain<SnowQueen> {
             return;
         }
         this.idle();
+        if (this.showcaseMode) {
+            return;
+        }
         for (int i = 0; i < this.cooldowns.length; i++) {
             if (this.cooldowns[i] > 0) {
                 this.cooldowns[i]--;
@@ -360,6 +363,42 @@ public final class QueenBrain extends BossBrain<SnowQueen> {
         }
         this.globalCooldown = (int) (SnowQueenConfig.SKILL_INTERVAL.get() * multiplier);
         TwilightBossPlus.debug("Snow Queen {} ends skill {}", this.mob.getId(), skill.name());
+    }
+
+    @Override
+    public boolean isSkillRunning() {
+        return this.current != null;
+    }
+
+    @Override
+    public int showcaseSkillCount() {
+        return SkillId.values().length;
+    }
+
+    @Override
+    public String showcaseSkillName(int index) {
+        if (index >= 0 && index < SkillId.values().length) {
+            return SkillId.values()[index].name();
+        }
+        return "";
+    }
+
+    @Override
+    public boolean startShowcaseSkill(int index) {
+        if (index < 0 || index >= SkillId.values().length) {
+            return false;
+        }
+        SkillId chosen = SkillId.values()[index];
+        QueenSkill skill = switch (chosen) {
+            case FROST_WALTZ -> new FrostWaltz(this);
+            case MIRROR_SHELL -> new MirrorShell(this);
+            case RIME_TRACE -> new RimeTrace(this);
+            case GLACIAL_COFFIN -> new GlacialCoffin(this);
+            case CRYSTAL_COURT -> new CrystalCourt(this);
+            case AURORA_MIRRORS -> new AuroraMirrors(this);
+        };
+        this.forceSkill(chosen, skill);
+        return true;
     }
 
     public void stopAll() {

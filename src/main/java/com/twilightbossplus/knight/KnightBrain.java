@@ -162,7 +162,7 @@ public final class KnightBrain extends BossBrain<KnightPhantom> {
             this.stageThree = this.stageThree || ratio <= KnightConfig.PHASE_THREE_HEALTH.get();
             return;
         }
-        if (this.checkStages()) {
+        if (!this.showcaseMode && this.checkStages()) {
             return;
         }
         if (this.current != null) {
@@ -170,6 +170,9 @@ public final class KnightBrain extends BossBrain<KnightPhantom> {
             if (!this.current.update()) {
                 this.endCurrent();
             }
+            return;
+        }
+        if (this.showcaseMode) {
             return;
         }
         for (int i = 0; i < this.cooldowns.length; i++) {
@@ -376,6 +379,49 @@ public final class KnightBrain extends BossBrain<KnightPhantom> {
             this.cooldowns[id.ordinal()] = Math.max(this.cooldowns[id.ordinal()], (int) (this.config(id).cooldown.get() * multiplier));
         }
         this.globalCooldown = (int) (KnightConfig.SKILL_INTERVAL.get() * multiplier);
+    }
+
+    @Override
+    public boolean isSkillRunning() {
+        return this.current != null;
+    }
+
+    @Override
+    public int showcaseSkillCount() {
+        return SkillId.values().length;
+    }
+
+    @Override
+    public String showcaseSkillName(int index) {
+        if (index >= 0 && index < SkillId.values().length) {
+            return SkillId.values()[index].name();
+        }
+        return "";
+    }
+
+    @Override
+    public boolean startShowcaseSkill(int index) {
+        if (index < 0 || index >= SkillId.values().length) {
+            return false;
+        }
+        LivingEntity target = this.target();
+        if (target == null) {
+            return false;
+        }
+        SkillId chosen = SkillId.values()[index];
+        KnightPhantom sword = this.performer(KnightPhantom::isSwordKnight, target);
+        KnightPhantom axe = this.performer(KnightPhantom::isAxeKnight, target);
+        KnightPhantom pick = this.performer(KnightPhantom::isPickKnight, target);
+        KnightSkill skill = switch (chosen) {
+            case ECHO_SLASH -> new EchoSlash(this, sword != null ? sword : this.mob, target);
+            case REVENANT_AXE -> new RevenantAxe(this, axe != null ? axe : this.mob, target);
+            case CHAIN_HOOK -> new ChainHook(this, pick != null ? pick : this.mob, target);
+            case CHAIN_NOOSE -> new ChainNoose(this, target);
+            case LANCE_PHALANX -> new LancePhalanx(this, target);
+            case OATHBLADE -> new Oathblade(this, target);
+        };
+        this.forceSkill(chosen, skill);
+        return true;
     }
 
     public void stopAll() {

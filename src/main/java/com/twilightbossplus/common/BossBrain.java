@@ -29,9 +29,34 @@ public abstract class BossBrain<E extends Mob> {
     private final List<BossHazard> hazards = new ArrayList<>();
     private final List<BossHazard> pendingHazards = new ArrayList<>();
     private boolean tickingHazards;
+    protected boolean showcaseMode;
 
     protected BossBrain(E mob) {
         this.mob = mob;
+    }
+
+    public boolean isShowcaseMode() {
+        return this.showcaseMode;
+    }
+
+    public void setShowcaseMode(boolean showcaseMode) {
+        this.showcaseMode = showcaseMode;
+    }
+
+    public boolean isSkillRunning() {
+        return false;
+    }
+
+    public int showcaseSkillCount() {
+        return 0;
+    }
+
+    public boolean startShowcaseSkill(int index) {
+        return false;
+    }
+
+    public String showcaseSkillName(int index) {
+        return "";
     }
 
     public E mob() {
