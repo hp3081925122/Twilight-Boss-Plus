@@ -2,6 +2,7 @@ package com.twilightbossplus.hydra;
 
 import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.common.BossBrain;
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.config.HydraConfig;
 import com.twilightbossplus.hydra.skill.EmberRain;
 import com.twilightbossplus.hydra.skill.FlameSweep;
@@ -128,8 +129,12 @@ public final class HydraBrain extends BossBrain<Hydra> {
         return this.headPos(index).add(Vec3.directionFromRotation(pitch, yaw).scale(MOUTH_OFFSET));
     }
 
+    public boolean enabled() {
+        return BossActivation.isEnhanced(this.mob, HydraConfig.ENABLED.get());
+    }
+
     public void tick() {
-        if (!HydraConfig.ENABLED.get()) {
+        if (!this.enabled()) {
             if (this.current != null) {
                 this.endCurrent();
             }
@@ -138,6 +143,7 @@ public final class HydraBrain extends BossBrain<Hydra> {
         if (!this.initialized) {
             this.initialize();
         }
+        this.syncAwakened();
         this.tickHazards();
         if (this.mob.isDeadOrDying()) {
             this.stopAll();

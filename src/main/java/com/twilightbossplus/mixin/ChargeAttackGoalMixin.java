@@ -1,5 +1,6 @@
 package com.twilightbossplus.mixin;
 
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.config.MinoConfig;
 import net.minecraft.world.entity.PathfinderMob;
 import org.spongepowered.asm.mixin.Final;
@@ -17,9 +18,9 @@ public abstract class ChargeAttackGoalMixin {
     @Final
     private PathfinderMob charger;
 
-    @Inject(method = "canUse", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "canUse", at = @At("HEAD"), cancellable = true)
     private void tbp$replacedCharge(CallbackInfoReturnable<Boolean> cir) {
-        if (this.charger instanceof Minoshroom && MinoConfig.ENABLED.get()) {
+        if (this.charger instanceof Minoshroom && BossActivation.isEnhanced(this.charger, MinoConfig.ENABLED.get())) {
             cir.setReturnValue(false);
         }
     }

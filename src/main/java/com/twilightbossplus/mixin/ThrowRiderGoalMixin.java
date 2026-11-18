@@ -21,18 +21,18 @@ public abstract class ThrowRiderGoalMixin extends MeleeAttackGoal {
 
     @Unique
     private boolean tbp$busy() {
-        return YetiConfig.ENABLED.get() && this.mob instanceof YetiBrainHolder holder && holder.tbp$getBrain().busy();
+        return this.mob instanceof YetiBrainHolder holder && holder.tbp$getBrain().enabled() && holder.tbp$getBrain().busy();
     }
 
-    @Inject(method = "canUse", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "canUse", at = @At("HEAD"), cancellable = true)
     private void tbp$waitForSkill(CallbackInfoReturnable<Boolean> cir) {
         if (this.tbp$busy()) {
             cir.setReturnValue(false);
         }
     }
 
-    @Inject(method = "checkAndPerformAttack", at = @At("HEAD"), cancellable = true, remap = false)
-    private void tbp$noGrabDuringSkill(LivingEntity victim, CallbackInfo ci) {
+    @Inject(method = "checkAndPerformAttack", at = @At("HEAD"), cancellable = true)
+    private void tbp$noGrabDuringSkill(LivingEntity victim, double distance, CallbackInfo ci) {
         if (this.tbp$busy()) {
             ci.cancel();
         }

@@ -2,6 +2,7 @@ package com.twilightbossplus.queen;
 
 import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.common.BossBrain;
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.config.SnowQueenConfig;
 import com.twilightbossplus.queen.skill.AuroraMirrors;
 import com.twilightbossplus.queen.skill.CrystalCourt;
@@ -98,7 +99,7 @@ public final class QueenBrain extends BossBrain<SnowQueen> {
     }
 
     public float damageScale(float amount) {
-        if (!this.shellActive || !SnowQueenConfig.ENABLED.get()) {
+        if (!this.shellActive || !this.enabled()) {
             return amount;
         }
         return (float) (amount * (1.0 - SnowQueenConfig.SHELL_DAMAGE_REDUCTION.get()));
@@ -176,8 +177,12 @@ public final class QueenBrain extends BossBrain<SnowQueen> {
         return this.level().getEntitiesOfClass(IceCrystal.class, this.mob.getBoundingBox().inflate(32.0, 16.0, 32.0)).size();
     }
 
+    public boolean enabled() {
+        return BossActivation.isEnhanced(this.mob, SnowQueenConfig.ENABLED.get());
+    }
+
     public void tick() {
-        if (!SnowQueenConfig.ENABLED.get()) {
+        if (!this.enabled()) {
             if (this.current != null) {
                 this.endCurrent();
             }
@@ -186,6 +191,7 @@ public final class QueenBrain extends BossBrain<SnowQueen> {
         if (!this.initialized) {
             this.initialize();
         }
+        this.syncAwakened();
         this.tickHazards();
         if (this.mob.isDeadOrDying()) {
             this.stopAll();

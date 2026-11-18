@@ -39,7 +39,7 @@ public abstract class KnightPhantomMixin extends BaseTFBoss implements KnightBra
 
     @Inject(method = "switchToFormation", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$holdFormation(KnightPhantom.Formation formation, CallbackInfo ci) {
-        if (KnightConfig.ENABLED.get() && this.tbp$getBrain().busy()) {
+        if (this.tbp$getBrain().enabled() && this.tbp$getBrain().busy()) {
             ci.cancel();
         }
     }

@@ -2,6 +2,7 @@ package com.twilightbossplus.yeti;
 
 import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.common.BossBrain;
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.config.YetiConfig;
 import com.twilightbossplus.yeti.skill.AvalanchePounce;
 import com.twilightbossplus.yeti.skill.FrostClap;
@@ -114,8 +115,12 @@ public final class YetiBrain extends BossBrain<AlphaYeti> {
         this.level().playSound(null, center.x, center.y, center.z, SoundEvents.GLASS_BREAK, SoundSource.HOSTILE, 1.6F, 0.5F);
     }
 
+    public boolean enabled() {
+        return BossActivation.isEnhanced(this.mob, YetiConfig.ENABLED.get());
+    }
+
     public void tick() {
-        if (!YetiConfig.ENABLED.get()) {
+        if (!this.enabled()) {
             if (this.current != null) {
                 this.endCurrent();
             }
@@ -124,6 +129,7 @@ public final class YetiBrain extends BossBrain<AlphaYeti> {
         if (!this.initialized) {
             this.initialize();
         }
+        this.syncAwakened();
         this.tickHazards();
         if (this.mob.isDeadOrDying()) {
             this.stopAll();

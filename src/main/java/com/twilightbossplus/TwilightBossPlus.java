@@ -2,6 +2,7 @@ package com.twilightbossplus;
 
 import com.mojang.logging.LogUtils;
 import com.twilightbossplus.client.vfx.ClientVfx;
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.config.ClientConfig;
 import com.twilightbossplus.config.GeneralConfig;
 import com.twilightbossplus.config.HydraConfig;
@@ -39,6 +40,7 @@ public final class TwilightBossPlus {
         modContainer.registerConfig(ModConfig.Type.COMMON, SnowQueenConfig.SPEC, MODID + "/snow_queen.toml");
         modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC, MODID + "/client.toml");
         modEventBus.addListener(BossNetwork::register);
+        NeoForge.EVENT_BUS.addListener(BossActivation::onEntityInteract);
         if (FMLEnvironment.getDist() == Dist.CLIENT) {
             modEventBus.addListener(com.twilightbossplus.client.vfx.PoseRenderData::register);
             modEventBus.addListener(com.twilightbossplus.client.vfx.VfxRenderTypes::register);
