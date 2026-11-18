@@ -1,5 +1,6 @@
 package com.twilightbossplus.mixin;
 
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.config.UrGhastConfig;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,7 +20,7 @@ public abstract class GhastguardAttackGoalMixin {
 
     @Inject(method = "canUse", at = @At("HEAD"), cancellable = true)
     private void tbp$blockUrGhast(CallbackInfoReturnable<Boolean> cir) {
-        if (this.ghast instanceof UrGhast && UrGhastConfig.ENABLED.get()) {
+        if (this.ghast instanceof UrGhast && BossActivation.isEnhanced(this.ghast, UrGhastConfig.ENABLED.get())) {
             cir.setReturnValue(false);
         }
     }

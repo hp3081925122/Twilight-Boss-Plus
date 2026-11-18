@@ -1,5 +1,6 @@
 package com.twilightbossplus.mixin;
 
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.config.HydraConfig;
 import com.twilightbossplus.hydra.HydraBrain;
 import com.twilightbossplus.hydra.HydraBrainHolder;
@@ -59,7 +60,7 @@ public abstract class HydraHeadContainerMixin implements HydraHeadControl {
 
     @Inject(method = "setHeadFacing", at = @At("TAIL"))
     private void tbp$aim(CallbackInfo ci) {
-        if (!HydraConfig.ENABLED.get() || !(this.hydra instanceof HydraBrainHolder holder)) {
+        if (!BossActivation.isEnhanced(this.hydra, HydraConfig.ENABLED.get()) || !(this.hydra instanceof HydraBrainHolder holder)) {
             return;
         }
         HydraBrain brain = holder.tbp$getBrain();
@@ -72,14 +73,14 @@ public abstract class HydraHeadContainerMixin implements HydraHeadControl {
 
     @Inject(method = "executeAttacks", at = @At("HEAD"), cancellable = true)
     private void tbp$replaceAttacks(CallbackInfo ci) {
-        if (HydraConfig.ENABLED.get()) {
+        if (BossActivation.isEnhanced(this.hydra, HydraConfig.ENABLED.get())) {
             ci.cancel();
         }
     }
 
     @Inject(method = "addMouthParticles", at = @At("HEAD"), cancellable = true)
     private void tbp$replaceParticles(CallbackInfo ci) {
-        if (HydraConfig.ENABLED.get()) {
+        if (BossActivation.isEnhanced(this.hydra, HydraConfig.ENABLED.get())) {
             ci.cancel();
         }
     }

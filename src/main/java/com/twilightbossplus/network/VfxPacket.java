@@ -10,6 +10,7 @@ import net.minecraftforge.network.NetworkEvent;
 
 public final class VfxPacket {
     public static final int SHAKE = 8;
+    public static final int AWAKEN = 9;
 
     public final int type;
     public final CompoundTag data;

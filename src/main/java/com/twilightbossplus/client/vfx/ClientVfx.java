@@ -2,6 +2,7 @@ package com.twilightbossplus.client.vfx;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.twilightbossplus.TwilightBossPlus;
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.config.ClientConfig;
 import com.twilightbossplus.network.VfxPacket;
 import java.util.ArrayList;
@@ -37,6 +38,10 @@ public final class ClientVfx {
     public static void handle(int type, CompoundTag d) {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) {
+            return;
+        }
+        if (type == VfxPacket.AWAKEN) {
+            BossActivation.markClientAwakened(d.getInt("id"));
             return;
         }
         if (type == VfxPacket.SHAKE) {
@@ -117,6 +122,7 @@ public final class ClientVfx {
             PENDING.clear();
             MOTES.clear();
             SHAKES.clear();
+            BossActivation.clearClientAwakened();
             return;
         }
         if (mc.isPaused()) {

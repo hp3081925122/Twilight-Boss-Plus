@@ -37,14 +37,14 @@ public abstract class UrGhastMixin extends CarminiteGhastguard implements UrGhas
 
     @Inject(method = "doTantrumDamageEffects", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$replaceTantrumDamage(CallbackInfo ci) {
-        if (UrGhastConfig.ENABLED.get()) {
+        if (this.tbp$getBrain().enabled()) {
             ci.cancel();
         }
     }
 
     @Inject(method = "spitFireball", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$replaceFireball(CallbackInfo ci) {
-        if (UrGhastConfig.ENABLED.get()) {
+        if (this.tbp$getBrain().enabled()) {
             ci.cancel();
         }
     }

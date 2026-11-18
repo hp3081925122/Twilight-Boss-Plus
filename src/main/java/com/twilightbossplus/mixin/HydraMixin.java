@@ -38,14 +38,14 @@ public abstract class HydraMixin extends Mob implements HydraBrainHolder {
 
     @Inject(method = "attackEntity", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$replaceAttacks(Entity target, float distance, CallbackInfo ci) {
-        if (HydraConfig.ENABLED.get()) {
+        if (this.tbp$getBrain().enabled()) {
             ci.cancel();
         }
     }
 
     @Inject(method = "secondaryAttacks", at = @At("HEAD"), cancellable = true, remap = false)
     private void tbp$replaceSecondary(CallbackInfo ci) {
-        if (HydraConfig.ENABLED.get()) {
+        if (this.tbp$getBrain().enabled()) {
             ci.cancel();
         }
     }

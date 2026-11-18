@@ -1,6 +1,7 @@
 package com.twilightbossplus.lich;
 
 import com.twilightbossplus.TwilightBossPlus;
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.common.BossBrain;
 import com.twilightbossplus.config.LichConfig;
 import com.twilightbossplus.lich.skill.CorpseDetonation;
@@ -76,11 +77,15 @@ public final class LichBrain extends BossBrain<Lich> {
         return this.enraged;
     }
 
+    public boolean enabled() {
+        return BossActivation.isEnhanced(this.mob, LichConfig.ENABLED.get());
+    }
+
     public void tick() {
         if (this.mob.isShadowClone()) {
             return;
         }
-        if (!LichConfig.ENABLED.get()) {
+        if (!this.enabled()) {
             if (this.current != null) {
                 this.endCurrent();
             }
@@ -89,6 +94,7 @@ public final class LichBrain extends BossBrain<Lich> {
         if (!this.initialized) {
             this.initialize();
         }
+        this.syncAwakened();
         this.tickHazards();
         if (this.mob.isDeadOrDying()) {
             this.stopAll();

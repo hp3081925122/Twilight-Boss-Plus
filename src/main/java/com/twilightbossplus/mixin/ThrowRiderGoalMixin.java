@@ -21,7 +21,7 @@ public abstract class ThrowRiderGoalMixin extends MeleeAttackGoal {
 
     @Unique
     private boolean tbp$busy() {
-        return YetiConfig.ENABLED.get() && this.mob instanceof YetiBrainHolder holder && holder.tbp$getBrain().busy();
+        return this.mob instanceof YetiBrainHolder holder && holder.tbp$getBrain().enabled() && holder.tbp$getBrain().busy();
     }
 
     @Inject(method = "canUse", at = @At("HEAD"), cancellable = true)

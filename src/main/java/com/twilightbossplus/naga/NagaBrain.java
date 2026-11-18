@@ -1,6 +1,7 @@
 package com.twilightbossplus.naga;
 
 import com.twilightbossplus.TwilightBossPlus;
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.config.NagaConfig;
 import com.twilightbossplus.common.BossBrain;
 import com.twilightbossplus.naga.skill.BurrowAmbush;
@@ -80,8 +81,12 @@ public final class NagaBrain extends BossBrain<Naga> {
         return this.stageThree;
     }
 
+    public boolean enabled() {
+        return BossActivation.isEnhanced(this.naga, NagaConfig.ENABLED.get());
+    }
+
     public void tick() {
-        if (!NagaConfig.ENABLED.get()) {
+        if (!this.enabled()) {
             if (this.current != null) {
                 this.endCurrent();
             }
@@ -90,6 +95,7 @@ public final class NagaBrain extends BossBrain<Naga> {
         if (!this.initialized) {
             this.initialize();
         }
+        this.syncAwakened();
         this.tickHazards();
         if (this.naga.isDeadOrDying()) {
             if (this.current != null) {

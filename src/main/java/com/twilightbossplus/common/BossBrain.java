@@ -1,6 +1,7 @@
 package com.twilightbossplus.common;
 
 import com.twilightbossplus.TwilightBossPlus;
+import com.twilightbossplus.config.GeneralConfig;
 import com.twilightbossplus.network.BossNetwork;
 import com.twilightbossplus.network.VfxPacket;
 import java.util.ArrayList;
@@ -70,7 +71,16 @@ public abstract class BossBrain<E extends Mob> {
         this.pendingHazards.clear();
     }
 
+    protected void syncAwakened() {
+        if (GeneralConfig.REQUIRE_TROPHY_ACTIVATION.get() && this.mob.tickCount % 40 == 0) {
+            BossActivation.syncClient(this.mob);
+        }
+    }
+
     protected void applyModifier(Attribute attribute, UUID id, String name, double amount, boolean keepRatio) {
+        if (!this.mob.addTag("tbp_attr_" + id)) {
+            return;
+        }
         AttributeInstance instance = this.mob.getAttribute(attribute);
         if (instance == null) {
             return;

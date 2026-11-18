@@ -57,7 +57,7 @@ public abstract class NagaMixin extends Monster implements NagaBrainHolder {
 
     @Redirect(method = "doHurtTarget", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;push(DDD)V"))
     private void tbp$scaleMeleePush(Entity target, double x, double y, double z) {
-        if (!NagaConfig.ENABLED.get() || !(target instanceof LivingEntity living)) {
+        if (!this.tbp$getBrain().enabled() || !(target instanceof LivingEntity living)) {
             target.push(x, y, z);
             return;
         }

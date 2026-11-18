@@ -1,5 +1,6 @@
 package com.twilightbossplus.mixin;
 
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.config.SnowQueenConfig;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
@@ -19,7 +20,7 @@ public abstract class QueenMeleeGoalMixin {
 
     @Inject(method = "canUse", at = @At("HEAD"), cancellable = true)
     private void tbp$blockQueen(CallbackInfoReturnable<Boolean> cir) {
-        if (this.mob instanceof SnowQueen && SnowQueenConfig.ENABLED.get()) {
+        if (this.mob instanceof SnowQueen && BossActivation.isEnhanced(this.mob, SnowQueenConfig.ENABLED.get())) {
             cir.setReturnValue(false);
         }
     }

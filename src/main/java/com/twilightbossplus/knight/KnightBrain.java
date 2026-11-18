@@ -1,5 +1,6 @@
 package com.twilightbossplus.knight;
 
+import com.twilightbossplus.common.BossActivation;
 import com.twilightbossplus.common.BossBrain;
 import com.twilightbossplus.config.KnightConfig;
 import com.twilightbossplus.knight.skill.ChainHook;
@@ -127,8 +128,12 @@ public final class KnightBrain extends BossBrain<KnightPhantom> {
         this.mob.switchToFormation(KnightPhantom.Formation.WAITING_FOR_LEADER);
     }
 
+    public boolean enabled() {
+        return BossActivation.isEnhanced(this.mob, KnightConfig.ENABLED.get());
+    }
+
     public void tick() {
-        if (!KnightConfig.ENABLED.get()) {
+        if (!this.enabled()) {
             if (this.current != null) {
                 this.endCurrent();
             }
@@ -138,6 +143,7 @@ public final class KnightBrain extends BossBrain<KnightPhantom> {
         if (!this.initialized) {
             this.initialize();
         }
+        this.syncAwakened();
         if (!Double.isFinite(this.mob.getX()) || !Double.isFinite(this.mob.getY()) || !Double.isFinite(this.mob.getZ())) {
             this.recover();
         }
