@@ -1,5 +1,6 @@
 package com.twilightbossplus.knight.skill;
 
+import com.twilightbossplus.TwilightBossPlus;
 import com.twilightbossplus.config.KnightConfig;
 import com.twilightbossplus.knight.KnightBrain;
 import com.twilightbossplus.knight.KnightFx;
@@ -82,6 +83,7 @@ public final class Oathblade extends KnightSkill {
         if (this.age == forged) {
             this.landing = this.floor(this.sword.subtract(0.0, HEIGHT, 0.0));
             this.bladeAngle = this.mob.getRandom().nextFloat() * Mth.TWO_PI;
+            TwilightBossPlus.debug("Oathblade {} locked landing={} from sword={}", this.mob.getId(), this.landing, this.sword);
             KnightFx.oathLock(this.brain, this.landing, IMPACT, LOCK, KnightConfig.OATH_BLADES.get(), this.bladeAngle, BLADE_RANGE);
             this.sound(SoundEvents.ANVIL_PLACE, this.sword, 2.0F, 0.5F);
         }
@@ -121,6 +123,7 @@ public final class Oathblade extends KnightSkill {
         this.sound(SoundEvents.GENERIC_EXPLODE, this.landing, 2.0F, 0.6F);
         this.sound(SoundEvents.ANVIL_LAND, this.landing, 2.0F, 0.4F);
         int blades = KnightConfig.OATH_BLADES.get();
+        TwilightBossPlus.debug("Oathblade {} impact at {} blades={}", this.mob.getId(), this.landing, blades);
         for (int i = 0; i < blades; i++) {
             double a = this.bladeAngle + i * Mth.TWO_PI / blades;
             Vec3 dir = new Vec3(Math.cos(a), 0.0, Math.sin(a));
