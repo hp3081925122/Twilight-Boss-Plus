@@ -2,18 +2,23 @@ package com.twilightbossplus.hydra.skill;
 
 import com.twilightbossplus.config.HydraConfig;
 import com.twilightbossplus.hydra.HydraBrain;
+import com.twilightbossplus.hydra.HydraFx;
 import com.twilightbossplus.hydra.HydraHeads;
-import com.twilightbossplus.hydra.hazard.MagmaShell;
+import com.twilightbossplus.hydra.HydraMortarControl;
 import java.util.List;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
+import twilightforest.entity.boss.HydraMortar;
+import twilightforest.init.TFEntities;
 import twilightforest.init.TFSounds;
 
 public final class MagmaVolley extends HydraSkill {
     private static final int WINDUP = 20;
     private static final int INTERVAL = 8;
-    private static final int FLIGHT = 26;
+    private static final int FLIGHT = 28;
+    private static final int FUSE = 70;
+    private static final double GRAVITY = 0.05;
     private static final double RADIUS = 2.4;
     private static final double SPREAD = 2.8;
     private static final float LOB_PITCH = -30.0F;
@@ -81,11 +86,21 @@ public final class MagmaVolley extends HydraSkill {
                     double dist = SPREAD * (0.4 + random.nextDouble() * 0.6);
                     aim = aim.add(Math.cos(angle) * dist, 0.0, Math.sin(angle) * dist);
                 }
-                MagmaShell shell = new MagmaShell(this.brain.mouth(index), this.brain.ground(aim), FLIGHT, RADIUS,
-                        HydraConfig.MAGMA_VOLLEY.multiplier.get(), HydraConfig.POOL_MULTIPLIER.get(), HydraConfig.POOL_TICKS.get());
-                this.brain.addHazard(shell);
-                shell.announce(this.brain);
-                this.sound(TFSounds.HYDRA_SHOOT.get(), this.brain.mouth(index), 2.5F, 0.9F + random.nextFloat() * 0.2F);
+                Vec3 origin = this.brain.mouth(index);
+                Vec3 landing = this.brain.ground(aim);
+                HydraMortar mortar = new HydraMortar(TFEntities.HYDRA_MORTAR.get(), this.brain.level(), this.brain.head(index).headEntity);
+                mortar.moveTo(origin.x, origin.y, origin.z, 0.0F, 0.0F);
+                double t = FLIGHT;
+                double vx = (landing.x - origin.x) / t * 1.12;
+                double vy = (landing.y - origin.y + 0.5 * GRAVITY * t * t) / t * 1.05;
+                double vz = (landing.z - origin.z) / t * 1.12;
+                mortar.setDeltaMovement(vx, vy, vz);
+                mortar.fuse = FUSE;
+                ((HydraMortarControl) mortar).tbp$configure(this.hydra, RADIUS, HydraConfig.MAGMA_VOLLEY.multiplier.get(),
+                        HydraConfig.POOL_MULTIPLIER.get(), HydraConfig.POOL_TICKS.get());
+                this.brain.level().addFreshEntity(mortar);
+                HydraFx.mortar(this.brain, mortar.getId(), landing, RADIUS, FLIGHT);
+                this.sound(TFSounds.HYDRA_SHOOT.get(), origin, 2.5F, 0.9F + random.nextFloat() * 0.2F);
             }
         }
         if (this.age >= this.finish) {

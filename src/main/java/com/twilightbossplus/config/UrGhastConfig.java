@@ -66,7 +66,7 @@ public final class UrGhastConfig {
 
         b.comment("暴怒时：泪幕风暴，取代原版暴怒的泪水伤害，恶魂身下形成乌云，带缺口的泪水雨幕从玩家身旁横扫而过，从缺口穿过即可躲避", "During tantrum: Tear Curtain, replaces the vanilla tantrum damage with sweeping walls of tear rain that each have a gap to slip through");
         TEAR_STORM = new Skill(b, "tear_storm", "泪幕风暴", "Tear Curtain", 1, 0.5);
-        STORM_INTERVAL = b.comment("每名玩家两道雨幕之间的间隔（tick），三阶段缩短 30%", "Ticks between two curtains per player, 30% shorter in phase three").defineInRange("interval_ticks", 50, 10, 1200);
+        STORM_INTERVAL = b.comment("每名玩家两道雨幕之间的间隔（tick），三阶段缩短 30%", "Ticks between two curtains per player, 30% shorter in phase three").defineInRange("interval_ticks", 90, 10, 1200);
         b.pop();
 
         b.comment("二阶段：泪晶棱阵，目标周围升起六颗泪晶，两两对穿连成三道贯穿中心的光束，先闪烁预警再点亮，每轮旋转角度不同，站在光束间隙即可躲避", "Phase 2: Tear Prism, six crystals rise around the target and link into three beams through the center; each cycle flashes a warning first and rotates, stand between the beams to dodge");
