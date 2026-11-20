@@ -141,6 +141,17 @@ public abstract class BossBrain<E extends Mob> {
         return victim.hurt(this.mob.damageSources().mobAttack(this.mob), (float) (this.attack() * multiplier));
     }
 
+    public boolean damageNoKnockback(LivingEntity victim, double multiplier) {
+        Vec3 motion = victim.getDeltaMovement();
+        boolean marked = victim.hurtMarked;
+        boolean hurt = this.damage(victim, multiplier);
+        if (hurt) {
+            victim.setDeltaMovement(motion);
+            victim.hurtMarked = marked;
+        }
+        return hurt;
+    }
+
     public double knockScale(LivingEntity victim) {
         return this.skillKnockback() * Math.max(0.0, 1.0 - victim.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
     }

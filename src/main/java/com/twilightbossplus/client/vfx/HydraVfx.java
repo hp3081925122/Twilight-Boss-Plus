@@ -87,6 +87,7 @@ public final class HydraVfx {
             }
             case HydraFx.REGROW -> ClientVfx.add(new Regrow(d.getInt("id"), d.getInt("head")));
             case HydraFx.CROWN -> ClientVfx.add(new Crown(d.getInt("id"), d.getInt("windup"), d.getInt("d")));
+            case HydraFx.MORTAR -> ClientVfx.add(new Mortar(level, d.getInt("id"), ClientVfx.vec(d, "l"), d.getFloat("r"), d.getInt("t")));
             default -> {
             }
         }
@@ -256,6 +257,88 @@ public final class HydraVfx {
             c.strip(A, true, FLAME_STRIP, FIRE, 0.75F).fade(0.0F, 1.0F).scroll(-t * 8.0).path(trail, 0.7, false);
             c.strip(A, true, FLAME_STRIP, GOLD, 0.8F).fade(0.0F, 1.0F).scroll(-t * 11.0).path(trail, 0.3, false);
             c.strip(A, true, HEAT, WARNING, 0.6F * p).scroll(-t * 6.0).density(10.0).wall(this.landing.x, this.landing.y, this.landing.z, this.radius * 0.55, 0.5 + 2.5 * p, t * 0.1, Mth.TWO_PI, true);
+            c.sprite(A, true, BURST, 1 + (this.age / 2) % 2, pos.x, pos.y, pos.z, 1.5, t * 0.3, FIRE, 0.55F);
+            c.sprite(A, true, BURST, (this.age / 2) % 4, pos.x, pos.y, pos.z, 0.9, -t * 0.4, GOLD, 0.6F);
+            c.sprite(A, false, BLOB, (this.age / 3) % 4, pos.x, pos.y, pos.z, 0.65, -t * 0.25, 0xFFFFFF, 1.0F);
+        }
+    }
+
+    private static final class Mortar extends VfxEffect {
+        private final int id;
+        private final Vec3 landing;
+        private final float radius;
+        private final int flight;
+        private final VfxCanvas.Patch patch;
+        private final Vec3[] history = new Vec3[7];
+        private int count;
+        private boolean seen;
+        private int missing;
+        private boolean showWarning = true;
+
+        Mortar(ClientLevel level, int id, Vec3 landing, float radius, int flight) {
+            this.id = id;
+            this.landing = landing;
+            this.radius = radius;
+            this.flight = Math.max(1, flight);
+            this.patch = VfxCanvas.patch(level, landing, radius);
+        }
+
+        @Override
+        public boolean tick(ClientLevel level) {
+            this.age++;
+            Entity entity = level.getEntity(this.id);
+            if (entity == null || !entity.isAlive()) {
+                this.missing++;
+                return !this.seen && this.missing < 12;
+            }
+            this.seen = true;
+            this.missing = 0;
+            Vec3 p = entity.position().add(0.0, entity.getBbHeight() * 0.5, 0.0);
+            if (this.count < this.history.length) {
+                this.history[this.count++] = p;
+            } else {
+                System.arraycopy(this.history, 1, this.history, 0, this.history.length - 1);
+                this.history[this.history.length - 1] = p;
+            }
+            if (entity.onGround() || this.age > this.flight + 6) {
+                this.showWarning = false;
+            }
+            RandomSource random = level.getRandom();
+            if (random.nextInt(2) == 0) {
+                ember(p.x, p.y, p.z, (random.nextDouble() - 0.5) * 0.05, 0.02, (random.nextDouble() - 0.5) * 0.05, random);
+            }
+            if (this.age % 3 == 0) {
+                smoke(p.x, p.y, p.z, 0.0, 0.02, 0.0, random);
+            }
+            return true;
+        }
+
+        @Override
+        protected boolean alive() {
+            return true;
+        }
+
+        @Override
+        public void render(VfxCanvas c) {
+            Entity entity = c.level.getEntity(this.id);
+            if (entity == null || !entity.isAlive()) {
+                return;
+            }
+            float t = this.time(c);
+            if (this.showWarning) {
+                float p = Mth.clamp(t / this.flight, 0.0F, 1.0F);
+                c.decal(A, true, SCORCH, this.patch, t * 0.05, 0.4 + 0.6 * p, 0.02, MAGMA, 0.25F + 0.45F * p);
+                c.strip(A, true, FLAME_STRIP, WARNING, 0.5F + 0.5F * p).scroll(-t * 5.0).density(12.0).arc(this.landing.x, this.landing.y, this.landing.z, Math.max(0.0, this.radius - 0.4), this.radius, 0.0, Mth.TWO_PI, true);
+                c.strip(A, true, HEAT, WARNING, 0.6F * p).scroll(-t * 6.0).density(10.0).wall(this.landing.x, this.landing.y, this.landing.z, this.radius * 0.55, 0.5 + 2.5 * p, t * 0.1, Mth.TWO_PI, true);
+            }
+            Vec3 pos = VfxCanvas.pos(entity, c.partial).add(0.0, entity.getBbHeight() * 0.5, 0.0);
+            if (this.count >= 2) {
+                Vec3[] trail = new Vec3[this.count];
+                System.arraycopy(this.history, 0, trail, 0, this.count - 1);
+                trail[this.count - 1] = pos;
+                c.strip(A, true, FLAME_STRIP, FIRE, 0.75F).fade(0.0F, 1.0F).scroll(-t * 8.0).path(trail, 0.7, false);
+                c.strip(A, true, FLAME_STRIP, GOLD, 0.8F).fade(0.0F, 1.0F).scroll(-t * 11.0).path(trail, 0.3, false);
+            }
             c.sprite(A, true, BURST, 1 + (this.age / 2) % 2, pos.x, pos.y, pos.z, 1.5, t * 0.3, FIRE, 0.55F);
             c.sprite(A, true, BURST, (this.age / 2) % 4, pos.x, pos.y, pos.z, 0.9, -t * 0.4, GOLD, 0.6F);
             c.sprite(A, false, BLOB, (this.age / 3) % 4, pos.x, pos.y, pos.z, 0.65, -t * 0.25, 0xFFFFFF, 1.0F);

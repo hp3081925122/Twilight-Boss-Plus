@@ -49,7 +49,7 @@ public final class TearStorm extends UrGhastSkill {
         for (Player player : this.brain.players(RANGE)) {
             Integer next = this.nextCurtain.get(player.getId());
             if (next == null) {
-                next = 10 + random.nextInt(20);
+                next = 30 + random.nextInt(20);
             }
             if (this.age < next) {
                 this.nextCurtain.put(player.getId(), next);

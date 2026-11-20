@@ -19,6 +19,7 @@ public final class HydraFx {
     public static final int AURA = 411;
     public static final int REGROW = 412;
     public static final int CROWN = 413;
+    public static final int MORTAR = 414;
 
     private HydraFx() {
     }
@@ -126,5 +127,14 @@ public final class HydraFx {
         data.putInt("id", hydra.getId());
         data.putInt("head", head);
         brain.send(REGROW, data);
+    }
+
+    public static void mortar(BossBrain<?> brain, int entityId, Vec3 landing, double radius, int flight) {
+        CompoundTag data = new CompoundTag();
+        data.putInt("id", entityId);
+        BossBrain.putVec(data, "l", landing);
+        data.putFloat("r", (float) radius);
+        data.putInt("t", flight);
+        brain.send(MORTAR, data);
     }
 }
