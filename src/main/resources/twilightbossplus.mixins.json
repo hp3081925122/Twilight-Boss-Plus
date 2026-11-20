@@ -5,7 +5,7 @@
   "compatibilityLevel": "JAVA_25",
 
   "mixins": [
-    "ChargeAttackGoalMixin", "GroundAttackGoalMixin", "HydraHeadContainerMixin", "HydraMixin", "KnightPhantomAccessor", "KnightPhantomMixin", "LichMixin", "MinoshroomMixin", "NagaMixin",
+    "ChargeAttackGoalMixin", "GroundAttackGoalMixin", "HydraHeadContainerMixin", "HydraMixin", "HydraMortarMixin", "KnightPhantomAccessor", "KnightPhantomMixin", "LichMixin", "MinoshroomMixin", "NagaMixin",
     "NagaMovementPatternMixin", "PhantomFormationGoalMixin", "PhantomThrowWeaponGoalMixin", "UrGhastMixin", "AlphaYetiMixin", "AlphaYetiRangedGoalMixin",
     "ThrowRiderGoalMixin", "YetiRampageGoalMixin", "SnowQueenMixin", "QueenHoverGoalMixin", "QueenMeleeGoalMixin"
   ],

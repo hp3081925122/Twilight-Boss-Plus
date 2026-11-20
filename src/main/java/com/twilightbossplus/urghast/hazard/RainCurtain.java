@@ -61,9 +61,7 @@ public final class RainCurtain implements BossHazard {
                 continue;
             }
             this.hits.put(victim.getId(), this.age);
-            if (brain.damage(victim, this.multiplier)) {
-                brain.knock(victim, this.motion.x, this.motion.z, 0.15, 0.05);
-            }
+            brain.damageNoKnockback(victim, this.multiplier);
         }
         return this.age < this.life;
     }
